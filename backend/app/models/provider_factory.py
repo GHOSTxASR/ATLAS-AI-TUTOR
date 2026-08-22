@@ -40,7 +40,11 @@ OPENAI_COMPATIBLE_PROVIDERS: dict[str, dict[str, str]] = {
     "openrouter": {
         "base_url": "https://openrouter.ai/api/v1",
         "env_key": "OPENROUTER_API_KEY",
-        "default_model": "google/gemini-2.0-flash-exp:free",
+        # A specific model id here goes stale the moment OpenRouter retires it
+        # (the previous default, google/gemini-2.0-flash-exp:free, no longer
+        # exists). `openrouter/auto` routes to a currently-available model, so
+        # it stays valid; the live model list covers deliberate choices.
+        "default_model": "openrouter/auto",
         "label": "OpenRouter (many free models)",
     },
     "together": {

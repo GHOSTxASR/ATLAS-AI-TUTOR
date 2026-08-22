@@ -27,11 +27,16 @@ async def list_providers(service: SettingsService = Depends(get_settings_service
 @router.get("/models", response_model=dict)
 async def list_models(
     provider: str | None = Query(None, description="Provider ID to query"),
+    refresh: bool = Query(False, description="Bypass the cached list and re-query the provider"),
     service: SettingsService = Depends(get_settings_service),
 ):
-    """List available models for the specified or active provider."""
-    models = service.list_models(provider=provider)
-    return envelope(data={"provider": provider or "active", "models": models})
+    """List models the provider currently offers.
+
+    Fetched live so retired models disappear and new ones (including new free
+    tiers) show up without a release. Falls back to a small static list when
+    the provider cannot be reached; `source` says which was used.
+    """
+    return envelope(data=await service.list_models(provider=provider, refresh=refresh))
 
 
 @router.post("/test-connection", response_model=dict)

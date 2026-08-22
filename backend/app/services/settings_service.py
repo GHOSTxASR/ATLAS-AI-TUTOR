@@ -5,21 +5,11 @@ from typing import Any
 
 from app.config import Settings, project_root, get_settings
 from app.exceptions import LearningOSError
+from app.models.model_catalog import FALLBACK_MODELS, get_models
 from app.models.provider_factory import get_all_providers, get_model_client
 from app.models.resilience import provider_error_from
 from app.security.keystore import KeyStore
 
-PROVIDER_MODEL_CATALOG: dict[str, list[str]] = {
-    "gemini": ["gemini-3.7-flash", "gemini-3.5-flash", "gemini-3.6-flash"],
-    "openai": ["gpt-4o", "gpt-4o-mini", "gpt-4-turbo", "gpt-3.5-turbo"],
-    "anthropic": ["claude-sonnet-4-20250514", "claude-3-5-sonnet-20241022", "claude-3-haiku-20240307"],
-    "ollama": ["llama3.1", "mistral", "phi3", "qwen2.5", "deepseek-r1"],
-    "groq": ["llama-3.3-70b-versatile", "llama-3.1-8b-instant", "mixtral-8x7b-32768"],
-    "deepseek": ["deepseek-chat", "deepseek-reasoner"],
-    "mistral": ["mistral-large-latest", "mistral-small-latest", "codestral-latest"],
-    "openrouter": ["google/gemini-2.0-flash-exp:free", "meta-llama/llama-3.3-70b-instruct:free"],
-    "together": ["meta-llama/Llama-3.3-70B-Instruct-Turbo", "mistralai/Mixtral-8x7B-Instruct-v0.1"],
-}
 
 
 class SettingsService:
@@ -55,9 +45,13 @@ class SettingsService:
             "active_model": self.settings.model.chat_model,
         }
 
-    def list_models(self, provider: str | None = None) -> list[str]:
+    async def list_models(
+        self, provider: str | None = None, *, refresh: bool = False
+    ) -> dict[str, Any]:
+        """Current models for a provider, fetched live where possible."""
         p = (provider or self.settings.model.provider).strip().lower()
-        return PROVIDER_MODEL_CATALOG.get(p, ["default-model"])
+        catalog = await get_models(self.settings, p, refresh=refresh)
+        return catalog.to_dict()
 
     def _model_for_provider(self, provider: str) -> str:
         """Chat model to use when talking to ``provider``.
@@ -71,7 +65,7 @@ class SettingsService:
         info = next((p for p in get_all_providers() if p["id"] == provider), None)
         if info and info.get("default_model"):
             return str(info["default_model"])
-        catalog = PROVIDER_MODEL_CATALOG.get(provider)
+        catalog = FALLBACK_MODELS.get(provider)
         return catalog[0] if catalog else self.settings.model.chat_model
 
     async def test_connection(self, provider: str | None = None) -> dict[str, Any]:

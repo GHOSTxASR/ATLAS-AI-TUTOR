@@ -18,7 +18,8 @@ import {
   ChevronDown,
 } from "lucide-react";
 import { apiClient } from "../api/client";
-import { settingsApi, ProvidersData } from "../api/settings";
+import { settingsApi, ProvidersData, ModelInfo } from "../api/settings";
+import { ModelPicker } from "../components/settings/ModelPicker";
 import { useThemeStore, ThemeMode } from "../stores/themeStore";
 import { Skeleton, CardSkeleton } from "../components/common/LoadingStates";
 
@@ -39,24 +40,36 @@ export function SettingsPage() {
   const [modelName, setModelName] = useState("");
   const [showKey, setShowKey] = useState(false);
 
-  // Model catalog state
-  const [modelCatalog, setModelCatalog] = useState<string[]>([]);
-  const [useCustomModel, setUseCustomModel] = useState(false);
+  // Model catalog, fetched live from the provider
+  const [modelCatalog, setModelCatalog] = useState<ModelInfo[]>([]);
+  const [catalogSource, setCatalogSource] = useState<"live" | "fallback">("fallback");
+  const [catalogError, setCatalogError] = useState<string | null>(null);
+  const [loadingModels, setLoadingModels] = useState(false);
 
   useEffect(() => {
     loadProviders();
   }, []);
 
-  // Fetch model catalog when selected provider changes
-  useEffect(() => {
-    if (selectedProvider) {
-      apiClient.get(`/settings/models`, { params: { provider: selectedProvider } })
-        .then((resp) => {
-          setModelCatalog(resp.data.data?.models || []);
-          setUseCustomModel(false);
-        })
-        .catch(() => setModelCatalog([]));
+  const loadModels = async (provider: string, refresh = false) => {
+    if (!provider) return;
+    setLoadingModels(true);
+    try {
+      const data = await settingsApi.getModels(provider, refresh);
+      setModelCatalog(data.models ?? []);
+      setCatalogSource(data.source ?? "fallback");
+      setCatalogError(data.error ?? null);
+    } catch {
+      setModelCatalog([]);
+      setCatalogSource("fallback");
+      setCatalogError("Could not reach the server.");
+    } finally {
+      setLoadingModels(false);
     }
+  };
+
+  // Re-query whenever the provider changes; lists go stale on their own.
+  useEffect(() => {
+    loadModels(selectedProvider);
   }, [selectedProvider]);
 
   const loadProviders = async () => {
@@ -313,55 +326,20 @@ export function SettingsPage() {
                 )}
 
                 <div>
-                  <label className="block text-on-surface-variant mb-1 font-semibold">Model Name</label>
-                  {!useCustomModel && modelCatalog.length > 0 ? (
-                    <div className="space-y-2">
-                      {/* `appearance-none` strips the native arrow, so this
-                          read as a plain text field. The chevron restores the
-                          affordance that it opens a list. */}
-                      <div className="relative">
-                        <select
-                          value={modelName}
-                          onChange={(e) => setModelName(e.target.value)}
-                          className="w-full pl-3 pr-9 py-2 bg-surface-container/50 border border-glass-border rounded-lg text-on-surface focus:outline-hidden focus:border-primary appearance-none cursor-pointer"
-                        >
-                          {modelCatalog.map((m) => (
-                            <option key={m} value={m}>{m}</option>
-                          ))}
-                        </select>
-                        <ChevronDown
-                          className="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none"
-                          aria-hidden="true"
-                        />
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => setUseCustomModel(true)}
-                        className="text-[10px] text-primary hover:underline"
-                      >
-                        Use custom model name instead
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      <input
-                        type="text"
-                        value={modelName}
-                        onChange={(e) => setModelName(e.target.value)}
-                        placeholder={activeProviderInfo.default_model}
-                        className="w-full px-3 py-2 bg-surface-container/50 border border-glass-border rounded-lg text-on-surface focus:outline-hidden focus:border-primary"
-                      />
-                      {modelCatalog.length > 0 && (
-                        <button
-                          type="button"
-                          onClick={() => { setUseCustomModel(false); setModelName(modelCatalog[0] || ""); }}
-                          className="text-[10px] text-primary hover:underline"
-                        >
-                          Choose from catalog instead
-                        </button>
-                      )}
-                    </div>
-                  )}
+                  <label className="block text-on-surface-variant mb-1 font-semibold">
+                    Model Name
+                  </label>
+                  {/* Searchable live list; typing is manual entry, so a model
+                      the provider added today still works. */}
+                  <ModelPicker
+                    value={modelName}
+                    onChange={setModelName}
+                    models={modelCatalog}
+                    source={catalogSource}
+                    error={catalogError}
+                    loading={loadingModels}
+                    onRefresh={() => loadModels(selectedProvider, true)}
+                  />
                 </div>
               </div>
             )}

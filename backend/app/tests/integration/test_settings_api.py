@@ -29,11 +29,13 @@ def test_settings_endpoints(tmp_path, monkeypatch):
         providers = p_resp.json()["data"]["providers"]
         assert len(providers) >= 3
 
-        # 2. List Models
+        # 2. List Models. Entries are objects now, because the list is fetched
+        #    live and carries pricing/context metadata.
         m_resp = client.get("/api/v1/settings/models?provider=openai")
         assert m_resp.status_code == 200
-        models = m_resp.json()["data"]["models"]
-        assert "gpt-4o" in models
+        payload = m_resp.json()["data"]
+        assert payload["source"] in ("live", "fallback")
+        assert "gpt-4o" in [m["id"] for m in payload["models"]]
 
         # 3. Test connection (returns ok or graceful provider error)
         t_resp = client.post("/api/v1/settings/test-connection", json={"provider": "ollama"})

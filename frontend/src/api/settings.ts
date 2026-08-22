@@ -22,9 +22,20 @@ export interface ProvidersData {
   active_model: string;
 }
 
+export interface ModelInfo {
+  id: string;
+  label: string;
+  free: boolean;
+  context_length?: number | null;
+}
+
 export interface ModelCatalogResponse {
   provider: string;
-  models: string[];
+  models: ModelInfo[];
+  /** "live" when fetched from the provider, "fallback" for the static list. */
+  source: "live" | "fallback";
+  error?: string | null;
+  free_count: number;
 }
 
 /** `SettingsService.test_connection()` reports `status`, not `success`. */
@@ -54,9 +65,9 @@ export const settingsApi = {
     return response.data.data;
   },
 
-  getModels: async (provider?: string): Promise<ModelCatalogResponse> => {
+  getModels: async (provider?: string, refresh = false): Promise<ModelCatalogResponse> => {
     const response = await apiClient.get<ApiResponse<ModelCatalogResponse>>("/settings/models", {
-      params: provider ? { provider } : undefined,
+      params: { ...(provider ? { provider } : {}), ...(refresh ? { refresh: true } : {}) },
     });
     return response.data.data;
   },
