@@ -1,0 +1,15 @@
+[project]
+name = "learningos-backend"
+version = "0.1.0"
+description = "LearningOS local-first backend"
+requires-python = ">=3.11"
+
+[tool.pytest.ini_options]
+testpaths = ["app/tests"]
+pythonpath = ["."]
+asyncio_mode = "auto"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
