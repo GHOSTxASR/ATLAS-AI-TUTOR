@@ -157,3 +157,97 @@ async def test_gemini_keeps_only_chat_capable_models(settings, monkeypatch):
 
     assert [m.id for m in catalog.models] == ["gemini-3.7-flash"]
     assert catalog.models[0].context_length == 1048576
+
+
+# ── Embedding models ──────────────────────────────────────────────────
+
+EMBEDDING_BODY = {
+    "data": [
+        {"id": "text-embedding-3-small", "name": "Embedding Small"},
+        {"id": "text-embedding-3-large", "name": "Embedding Large"},
+        {"id": "gpt-4o", "name": "GPT-4o"},
+    ]
+}
+
+
+async def test_embedding_purpose_returns_only_embedding_models(settings, monkeypatch):
+    monkeypatch.setattr("app.models.model_catalog.resolve_api_key", lambda *a, **k: "key")
+    _patch_transport(monkeypatch, lambda req: httpx.Response(200, json=EMBEDDING_BODY))
+
+    catalog = await get_models(settings, "openai", purpose="embedding", refresh=True)
+
+    # Order is free-first then alphabetical, so compare as a set.
+    ids = {m.id for m in catalog.models}
+    assert ids == {"text-embedding-3-small", "text-embedding-3-large"}
+    assert "gpt-4o" not in ids
+
+
+async def test_chat_and_embedding_lists_are_cached_separately(settings, monkeypatch):
+    monkeypatch.setattr("app.models.model_catalog.resolve_api_key", lambda *a, **k: "key")
+    _patch_transport(monkeypatch, lambda req: httpx.Response(200, json=EMBEDDING_BODY))
+
+    chat = await get_models(settings, "openai", purpose="chat", refresh=True)
+    embedding = await get_models(settings, "openai", purpose="embedding", refresh=True)
+
+    assert [m.id for m in chat.models] == ["gpt-4o"]
+    assert "text-embedding-3-small" in [m.id for m in embedding.models]
+
+
+async def test_gemini_embedding_uses_declared_capability(settings, monkeypatch):
+    body = {
+        "models": [
+            {
+                "name": "models/gemini-embedding-001",
+                "displayName": "Gemini Embedding",
+                "supportedGenerationMethods": ["embedContent"],
+            },
+            {
+                "name": "models/gemini-3.7-flash",
+                "supportedGenerationMethods": ["generateContent"],
+            },
+        ]
+    }
+    monkeypatch.setattr("app.models.model_catalog.resolve_api_key", lambda *a, **k: "key")
+    _patch_transport(monkeypatch, lambda req: httpx.Response(200, json=body))
+
+    catalog = await get_models(settings, "gemini", purpose="embedding", refresh=True)
+
+    assert [m.id for m in catalog.models] == ["gemini-embedding-001"]
+
+
+async def test_provider_without_embeddings_api_says_so(settings):
+    """OpenRouter is chat-only; documents cannot be indexed with it."""
+    catalog = await get_models(settings, "openrouter", purpose="embedding", refresh=True)
+
+    assert catalog.source == "fallback"
+    assert catalog.models == []
+    assert "no embeddings API" in (catalog.error or "")
+
+
+def test_indexed_models_read_back_from_collection_namespaces(settings, monkeypatch):
+    """Collections are namespaced per embedding model, so the index reveals
+    which model produced it — that is what drives the re-index warning."""
+    from app.models import model_catalog as mc
+
+    class FakeCollection:
+        def __init__(self, name):
+            self.name = name
+
+    class FakeClient:
+        def list_collections(self):
+            return [
+                FakeCollection("prof1_documents_gemini_embedding_001"),
+                FakeCollection("prof1_memory_gemini_embedding_001"),
+                FakeCollection("prof2_documents_hash_dev_1536"),
+            ]
+
+    monkeypatch.setattr("app.pipelines.embedder.get_chroma_client", lambda _dir: FakeClient())
+
+    assert mc.indexed_embedding_models(settings) == ["gemini-embedding-001", "hash-dev-1536"]
+
+
+def test_indexed_models_empty_when_no_vector_store(settings, monkeypatch):
+    from app.models import model_catalog as mc
+
+    monkeypatch.setattr("app.pipelines.embedder.get_chroma_client", lambda _dir: None)
+    assert mc.indexed_embedding_models(settings) == []

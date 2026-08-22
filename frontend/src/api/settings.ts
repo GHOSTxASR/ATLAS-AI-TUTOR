@@ -46,10 +46,20 @@ export interface TestConnectionResponse {
   error?: string;
 }
 
+export interface EmbeddingCatalogResponse extends ModelCatalogResponse {
+  /** Embedding model that would be used right now. */
+  active_model: string;
+  /** Models the existing vector index was actually built with. */
+  indexed_models: string[];
+  /** True when the active model differs from what is indexed. */
+  reindex_required: boolean;
+}
+
 export interface SetProviderRequest {
   provider: string;
   model?: string;
   api_key?: string;
+  embedding_model?: string;
 }
 
 export interface SetProviderResponse {
@@ -69,6 +79,17 @@ export const settingsApi = {
     const response = await apiClient.get<ApiResponse<ModelCatalogResponse>>("/settings/models", {
       params: { ...(provider ? { provider } : {}), ...(refresh ? { refresh: true } : {}) },
     });
+    return response.data.data;
+  },
+
+  getEmbeddingModels: async (
+    provider?: string,
+    refresh = false
+  ): Promise<EmbeddingCatalogResponse> => {
+    const response = await apiClient.get<ApiResponse<EmbeddingCatalogResponse>>(
+      "/settings/embedding-models",
+      { params: { ...(provider ? { provider } : {}), ...(refresh ? { refresh: true } : {}) } }
+    );
     return response.data.data;
   },
 

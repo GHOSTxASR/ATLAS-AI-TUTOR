@@ -5,7 +5,7 @@ from typing import Any
 
 from app.config import Settings, project_root, get_settings
 from app.exceptions import LearningOSError
-from app.models.model_catalog import FALLBACK_MODELS, get_models
+from app.models.model_catalog import FALLBACK_MODELS, get_models, indexed_embedding_models
 from app.models.provider_factory import get_all_providers, get_model_client
 from app.models.resilience import provider_error_from
 from app.security.keystore import KeyStore
@@ -52,6 +52,34 @@ class SettingsService:
         p = (provider or self.settings.model.provider).strip().lower()
         catalog = await get_models(self.settings, p, refresh=refresh)
         return catalog.to_dict()
+
+    async def list_embedding_models(
+        self, provider: str | None = None, *, refresh: bool = False
+    ) -> dict[str, Any]:
+        """Embedding models for a provider, plus what is already indexed.
+
+        Switching embedding model starts a fresh vector collection, so the
+        response reports which models the existing index was built with; the UI
+        uses that to warn before documents silently stop being searchable.
+        """
+        p = (provider or self.settings.model.provider).strip().lower()
+        catalog = await get_models(self.settings, p, purpose="embedding", refresh=refresh)
+
+        from dataclasses import replace
+
+        from app.pipelines.embedder import DocumentEmbedder
+
+        # Resolve for the provider being *previewed*, not the saved one, or
+        # selecting Gemini would suggest OpenAI's default embedding model.
+        preview = replace(self.settings, model=replace(self.settings.model, provider=p))
+        active = DocumentEmbedder(settings=preview).embedding_model
+        indexed = indexed_embedding_models(self.settings)
+
+        payload = catalog.to_dict()
+        payload["active_model"] = active
+        payload["indexed_models"] = indexed
+        payload["reindex_required"] = bool(indexed) and active not in indexed
+        return payload
 
     def _model_for_provider(self, provider: str) -> str:
         """Chat model to use when talking to ``provider``.
@@ -100,7 +128,9 @@ class SettingsService:
             # key-in-query providers is the API key itself.
             return {"status": "error", "provider": p, "error": provider_error_from(e, p).message}
 
-    def set_provider(self, provider: str, api_key: str, model: str) -> dict[str, object]:
+    def set_provider(
+        self, provider: str, api_key: str, model: str, embedding_model: str = ""
+    ) -> dict[str, object]:
         # Invalidate the cached settings so all services pick up the new config
         get_settings.cache_clear()
 
@@ -132,6 +162,12 @@ class SettingsService:
         self._persist_env_choice("LEARNINGOS_CHAT_MODEL", model)
         os.environ["LEARNINGOS_CHAT_MODEL"] = model
 
+        # Previously read from config but never writable from the UI.
+        embedding_model = (embedding_model or "").strip()
+        if embedding_model:
+            self._persist_env_choice("LEARNINGOS_EMBEDDING_MODEL", embedding_model)
+            os.environ["LEARNINGOS_EMBEDDING_MODEL"] = embedding_model
+
         # Clear cache again after env vars are updated so next get_settings()
         # picks up the new environment values
         get_settings.cache_clear()
@@ -139,6 +175,7 @@ class SettingsService:
         return {
             "provider": provider,
             "model": model,
+            "embedding_model": embedding_model,
             "key_persisted": bool(api_key and env_key),
             "message": f"Switched to {provider_info['label']}.",
         }

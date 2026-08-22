@@ -46,6 +46,15 @@ export function SettingsPage() {
   const [catalogError, setCatalogError] = useState<string | null>(null);
   const [loadingModels, setLoadingModels] = useState(false);
 
+  // Embedding model: a separate catalogue, and changing it invalidates the
+  // vector index, so the indexed model is tracked alongside.
+  const [embeddingModel, setEmbeddingModel] = useState("");
+  const [embeddingCatalog, setEmbeddingCatalog] = useState<ModelInfo[]>([]);
+  const [embeddingSource, setEmbeddingSource] = useState<"live" | "fallback">("fallback");
+  const [embeddingError, setEmbeddingError] = useState<string | null>(null);
+  const [indexedModels, setIndexedModels] = useState<string[]>([]);
+  const [loadingEmbeddings, setLoadingEmbeddings] = useState(false);
+
   useEffect(() => {
     loadProviders();
   }, []);
@@ -67,9 +76,30 @@ export function SettingsPage() {
     }
   };
 
+  const loadEmbeddingModels = async (provider: string, refresh = false) => {
+    if (!provider) return;
+    setLoadingEmbeddings(true);
+    try {
+      const data = await settingsApi.getEmbeddingModels(provider, refresh);
+      setEmbeddingCatalog(data.models ?? []);
+      setEmbeddingSource(data.source ?? "fallback");
+      setEmbeddingError(data.error ?? null);
+      setIndexedModels(data.indexed_models ?? []);
+      setEmbeddingModel((current) => current || data.active_model || "");
+    } catch {
+      setEmbeddingCatalog([]);
+      setEmbeddingSource("fallback");
+      setEmbeddingError("Could not reach the server.");
+    } finally {
+      setLoadingEmbeddings(false);
+    }
+  };
+
   // Re-query whenever the provider changes; lists go stale on their own.
   useEffect(() => {
     loadModels(selectedProvider);
+    setEmbeddingModel("");
+    loadEmbeddingModels(selectedProvider);
   }, [selectedProvider]);
 
   const loadProviders = async () => {
@@ -95,10 +125,12 @@ export function SettingsPage() {
         provider: selectedProvider,
         api_key: apiKey,
         model: modelName,
+        embedding_model: embeddingModel,
       });
       setSuccess(data.message);
       setApiKey("");
       await loadProviders();
+      await loadEmbeddingModels(selectedProvider, true);
     } catch (err: any) {
       setError(err.response?.data?.error?.message || "Failed to save settings");
     } finally {
@@ -340,6 +372,51 @@ export function SettingsPage() {
                     loading={loadingModels}
                     onRefresh={() => loadModels(selectedProvider, true)}
                   />
+                </div>
+
+                {/* Embedding model. Separate catalogue, and separate stakes:
+                    switching it starts a new vector index rather than
+                    reinterpreting the old one. */}
+                <div>
+                  <label className="block text-on-surface-variant mb-1 font-semibold">
+                    Embedding Model
+                    <span className="ml-1.5 font-normal text-on-surface-variant/70">
+                      — used to index documents for search
+                    </span>
+                  </label>
+
+                  {embeddingCatalog.length === 0 && embeddingError ? (
+                    <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-200 text-[11px] leading-relaxed">
+                      {embeddingError}
+                      <span className="block mt-1 opacity-80">
+                        Chat still works. Document search needs a provider with an
+                        embeddings API — OpenAI, Gemini, Mistral, Together, or a local
+                        Ollama model.
+                      </span>
+                    </div>
+                  ) : (
+                    <ModelPicker
+                      value={embeddingModel}
+                      onChange={setEmbeddingModel}
+                      models={embeddingCatalog}
+                      source={embeddingSource}
+                      error={embeddingError}
+                      loading={loadingEmbeddings}
+                      onRefresh={() => loadEmbeddingModels(selectedProvider, true)}
+                    />
+                  )}
+
+                  {indexedModels.length > 0 &&
+                    embeddingModel &&
+                    !indexedModels.includes(embeddingModel) && (
+                      <div className="mt-2 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-200 text-[11px] leading-relaxed">
+                        Your documents are indexed with{" "}
+                        <span className="font-mono">{indexedModels.join(", ")}</span>.
+                        Switching to <span className="font-mono">{embeddingModel}</span>{" "}
+                        starts a new index — existing documents stay on disk but will not
+                        be searchable until you reprocess them from the Library.
+                      </div>
+                    )}
                 </div>
               </div>
             )}

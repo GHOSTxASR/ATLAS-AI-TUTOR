@@ -33,7 +33,31 @@ logger = logging.getLogger(__name__)
 CACHE_TTL_SECONDS = 600
 FETCH_TIMEOUT_SECONDS = 12.0
 
+# Providers that expose an embeddings endpoint, and where to reach it.
+OPENAI_COMPATIBLE_EMBEDDING_URLS: dict[str, str] = {
+    "openai": "https://api.openai.com/v1",
+    "mistral": "https://api.mistral.ai/v1",
+    "together": "https://api.together.xyz/v1",
+}
+
+# Chat providers with no embeddings API of their own. Documents cannot be
+# indexed while one of these is the active provider.
+PROVIDERS_WITHOUT_EMBEDDINGS = frozenset({"anthropic", "groq", "deepseek", "openrouter"})
+
+# Sensible per-provider default, used when the global embedding_model setting
+# still holds its cross-provider default value.
+DEFAULT_EMBEDDING_MODELS: dict[str, str] = {
+    "openai": "text-embedding-3-small",
+    "mistral": "mistral-embed",
+    "together": "BAAI/bge-base-en-v1.5",
+    "gemini": "gemini-embedding-001",
+    "ollama": "nomic-embed-text",
+}
+
 GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta"
+# Kept as a separate name because the embedder imports it.
+GEMINI_EMBEDDING_BASE_URL = GEMINI_BASE_URL
+GEMINI_EMBEDDING_DIMENSION = 768
 ANTHROPIC_BASE_URL = "https://api.anthropic.com"
 
 # Ids that are not chat models. Provider "list models" endpoints happily return
@@ -41,6 +65,13 @@ ANTHROPIC_BASE_URL = "https://api.anthropic.com"
 _NON_CHAT_PATTERNS = re.compile(
     r"(embed|embedding|tts|whisper|audio|speech|transcribe|dall-e|image|"
     r"moderation|rerank|guard|vision-only|codestral-embed)",
+    re.IGNORECASE,
+)
+
+# Ids that denote an embedding model. Providers return them from the same
+# "list models" endpoint as chat models, so the two are separated by pattern.
+_EMBEDDING_PATTERNS = re.compile(
+    r"(embed|embedding|bge-|gte-|e5-|minilm|nomic|mxbai|voyage|jina-emb|m2-bert)",
     re.IGNORECASE,
 )
 
@@ -100,8 +131,20 @@ def _is_chat_model(model_id: str) -> bool:
     return not _NON_CHAT_PATTERNS.search(model_id)
 
 
-def _fallback(provider: str, error: str | None) -> ModelCatalog:
-    ids = FALLBACK_MODELS.get(provider, [])
+def _is_embedding_model(model_id: str) -> bool:
+    return bool(_EMBEDDING_PATTERNS.search(model_id))
+
+
+def _matches_purpose(model_id: str, purpose: str) -> bool:
+    return _is_embedding_model(model_id) if purpose == "embedding" else _is_chat_model(model_id)
+
+
+def _fallback(provider: str, error: str | None, purpose: str = "chat") -> ModelCatalog:
+    if purpose == "embedding":
+        default = DEFAULT_EMBEDDING_MODELS.get(provider)
+        ids = [default] if default else []
+    else:
+        ids = FALLBACK_MODELS.get(provider, [])
     return ModelCatalog(
         provider=provider,
         models=[ModelInfo(id=i, label=i) for i in ids],
@@ -115,7 +158,7 @@ def _fallback(provider: str, error: str | None) -> ModelCatalog:
 
 
 async def _fetch_openai_compatible(
-    provider: str, base_url: str, api_key: str
+    provider: str, base_url: str, api_key: str, purpose: str = "chat"
 ) -> list[ModelInfo]:
     """`GET /models` - the shape shared by OpenAI, Groq, DeepSeek, Mistral,
     Together and OpenRouter. OpenRouter additionally returns pricing and
@@ -132,7 +175,7 @@ async def _fetch_openai_compatible(
     out: list[ModelInfo] = []
     for entry in payload.get("data", []):
         model_id = entry.get("id")
-        if not model_id or not _is_chat_model(model_id):
+        if not model_id or not _matches_purpose(model_id, purpose):
             continue
 
         pricing = entry.get("pricing") or {}
@@ -159,8 +202,10 @@ def _is_zero(value: Any) -> bool:
         return False
 
 
-async def _fetch_gemini(api_key: str) -> list[ModelInfo]:
-    """Gemini reports which methods each model supports; keep the chat ones."""
+async def _fetch_gemini(api_key: str, purpose: str = "chat") -> list[ModelInfo]:
+    """Gemini declares which methods each model supports, so the split between
+    chat and embedding models is authoritative rather than name-guessed."""
+    wanted = "embedContent" if purpose == "embedding" else "generateContent"
     async with httpx.AsyncClient(
         timeout=FETCH_TIMEOUT_SECONDS, headers={"x-goog-api-key": api_key}
     ) as client:
@@ -171,7 +216,7 @@ async def _fetch_gemini(api_key: str) -> list[ModelInfo]:
     out: list[ModelInfo] = []
     for entry in payload.get("models", []):
         methods = entry.get("supportedGenerationMethods", [])
-        if "generateContent" not in methods:
+        if wanted not in methods:
             continue
         model_id = str(entry.get("name", "")).removeprefix("models/")
         if not model_id:
@@ -202,8 +247,9 @@ async def _fetch_anthropic(api_key: str) -> list[ModelInfo]:
     ]
 
 
-async def _fetch_ollama(base_url: str) -> list[ModelInfo]:
-    """Locally pulled models, so this is the only truly authoritative list."""
+async def _fetch_ollama(base_url: str, purpose: str = "chat") -> list[ModelInfo]:
+    """Locally pulled models, so this is the only truly authoritative list.
+    Ollama does not label capabilities here, so purpose is inferred by name."""
     async with httpx.AsyncClient(timeout=FETCH_TIMEOUT_SECONDS) as client:
         resp = await client.get(f"{base_url.rstrip('/')}/api/tags")
         resp.raise_for_status()
@@ -212,7 +258,7 @@ async def _fetch_ollama(base_url: str) -> list[ModelInfo]:
     return [
         ModelInfo(id=e["name"], label=e["name"], free=True)
         for e in payload.get("models", [])
-        if e.get("name")
+        if e.get("name") and _matches_purpose(e["name"], purpose)
     ]
 
 
@@ -220,32 +266,39 @@ async def _fetch_ollama(base_url: str) -> list[ModelInfo]:
 
 
 async def get_models(
-    settings: Settings, provider: str, *, refresh: bool = False
+    settings: Settings, provider: str, *, purpose: str = "chat", refresh: bool = False
 ) -> ModelCatalog:
     """Current models for `provider`, live where possible.
+
+    `purpose` selects chat or embedding models; both come from the same
+    provider endpoints and are separated by declared capability (Gemini) or by
+    id pattern (everyone else).
 
     Never raises: a failure degrades to the static list with `source` set to
     "fallback" and `error` explaining why, so the Settings page always renders
     and manual entry always remains available.
     """
     provider = (provider or "").strip().lower()
+    cache_key = f"{provider}:{purpose}"
 
-    cached = _cache.get(provider)
+    cached = _cache.get(cache_key)
     if cached and not refresh and (time.time() - cached.fetched_at) < CACHE_TTL_SECONDS:
         return cached
 
     try:
-        models = await _dispatch(settings, provider)
+        models = await _dispatch(settings, provider, purpose)
     except Exception as exc:
         message = provider_error_from(exc, provider).message
-        logger.warning("Live model lookup failed for %s: %s", provider, message)
-        result = _fallback(provider, message)
-        _cache[provider] = result
+        logger.warning("Live %s model lookup failed for %s: %s", purpose, provider, message)
+        result = _fallback(provider, message, purpose)
+        _cache[cache_key] = result
         return result
 
     if not models:
-        result = _fallback(provider, "The provider returned no chat models.")
-        _cache[provider] = result
+        result = _fallback(
+            provider, f"The provider returned no {purpose} models.", purpose
+        )
+        _cache[cache_key] = result
         return result
 
     # Free first, then alphabetically - free tiers are what users hunt for.
@@ -253,21 +306,30 @@ async def get_models(
     result = ModelCatalog(
         provider=provider, models=models, source="live", fetched_at=time.time()
     )
-    _cache[provider] = result
+    _cache[cache_key] = result
     return result
 
 
-async def _dispatch(settings: Settings, provider: str) -> list[ModelInfo]:
+async def _dispatch(
+    settings: Settings, provider: str, purpose: str = "chat"
+) -> list[ModelInfo]:
     import os
 
+    if purpose == "embedding" and provider in PROVIDERS_WITHOUT_EMBEDDINGS:
+        raise ValueError(
+            f"'{provider}' has no embeddings API. Documents cannot be indexed with it."
+        )
+
     if provider == "ollama":
-        return await _fetch_ollama(os.getenv("OLLAMA_BASE_URL", "http://localhost:11434"))
+        return await _fetch_ollama(
+            os.getenv("OLLAMA_BASE_URL", "http://localhost:11434"), purpose
+        )
 
     if provider == "gemini":
         key = resolve_api_key(settings, "gemini", "GEMINI_API_KEY")
         if not key:
             raise ValueError("Add a Gemini API key to load the live model list.")
-        return await _fetch_gemini(key)
+        return await _fetch_gemini(key, purpose)
 
     if provider == "anthropic":
         key = resolve_api_key(settings, "anthropic", "ANTHROPIC_API_KEY")
@@ -285,9 +347,54 @@ async def _dispatch(settings: Settings, provider: str) -> list[ModelInfo]:
     if not key and provider != "openrouter":
         raise ValueError(f"Add a {info['label']} API key to load the live model list.")
 
-    return await _fetch_openai_compatible(provider, info["base_url"], key)
+    base_url = (
+        OPENAI_COMPATIBLE_EMBEDDING_URLS.get(provider, info["base_url"])
+        if purpose == "embedding"
+        else info["base_url"]
+    )
+    return await _fetch_openai_compatible(provider, base_url, key, purpose)
 
 
 def clear_cache() -> None:
     """Drop cached catalogues. Intended for tests and key changes."""
     _cache.clear()
+
+
+def indexed_embedding_models(settings: Settings) -> list[str]:
+    """Embedding models the existing vector store was built with.
+
+    Collections are namespaced by embedding model, so switching model starts an
+    empty index rather than corrupting the old one - documents stay on disk but
+    become unsearchable until reprocessed. Surfacing this lets the UI warn
+    before that happens instead of after.
+
+    Namespaces are slugs, so they are matched back against known model names;
+    anything unrecognised is returned as its raw slug.
+    """
+    from app.pipelines.embedder import HASH_BACKEND_MODEL, embedding_namespace, get_chroma_client
+
+    client = get_chroma_client(settings.paths.chroma_dir)
+    if client is None:
+        return []
+
+    try:
+        names = [str(getattr(c, "name", c)) for c in client.list_collections()]
+    except Exception:
+        logger.debug("Could not enumerate vector collections.", exc_info=True)
+        return []
+
+    candidates = {
+        embedding_namespace(m): m
+        for m in [*DEFAULT_EMBEDDING_MODELS.values(), HASH_BACKEND_MODEL]
+    }
+    configured = (settings.model.embedding_model or "").strip()
+    if configured:
+        candidates[embedding_namespace(configured)] = configured
+
+    found: set[str] = set()
+    for name in names:
+        for slug, model in candidates.items():
+            if name.endswith(f"_{slug}"):
+                found.add(model)
+                break
+    return sorted(found)

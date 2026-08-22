@@ -17,6 +17,13 @@ from app.config import Settings, get_settings
 from app.db.models import ChunkEmbeddingQueue, Document
 from app.db.repositories.embedding_repo import EmbeddingRepository
 from app.models.provider_factory import resolve_api_key
+from app.models.model_catalog import (
+    DEFAULT_EMBEDDING_MODELS,
+    GEMINI_EMBEDDING_BASE_URL,
+    GEMINI_EMBEDDING_DIMENSION,
+    OPENAI_COMPATIBLE_EMBEDDING_URLS,
+    PROVIDERS_WITHOUT_EMBEDDINGS,
+)
 from app.models.resilience import retry_async
 from app.utils.file_utils import sha256_text
 
@@ -69,30 +76,6 @@ class EmbeddingUnavailableError(RuntimeError):
     document search return random passages while appearing to work.
     """
 
-
-# Providers that expose an embeddings endpoint, and where to reach it.
-OPENAI_COMPATIBLE_EMBEDDING_URLS: dict[str, str] = {
-    "openai": "https://api.openai.com/v1",
-    "mistral": "https://api.mistral.ai/v1",
-    "together": "https://api.together.xyz/v1",
-}
-
-# Chat providers with no embeddings API of their own. Documents cannot be
-# indexed while one of these is the active provider.
-PROVIDERS_WITHOUT_EMBEDDINGS = frozenset({"anthropic", "groq", "deepseek", "openrouter"})
-
-# Sensible per-provider default, used when the global embedding_model setting
-# still holds its cross-provider default value.
-DEFAULT_EMBEDDING_MODELS: dict[str, str] = {
-    "openai": "text-embedding-3-small",
-    "mistral": "mistral-embed",
-    "together": "BAAI/bge-base-en-v1.5",
-    "gemini": "gemini-embedding-001",
-    "ollama": "nomic-embed-text",
-}
-
-GEMINI_EMBEDDING_BASE_URL = "https://generativelanguage.googleapis.com/v1beta"
-GEMINI_EMBEDDING_DIMENSION = 768
 
 # Opt-in offline backend for development and tests. Never selected implicitly.
 HASH_BACKEND_NAME = "hash"

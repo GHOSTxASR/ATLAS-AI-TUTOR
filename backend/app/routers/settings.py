@@ -39,6 +39,20 @@ async def list_models(
     return envelope(data=await service.list_models(provider=provider, refresh=refresh))
 
 
+@router.get("/embedding-models", response_model=dict)
+async def list_embedding_models(
+    provider: str | None = Query(None, description="Provider ID to query"),
+    refresh: bool = Query(False, description="Bypass the cached list and re-query the provider"),
+    service: SettingsService = Depends(get_settings_service),
+):
+    """List embedding models the provider currently offers.
+
+    Also reports which models the existing vector index was built with, so the
+    UI can warn that switching requires reprocessing documents.
+    """
+    return envelope(data=await service.list_embedding_models(provider=provider, refresh=refresh))
+
+
 @router.post("/test-connection", response_model=dict)
 async def test_connection(
     body: dict[str, Any] | None = None,
@@ -61,6 +75,7 @@ async def set_provider(body: dict[str, str], service: SettingsService = Depends(
         provider=body.get("provider", ""),
         api_key=body.get("api_key", ""),
         model=body.get("model", ""),
+        embedding_model=body.get("embedding_model", ""),
     )
     return envelope(data=data)
 
