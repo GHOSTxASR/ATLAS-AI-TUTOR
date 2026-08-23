@@ -76,11 +76,11 @@ export function DashboardPage() {
   if (loading) {
     return (
       <div className="w-full min-w-0 space-y-6">
-        <Skeleton className="h-32 w-full rounded-2xl" />
+        <Skeleton className="h-32 w-full" />
         <CardSkeleton count={4} />
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <Skeleton className="h-64 rounded-2xl lg:col-span-2" />
-          <Skeleton className="h-64 rounded-2xl" />
+        <div className="atlas-grid grid-cols-1 lg:grid-cols-3">
+          <Skeleton className="h-64 lg:col-span-2" />
+          <Skeleton className="h-64" />
         </div>
       </div>
     );
@@ -96,10 +96,10 @@ export function DashboardPage() {
   return (
     <div className="w-full min-w-0 space-y-6">
       {/* Welcome Editorial Glass Banner */}
-      <div className="glass-panel p-6 sm:p-8 rounded-2xl border border-glass-border shadow-[0_4px_30px_rgba(0,0,0,0.1)] flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
+      <div className="glass-panel p-6 sm:p-8 border border-glass-border shadow-[0_4px_30px_rgba(0,0,0,0.1)] flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
         <div>
           <div className="flex items-center gap-2">
-            <span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-primary-container/30 text-primary border border-glass-border uppercase tracking-widest">
+            <span className="atlas-label">
               Active Polymath Flow
             </span>
           </div>
@@ -117,13 +117,13 @@ export function DashboardPage() {
         <div className="flex flex-wrap gap-3">
           <Link
             to="/chat"
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary hover:opacity-90 active:scale-95 text-on-primary text-xs font-semibold rounded-lg shadow-[0_0_15px_rgba(var(--accent-rgb),0.3)] transition"
+            className="atlas-btn atlas-btn-primary"
           >
             <MessageSquare className="w-4 h-4" /> Start AI Tutor
           </Link>
           <Link
             to="/roadmap"
-            className="inline-flex items-center gap-2 px-4 py-2.5 bg-surface-container/60 hover:bg-surface-container-high/80 active:scale-95 text-on-surface text-xs font-semibold rounded-lg border border-glass-border transition"
+            className="atlas-btn"
           >
             <Route className="w-4 h-4" /> View Roadmap DAG
           </Link>
@@ -131,7 +131,7 @@ export function DashboardPage() {
       </div>
 
       {/* 4 Primary KPI Metric Cards (Frosted Glass Slabs) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="atlas-grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
         {/* Metric 1: Completion */}
         <div className="glass-card p-5 border border-glass-border flex flex-col justify-between hover:border-primary/40 transition duration-300">
           <div className="flex justify-between items-center mb-2">
@@ -143,9 +143,9 @@ export function DashboardPage() {
           <div className="font-editorial text-3xl sm:text-4xl text-on-surface">
             {completionPct}%
           </div>
-          <div className="w-full bg-surface-container-highest/50 rounded-full h-1.5 mt-3 overflow-hidden">
+          <div className="w-full bg-surface-container-highest/50 h-1.5 mt-3 overflow-hidden">
             <div
-              className="bg-primary h-1.5 rounded-full transition-all duration-700 shadow-[0_0_8px_rgba(var(--accent-rgb),0.4)]"
+              className="bg-primary h-1.5 transition-all duration-700 shadow-[0_0_8px_rgba(var(--accent-rgb),0.4)]"
               style={{ width: `${completionPct}%` }}
             />
           </div>
@@ -182,9 +182,9 @@ export function DashboardPage() {
           <div className="font-editorial text-3xl sm:text-4xl text-on-surface">
             {avgMasteryPct}%
           </div>
-          <div className="w-full bg-surface-container-highest/50 rounded-full h-1.5 mt-3 overflow-hidden">
+          <div className="w-full bg-surface-container-highest/50 h-1.5 mt-3 overflow-hidden">
             <div
-              className="bg-primary h-1.5 rounded-full transition-all duration-700 shadow-[0_0_8px_rgba(var(--accent-rgb),0.4)]"
+              className="bg-primary h-1.5 transition-all duration-700 shadow-[0_0_8px_rgba(var(--accent-rgb),0.4)]"
               style={{ width: `${avgMasteryPct}%` }}
             />
           </div>
@@ -212,9 +212,9 @@ export function DashboardPage() {
       </div>
 
       {/* Main Grid: Active Roadmap & Weakness Identification */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="atlas-grid grid-cols-1 lg:grid-cols-3">
         {/* Active Roadmap & Current Node */}
-        <div className="lg:col-span-2 glass-panel p-6 rounded-2xl border border-glass-border space-y-4">
+        <div className="lg:col-span-2 glass-panel p-6 border border-glass-border space-y-4">
           <div className="flex justify-between items-center">
             <div>
               <h2 className="font-editorial text-2xl text-on-surface">
@@ -237,10 +237,10 @@ export function DashboardPage() {
               {activeRoadmap.nodes.slice(0, 5).map((node, i) => (
                 <div
                   key={node.id}
-                  className="flex items-center justify-between p-3.5 rounded-xl bg-surface-container/30 border border-glass-border hover:bg-surface-container/60 transition"
+                  className="flex items-center justify-between p-3.5 bg-surface-container/30 border border-glass-border hover:bg-surface-container/60 transition"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-6 h-6 rounded-md bg-surface-container-high/80 border border-glass-border flex items-center justify-center text-xs font-mono text-on-surface-variant">
+                    <div className="w-6 h-6 bg-surface-container-high/80 border border-glass-border flex items-center justify-center text-xs font-mono text-on-surface-variant">
                       {i + 1}
                     </div>
                     <div>
@@ -272,7 +272,7 @@ export function DashboardPage() {
         </div>
 
         {/* Target Focus Areas & Weaknesses */}
-        <div className="glass-panel p-6 rounded-2xl border border-glass-border space-y-4">
+        <div className="glass-panel p-6 border border-glass-border space-y-4">
           <div className="flex items-center gap-2">
             <AlertTriangle className="w-4 h-4 text-luminous-highlight" />
             <h2 className="font-editorial text-2xl text-on-surface">Focus Targets</h2>
@@ -286,7 +286,7 @@ export function DashboardPage() {
               {weaknesses.slice(0, 4).map((w, idx) => (
                 <div
                   key={idx}
-                  className="p-3 rounded-xl bg-primary-container/25 border border-primary/30 flex items-center justify-between"
+                  className="p-3 bg-primary-container/25 border border-primary/30 flex items-center justify-between"
                 >
                   <div>
                     <h3 className="text-xs font-semibold text-on-surface">{w.title}</h3>

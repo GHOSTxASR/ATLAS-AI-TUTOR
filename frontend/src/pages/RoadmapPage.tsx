@@ -114,11 +114,11 @@ export function RoadmapPage() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-primary-container/30 text-primary border border-glass-border uppercase tracking-widest">
+            <span className="atlas-label">
               Topological DAG
             </span>
             {roadmap?.mode && (
-              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono uppercase bg-surface-container-high text-primary border border-glass-border">
+              <span className="px-2.5 py-0.5 text-[10px] font-mono uppercase bg-surface-container-high text-primary border border-glass-border">
                 {roadmap.mode} Mode
               </span>
             )}
@@ -139,7 +139,7 @@ export function RoadmapPage() {
             <Link
               to={`/chat?topic=${encodeURIComponent(currentNode.title)}`}
               title={`Open the AI tutor on "${currentNode.title}"`}
-              className="inline-flex items-center gap-2 px-4 py-2.5 max-w-[16rem] bg-primary hover:opacity-90 active:scale-95 text-on-primary text-xs font-semibold rounded-lg shadow-[0_0_12px_rgba(var(--accent-rgb),0.25)] transition"
+              className="atlas-btn atlas-btn-primary max-w-[16rem]"
             >
               <MessageSquare className="w-4 h-4 shrink-0" />
               <span className="truncate">Study {currentNode.title}</span>
@@ -149,7 +149,7 @@ export function RoadmapPage() {
       </div>
 
       {/* Progress & Health Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="atlas-grid grid-cols-1 sm:grid-cols-3">
         <div className="glass-card p-5 border border-glass-border flex flex-col justify-between">
           <div className="flex justify-between items-center mb-2">
             <span className="text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
@@ -160,9 +160,9 @@ export function RoadmapPage() {
           <div className="font-editorial text-3xl sm:text-4xl text-on-surface">
             {completionPct}%
           </div>
-          <div className="w-full bg-surface-container-highest/50 rounded-full h-1.5 mt-3 overflow-hidden">
+          <div className="w-full bg-surface-container-highest/50 h-1.5 mt-3 overflow-hidden">
             <div
-              className="bg-primary h-1.5 rounded-full transition-all duration-500 shadow-[0_0_8px_rgba(var(--accent-rgb),0.4)]"
+              className="bg-primary h-1.5 transition-all duration-500 shadow-[0_0_8px_rgba(var(--accent-rgb),0.4)]"
               style={{ width: `${completionPct}%` }}
             />
           </div>
@@ -178,9 +178,9 @@ export function RoadmapPage() {
           <div className="font-editorial text-3xl sm:text-4xl text-on-surface">
             {avgMastery}%
           </div>
-          <div className="w-full bg-surface-container-highest/50 rounded-full h-1.5 mt-3 overflow-hidden">
+          <div className="w-full bg-surface-container-highest/50 h-1.5 mt-3 overflow-hidden">
             <div
-              className="bg-primary h-1.5 rounded-full transition-all duration-500 shadow-[0_0_8px_rgba(var(--accent-rgb),0.4)]"
+              className="bg-primary h-1.5 transition-all duration-500 shadow-[0_0_8px_rgba(var(--accent-rgb),0.4)]"
               style={{ width: `${avgMastery}%` }}
             />
           </div>
@@ -204,9 +204,9 @@ export function RoadmapPage() {
       </div>
 
       {/* Main Grid: Sequential Node List & Detail Panel */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="atlas-grid grid-cols-1 lg:grid-cols-3">
         {/* Nodes List */}
-        <div className="lg:col-span-2 glass-panel p-6 rounded-2xl border border-glass-border space-y-4">
+        <div className="lg:col-span-2 glass-panel p-6 border border-glass-border space-y-4">
           <div className="flex justify-between items-center">
             <h2 className="font-editorial text-2xl text-on-surface">
               {roadmap?.title || "Sequenced Curriculum Topics"}
@@ -224,7 +224,7 @@ export function RoadmapPage() {
                   <div
                     key={node.id}
                     onClick={() => setSelectedNode(node)}
-                    className={`p-4 rounded-xl border transition-all cursor-pointer flex items-center justify-between gap-4 ${
+                    className={`p-4 border transition-all cursor-pointer flex items-center justify-between gap-4 ${
                       isSelected
                         ? "bg-surface-container/70 border-primary shadow-[0_0_12px_rgba(var(--accent-rgb),0.15)] luminous-active"
                         : "bg-surface-container/30 hover:bg-surface-container/60 border-glass-border"
@@ -232,7 +232,7 @@ export function RoadmapPage() {
                   >
                     <div className="flex items-center gap-3.5 min-w-0">
                       <div
-                        className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs font-mono shrink-0 border border-glass-border ${
+                        className={`w-7 h-7 flex items-center justify-center text-xs font-mono shrink-0 border border-glass-border ${
                           node.status === "completed"
                             ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/30"
                             : node.status === "in_progress"
@@ -280,7 +280,7 @@ export function RoadmapPage() {
         </div>
 
         {/* Selected Node Details & Status Management */}
-        <div className="glass-panel p-6 rounded-2xl border border-glass-border space-y-5">
+        <div className="glass-panel p-6 border border-glass-border space-y-5">
           {selectedNode ? (
             <>
               <div>
@@ -308,25 +308,25 @@ export function RoadmapPage() {
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     onClick={() => handleUpdateStatus(selectedNode.id, "in_progress")}
-                    className="px-3 py-2 rounded-lg bg-surface-container/50 hover:bg-surface-container-high text-xs font-semibold text-primary border border-glass-border transition"
+                    className="atlas-btn"
                   >
                     In Progress
                   </button>
                   <button
                     onClick={() => handleUpdateStatus(selectedNode.id, "completed")}
-                    className="px-3 py-2 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-xs font-semibold text-emerald-300 border border-emerald-500/30 transition"
+                    className="px-3 py-2 bg-emerald-500/20 hover:bg-emerald-500/30 text-xs font-semibold text-emerald-300 border border-emerald-500/30 transition"
                   >
                     Mark Done
                   </button>
                   <button
                     onClick={() => handleUpdateStatus(selectedNode.id, "skipped")}
-                    className="px-3 py-2 rounded-lg bg-surface-container/40 hover:bg-surface-container-high text-xs font-semibold text-on-surface-variant border border-glass-border transition"
+                    className="atlas-btn"
                   >
                     Skip
                   </button>
                   <button
                     onClick={() => handleUpdateStatus(selectedNode.id, "flagged")}
-                    className="px-3 py-2 rounded-lg bg-primary/20 hover:bg-primary/30 text-xs font-semibold text-luminous-highlight border border-primary/30 transition"
+                    className="px-3 py-2 bg-primary/20 hover:bg-primary/30 text-xs font-semibold text-luminous-highlight border border-primary/30 transition"
                   >
                     Needs Review
                   </button>
@@ -337,13 +337,13 @@ export function RoadmapPage() {
               <div className="pt-3 border-t border-glass-border space-y-2">
                 <Link
                   to={`/chat?topic=${encodeURIComponent(selectedNode.title)}`}
-                  className="w-full py-2.5 bg-primary hover:opacity-90 text-on-primary text-xs font-semibold rounded-lg flex items-center justify-center gap-2 shadow-[0_0_12px_rgba(var(--accent-rgb),0.25)] transition"
+                  className="atlas-btn atlas-btn-primary w-full"
                 >
                   <MessageSquare className="w-4 h-4" /> Start AI Tutorial
                 </Link>
                 <Link
                   to={`/quiz?topic=${encodeURIComponent(selectedNode.title)}`}
-                  className="w-full py-2.5 bg-surface-container/50 hover:bg-surface-container-high text-on-surface text-xs font-semibold rounded-lg flex items-center justify-center gap-2 border border-glass-border transition"
+                  className="atlas-btn w-full"
                 >
                   <Award className="w-4 h-4 text-luminous-highlight" /> Take Diagnostic Quiz
                 </Link>

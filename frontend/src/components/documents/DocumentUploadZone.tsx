@@ -36,7 +36,7 @@ export function DocumentUploadZone({ onFilesSelected, isUploading }: DocumentUpl
         setIsDragActive(false);
         handleFiles(e.dataTransfer.files);
       }}
-      className={`flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed p-8 sm:p-10 text-center cursor-pointer transition-all focus-visible:ring-2 focus-visible:ring-primary ${
+      className={`flex flex-col items-center justify-center gap-3 border-2 border-dashed p-8 sm:p-10 text-center cursor-pointer transition-all focus-visible:ring-2 focus-visible:ring-primary ${
         isDragActive
           ? "border-primary bg-primary-container/20 shadow-[0_0_15px_rgba(var(--accent-rgb),0.15)]"
           : "border-glass-border bg-surface-container/30 hover:border-primary/60 hover:bg-surface-container/50"
@@ -56,7 +56,7 @@ export function DocumentUploadZone({ onFilesSelected, isUploading }: DocumentUpl
       {isUploading ? (
         <Loader2 className="w-10 h-10 text-primary animate-spin" />
       ) : (
-        <div className="p-3 bg-primary-container/30 text-primary rounded-2xl">
+        <div className="p-3 bg-primary-container/30 text-primary">
           <UploadCloud className="w-8 h-8" />
         </div>
       )}

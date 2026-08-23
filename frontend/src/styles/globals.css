@@ -305,6 +305,158 @@ html {
 }
 
 /* ─────────────────────────────────────────────────────────────
+   Atlas UI language
+   The vocabulary the landing page established, as reusable primitives:
+   squared surfaces, mono bracket labels, and pointer feedback expressed as an
+   accent outline rather than a fill change. Outlines are drawn with an inset
+   box-shadow so hover never changes an element's box and nothing reflows.
+   ───────────────────────────────────────────────────────────── */
+
+/* Mono micro-label. Brackets come from generated content so every label reads
+   the same without each caller hand-writing them. */
+.atlas-label {
+  display: inline-block;
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 10px;
+  line-height: 1.4;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--color-on-surface-variant);
+}
+.atlas-label::before {
+  content: "[ ";
+  color: var(--color-primary);
+}
+.atlas-label::after {
+  content: " ]";
+  color: var(--color-primary);
+}
+
+/* Anything the pointer can act on. */
+.atlas-hover {
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease,
+    box-shadow 160ms ease,
+    color 160ms ease;
+}
+.atlas-hover:hover {
+  border-color: var(--color-primary);
+  box-shadow: inset 0 0 0 1px var(--color-primary);
+}
+
+/* Contiguous tiles. Cells share a single hairline instead of floating apart
+   with padding between them; the 1px gap shows the container through as the
+   rule. Safe here because every one of these grids is exactly filled -- an
+   under-filled auto-fill track would expose the container as a phantom tile. */
+.atlas-grid {
+  display: grid;
+  gap: 1px;
+  background-color: var(--color-glass-border);
+  border: 1px solid var(--color-glass-border);
+}
+.atlas-grid > * {
+  background-color: var(--color-glass-surface);
+  border: 0;
+}
+
+/* Buttons. Ghost by default, solid for the single primary action per view. */
+.atlas-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 40px;
+  padding: 0 1rem;
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  border: 1px solid var(--color-glass-border);
+  background-color: transparent;
+  color: var(--color-on-surface);
+  cursor: pointer;
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease,
+    box-shadow 160ms ease,
+    color 160ms ease;
+}
+.atlas-btn:hover:not(:disabled) {
+  border-color: var(--color-primary);
+  box-shadow: inset 0 0 0 1px var(--color-primary);
+  color: var(--color-luminous-highlight);
+}
+.atlas-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.atlas-btn-primary {
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
+  color: var(--color-on-primary);
+}
+/* Hover empties the fill and keeps the outline -- the inverse of the ghost,
+   so the pair reads as one system rather than two effects. */
+.atlas-btn-primary:hover:not(:disabled) {
+  background-color: transparent;
+  color: var(--color-luminous-highlight);
+}
+
+/* Selected tile: a doubled inset outline. Uses box-shadow rather than a
+   border so it still shows inside .atlas-grid, where children carry no border
+   of their own. */
+.atlas-selected {
+  box-shadow: inset 0 0 0 2px var(--color-primary);
+  color: var(--color-luminous-highlight);
+  background-color: var(--color-surface-container);
+}
+
+/* Dashed affordance for "add another", as on the landing page. */
+.atlas-dashed {
+  border: 1px dashed var(--color-glass-border);
+  background-color: transparent;
+}
+.atlas-dashed:hover {
+  border-style: dashed;
+  border-color: var(--color-primary);
+}
+
+/* Navigation. Invisible frame at rest so hover and selection add an outline
+   without shifting anything. */
+.atlas-nav-item {
+  border: 1px solid transparent;
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease,
+    box-shadow 160ms ease,
+    color 160ms ease;
+}
+.atlas-nav-item:hover {
+  /* Deliberately neutral, not accent: hover has to stay distinguishable from
+     the selected item rather than imitating it. */
+  border-color: color-mix(in srgb, var(--color-on-surface) 30%, transparent);
+  background-color: var(--color-surface-container);
+  color: var(--color-on-surface);
+}
+.atlas-nav-item[aria-current="page"] {
+  border-color: var(--color-primary);
+  box-shadow: inset 0 0 0 1px var(--color-primary);
+  color: var(--color-luminous-highlight);
+  background-color: var(--color-surface-container);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .atlas-hover,
+  .atlas-btn,
+  .atlas-nav-item {
+    transition: none;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────
    Page transitions
    The main region replays a short enter animation on every route change, and
    the page's own top-level sections follow in sequence -- the same reveal the

@@ -115,7 +115,7 @@ export function ModelPicker({
               setOpen(true);
             }}
             onKeyDown={handleKeyDown}
-            className="w-full pl-9 pr-3 py-2 bg-surface-container/50 border border-glass-border rounded-lg text-on-surface placeholder:text-on-surface-variant/60 focus:outline-hidden focus:border-primary transition"
+            className="w-full pl-9 pr-3 py-2 bg-surface-container/50 border border-glass-border text-on-surface placeholder:text-on-surface-variant/60 focus:outline-hidden focus:border-primary transition"
           />
         </div>
         <button
@@ -123,7 +123,7 @@ export function ModelPicker({
           onClick={onRefresh}
           disabled={loading}
           title="Re-query the provider for its current models"
-          className="shrink-0 p-2 rounded-lg bg-surface-container/50 border border-glass-border text-on-surface-variant hover:text-on-surface disabled:opacity-40 transition"
+          className="shrink-0 p-2 bg-surface-container/50 border border-glass-border text-on-surface-variant hover:text-on-surface disabled:opacity-40 transition"
         >
           {loading ? (
             <Loader2 className="w-4 h-4 animate-spin" />
@@ -166,7 +166,7 @@ export function ModelPicker({
       {open && (
         <ul
           role="listbox"
-          className="absolute z-30 mt-1 w-full max-h-72 overflow-y-auto rounded-lg border border-glass-border bg-surface-container-high/95 backdrop-blur-xl shadow-[0_8px_30px_rgba(0,0,0,0.35)]"
+          className="absolute z-30 mt-1 w-full max-h-72 overflow-y-auto border border-glass-border bg-surface-container-high/95 backdrop-blur-xl shadow-[0_8px_30px_rgba(0,0,0,0.35)]"
         >
           {filtered.length === 0 ? (
             <li className="px-3 py-3 text-[11px] text-on-surface-variant">

@@ -70,7 +70,7 @@ export function DocumentListItem({
       </div>
 
       <span
-        className={`shrink-0 rounded-xl px-2.5 py-1 text-[10px] font-bold ${statusInfo.className}`}
+        className={`shrink-0 px-2.5 py-1 text-[10px] font-bold ${statusInfo.className}`}
       >
         {statusInfo.label}
       </span>

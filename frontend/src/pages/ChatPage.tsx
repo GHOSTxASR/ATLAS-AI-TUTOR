@@ -194,7 +194,7 @@ export function ChatPage() {
             <h3 className="font-editorial text-xl text-on-surface">Dialogues</h3>
             <button
               onClick={handleCreateChat}
-              className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-primary hover:opacity-90 active:scale-95 text-on-primary text-xs font-semibold shadow-[0_0_10px_rgba(var(--accent-rgb),0.2)] transition"
+              className="atlas-btn atlas-btn-primary"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>New</span>
@@ -209,7 +209,7 @@ export function ChatPage() {
               placeholder="Search dialogues..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-8 pr-3 py-1.5 rounded-lg bg-surface-container/40 border border-glass-border text-xs text-on-surface placeholder:text-on-surface-variant/60 focus:outline-hidden focus:border-primary transition"
+              className="w-full pl-8 pr-3 py-1.5 bg-surface-container/40 border border-glass-border text-xs text-on-surface placeholder:text-on-surface-variant/60 focus:outline-hidden focus:border-primary transition"
             />
           </div>
         </div>
@@ -220,7 +220,7 @@ export function ChatPage() {
             <div
               key={session.id}
               onClick={() => handleSelectChat(session.id)}
-              className={`group flex items-center justify-between p-2.5 rounded-lg text-xs cursor-pointer transition duration-150 border ${
+              className={`group flex items-center justify-between p-2.5 text-xs cursor-pointer transition duration-150 border ${
                 activeSession?.id === session.id
                   ? "bg-surface-container/60 text-luminous-highlight border-glass-border shadow-[0_0_10px_rgba(var(--accent-rgb),0.1)] luminous-active"
                   : "text-on-surface-variant hover:text-on-surface hover:bg-surface-container/30 border-transparent"
@@ -282,7 +282,7 @@ export function ChatPage() {
               <div className="flex items-center gap-3 min-w-0">
                 <button
                   onClick={() => setShowSessionDrawer(true)}
-                  className="md:hidden p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-bright/20"
+                  className="md:hidden p-1.5 text-on-surface-variant hover:bg-surface-bright/20"
                 >
                   <Menu className="w-4 h-4" />
                 </button>
@@ -298,7 +298,7 @@ export function ChatPage() {
 
               <div className="flex items-center gap-2 min-w-0 shrink-0 flex-wrap justify-end">
                 {/* Mode Selector Tabs */}
-                <div className="flex items-center gap-1 bg-surface-container/40 p-1 rounded-lg border border-glass-border">
+                <div className="flex items-center gap-1 bg-surface-container/40 p-1 border border-glass-border">
                   {modesConfig.map((m) => {
                     const Icon = m.icon;
                     const isSelected = selectedMode === m.id;
@@ -306,7 +306,7 @@ export function ChatPage() {
                       <button
                         key={m.id}
                         onClick={() => setSelectedMode(m.id as LearningMode)}
-                        className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-semibold transition ${
+                        className={`flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold transition ${
                           isSelected
                             ? "bg-primary text-on-primary shadow-[0_0_8px_rgba(var(--accent-rgb),0.3)]"
                             : "text-on-surface-variant hover:text-on-surface"
@@ -322,7 +322,7 @@ export function ChatPage() {
                 {/* 5-Pillar Context Panel Toggle */}
                 <button
                   onClick={() => setShowContextPanel(!showContextPanel)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-semibold transition ${
+                  className={`flex items-center gap-1.5 px-3 py-1.5 border text-xs font-semibold transition ${
                     showContextPanel
                       ? "bg-primary-container/40 border-primary text-primary shadow-[0_0_10px_rgba(var(--accent-rgb),0.2)]"
                       : "bg-surface-container/40 border-glass-border text-on-surface-variant hover:text-on-surface"
@@ -347,7 +347,7 @@ export function ChatPage() {
                       }`}
                     >
                       <div
-                        className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center shrink-0 border border-glass-border shadow-sm ${
+                        className={`w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center shrink-0 border border-glass-border shadow-sm ${
                           msg.role === "user"
                             ? "bg-primary-container/40 text-luminous-highlight"
                             : "bg-surface-container-high text-primary"
@@ -357,7 +357,7 @@ export function ChatPage() {
                       </div>
 
                       <div
-                        className={`min-w-0 rounded-xl px-4 sm:px-5 py-3 text-xs sm:text-sm leading-relaxed ${
+                        className={`min-w-0 px-4 sm:px-5 py-3 text-xs sm:text-sm leading-relaxed ${
                           msg.role === "user"
                             ? "bg-primary-container/40/80 text-on-surface rounded-tr-none border border-glass-border shadow-sm"
                             : "glass-card text-on-surface rounded-tl-none border border-glass-border shadow-[0_4px_20px_rgba(0,0,0,0.08)]"
@@ -377,10 +377,10 @@ export function ChatPage() {
                   {/* Streaming Assistant Response */}
                   {isStreaming && (
                     <div className="flex gap-3 sm:gap-4 max-w-3xl mr-auto">
-                      <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-surface-container-high border border-glass-border flex items-center justify-center shrink-0 text-primary">
+                      <div className="w-7 h-7 sm:w-8 sm:h-8 bg-surface-container-high border border-glass-border flex items-center justify-center shrink-0 text-primary">
                         <Sparkles className="w-4 h-4 animate-spin" />
                       </div>
-                      <div className="min-w-0 glass-card rounded-xl rounded-tl-none px-4 sm:px-5 py-3 text-xs sm:text-sm leading-relaxed border border-glass-border">
+                      <div className="min-w-0 glass-card rounded-tl-none px-4 sm:px-5 py-3 text-xs sm:text-sm leading-relaxed border border-glass-border">
                         <MarkdownContent content={streamingContent} />
                         <span className="inline-block w-1.5 h-4 bg-primary ml-1 animate-pulse" />
                         {streamingCitations.length > 0 && (
@@ -391,7 +391,7 @@ export function ChatPage() {
                   )}
 
                   {error && (
-                    <div className="p-3 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs">
+                    <div className="p-3 bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs">
                       {error}
                     </div>
                   )}
@@ -421,13 +421,13 @@ export function ChatPage() {
                     placeholder={`Ask AI Tutor in ${selectedMode} mode...`}
                     disabled={isStreaming}
                     rows={1}
-                    className="flex-1 bg-surface-container/50 border border-glass-border rounded-xl px-4 py-2.5 text-xs sm:text-sm text-on-surface placeholder:text-on-surface-variant/60 focus:outline-hidden focus:border-primary focus:shadow-[0_0_12px_rgba(var(--accent-rgb),0.2)] transition resize-none overflow-y-auto"
+                    className="flex-1 bg-surface-container/50 border border-glass-border px-4 py-2.5 text-xs sm:text-sm text-on-surface placeholder:text-on-surface-variant/60 focus:outline-hidden focus:border-primary focus:shadow-[0_0_12px_rgba(var(--accent-rgb),0.2)] transition resize-none overflow-y-auto"
                     style={{ maxHeight: "160px" }}
                   />
                   <button
                     type="submit"
                     disabled={!messageInput.trim() || isStreaming}
-                    className="px-4 py-2.5 bg-primary hover:opacity-90 disabled:opacity-40 text-on-primary text-xs font-semibold rounded-xl flex items-center gap-1.5 shadow-[0_0_12px_rgba(var(--accent-rgb),0.25)] transition active:scale-95 shrink-0"
+                    className="atlas-btn atlas-btn-primary shrink-0"
                   >
                     {isStreaming ? (
                       <Loader2 className="w-4 h-4 animate-spin" />
@@ -451,7 +451,7 @@ export function ChatPage() {
                     </div>
                     <button
                       onClick={() => setShowContextPanel(false)}
-                      className="p-1 rounded-md text-on-surface-variant hover:bg-surface-bright/20"
+                      className="p-1 text-on-surface-variant hover:bg-surface-bright/20"
                     >
                       <X className="w-4 h-4" />
                     </button>
@@ -459,14 +459,14 @@ export function ChatPage() {
 
                   {loadingContext ? (
                     <div className="space-y-3">
-                      <Skeleton className="h-16 rounded-xl" />
-                      <Skeleton className="h-16 rounded-xl" />
-                      <Skeleton className="h-16 rounded-xl" />
+                      <Skeleton className="h-16" />
+                      <Skeleton className="h-16" />
+                      <Skeleton className="h-16" />
                     </div>
                   ) : unifiedContext ? (
                     <div className="space-y-3 font-sans text-xs">
                       {/* Pillar 1: Cognitive Memory */}
-                      <div className="p-3 rounded-xl bg-surface-container/40 border border-glass-border">
+                      <div className="p-3 bg-surface-container/40 border border-glass-border">
                         <div className="flex items-center gap-1.5 text-primary font-semibold mb-1">
                           <Brain className="w-3.5 h-3.5" />
                           <span>1. Learner Memory</span>
@@ -478,7 +478,7 @@ export function ChatPage() {
                       </div>
 
                       {/* Pillar 2: Roadmap Concept */}
-                      <div className="p-3 rounded-xl bg-surface-container/40 border border-glass-border">
+                      <div className="p-3 bg-surface-container/40 border border-glass-border">
                         <div className="flex items-center gap-1.5 text-emerald-400 font-semibold mb-1">
                           <Compass className="w-3.5 h-3.5" />
                           <span>2. Active Roadmap Node</span>
@@ -493,7 +493,7 @@ export function ChatPage() {
                       </div>
 
                       {/* Pillar 3: Knowledge Graph */}
-                      <div className="p-3 rounded-xl bg-surface-container/40 border border-glass-border">
+                      <div className="p-3 bg-surface-container/40 border border-glass-border">
                         <div className="flex items-center gap-1.5 text-luminous-highlight font-semibold mb-1">
                           <Share2 className="w-3.5 h-3.5" />
                           <span>3. Concept Graph</span>
@@ -505,7 +505,7 @@ export function ChatPage() {
                       </div>
 
                       {/* Pillar 4: Syllabus Structure */}
-                      <div className="p-3 rounded-xl bg-surface-container/40 border border-glass-border">
+                      <div className="p-3 bg-surface-container/40 border border-glass-border">
                         <div className="flex items-center gap-1.5 text-primary font-semibold mb-1">
                           <BookOpen className="w-3.5 h-3.5" />
                           <span>4. Syllabus Overview</span>
@@ -516,7 +516,7 @@ export function ChatPage() {
                       </div>
 
                       {/* Pillar 5: Document Chunks / Citations */}
-                      <div className="p-3 rounded-xl bg-surface-container/40 border border-glass-border">
+                      <div className="p-3 bg-surface-container/40 border border-glass-border">
                         <div className="flex items-center gap-1.5 text-cyan-300 font-semibold mb-1">
                           <FileText className="w-3.5 h-3.5" />
                           <span>5. Document Grounding ({unifiedContext.citations?.length || 0})</span>

@@ -243,7 +243,7 @@ export function GraphPage() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-primary-container/30 text-primary border border-glass-border uppercase tracking-widest">
+            <span className="atlas-label">
               Neural Concept Atlas
             </span>
           </div>
@@ -257,13 +257,13 @@ export function GraphPage() {
         <div className="flex flex-wrap gap-2.5">
           <button
             onClick={() => setShowEnrichModal(true)}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-primary hover:opacity-90 active:scale-95 text-on-primary text-xs font-semibold rounded-lg shadow-[0_0_12px_rgba(var(--accent-rgb),0.25)] transition"
+            className="atlas-btn atlas-btn-primary"
           >
             <Sparkles className="w-3.5 h-3.5" /> AI Extract
           </button>
           <button
             onClick={() => setShowAddModal(true)}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-surface-container/60 hover:bg-surface-container-high/80 active:scale-95 text-on-surface text-xs font-semibold rounded-lg border border-glass-border transition"
+            className="atlas-btn"
           >
             <Plus className="w-3.5 h-3.5" /> Add Concept
           </button>
@@ -277,7 +277,7 @@ export function GraphPage() {
                 ? "Add at least two concepts before linking them"
                 : "Create a relationship between two concepts"
             }
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-surface-container/60 hover:bg-surface-container-high/80 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100 text-on-surface text-xs font-semibold rounded-lg border border-glass-border transition"
+            className="atlas-btn"
           >
             <LinkIcon className="w-3.5 h-3.5" /> Link
           </button>
@@ -285,7 +285,7 @@ export function GraphPage() {
       </div>
 
       {/* 4 KPI Metric Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      <div className="atlas-grid grid-cols-2 sm:grid-cols-4">
         <div className="glass-card p-4 border border-glass-border">
           <div className="text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider">
             Total Concepts
@@ -323,7 +323,7 @@ export function GraphPage() {
       {/* Main Interactive Canvas.
           An empty atlas used to render as a blank dark rectangle with no
           indication of what to do next. */}
-      <div className="relative glass-panel p-2 rounded-2xl border border-glass-border shadow-[0_4px_30px_rgba(0,0,0,0.1)]">
+      <div className="relative glass-panel p-2 border border-glass-border shadow-[0_4px_30px_rgba(0,0,0,0.1)]">
         <KnowledgeGraphCanvas
           nodes={filteredNodes}
           edges={links}
@@ -353,7 +353,7 @@ export function GraphPage() {
       </div>
 
       {/* Path Finder & Filter Toolbar */}
-      <div className="glass-panel p-5 rounded-2xl border border-glass-border space-y-4">
+      <div className="glass-panel p-5 border border-glass-border space-y-4">
         <div className="flex flex-col sm:flex-row gap-3 justify-between items-center">
           {/* Node Type Filters */}
           <div className="flex gap-1.5 overflow-x-auto min-w-0 w-full sm:w-auto">
@@ -361,7 +361,7 @@ export function GraphPage() {
               <button
                 key={t}
                 onClick={() => setSelectedType(t)}
-                className={`px-3 py-1 rounded-lg text-xs font-semibold capitalize transition ${
+                className={`px-3 py-1 text-xs font-semibold capitalize transition ${
                   selectedType === t
                     ? "bg-primary text-on-primary shadow-[0_0_10px_rgba(var(--accent-rgb),0.3)]"
                     : "bg-surface-container/40 text-on-surface-variant hover:text-on-surface border border-glass-border"
@@ -379,7 +379,7 @@ export function GraphPage() {
               placeholder="Search concepts on atlas..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full px-3 py-1.5 bg-surface-container/50 border border-glass-border rounded-lg text-xs text-on-surface placeholder:text-on-surface-variant/60 focus:outline-hidden focus:border-primary transition"
+              className="w-full px-3 py-1.5 bg-surface-container/50 border border-glass-border text-xs text-on-surface placeholder:text-on-surface-variant/60 focus:outline-hidden focus:border-primary transition"
             />
           </div>
         </div>
@@ -392,7 +392,7 @@ export function GraphPage() {
           <select
             value={pathSourceId}
             onChange={(e) => setPathSourceId(e.target.value)}
-            className="p-1.5 text-xs bg-surface-container/50 border border-glass-border rounded-lg text-on-surface focus:outline-hidden"
+            className="p-1.5 text-xs bg-surface-container/50 border border-glass-border text-on-surface focus:outline-hidden"
           >
             <option value="">-- From Concept --</option>
             {nodes
@@ -407,7 +407,7 @@ export function GraphPage() {
           <select
             value={pathTargetId}
             onChange={(e) => setPathTargetId(e.target.value)}
-            className="p-1.5 text-xs bg-surface-container/50 border border-glass-border rounded-lg text-on-surface focus:outline-hidden"
+            className="p-1.5 text-xs bg-surface-container/50 border border-glass-border text-on-surface focus:outline-hidden"
           >
             <option value="">-- To Concept --</option>
             {nodes
@@ -421,7 +421,7 @@ export function GraphPage() {
           <button
             onClick={handleFindPath}
             disabled={!pathSourceId || !pathTargetId}
-            className="px-3.5 py-1.5 bg-primary hover:opacity-90 text-on-primary text-xs font-semibold rounded-lg shadow-sm transition disabled:opacity-40"
+            className="atlas-btn atlas-btn-primary"
           >
             Find Route
           </button>
@@ -439,7 +439,7 @@ export function GraphPage() {
 
       {/* Selected Concept Detail Drawer */}
       {selectedNode && (
-        <div className="glass-panel p-6 rounded-2xl border border-glass-border space-y-4 shadow-[0_4px_30px_rgba(0,0,0,0.1)]">
+        <div className="glass-panel p-6 border border-glass-border space-y-4 shadow-[0_4px_30px_rgba(0,0,0,0.1)]">
           <div className="flex justify-between items-start">
             <div>
               <div className="flex items-center gap-2">
@@ -455,13 +455,13 @@ export function GraphPage() {
             <div className="flex items-center gap-2">
               <Link
                 to={`/chat?topic=${encodeURIComponent(selectedNode.label)}`}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary hover:opacity-90 text-on-primary text-xs font-semibold transition"
+                className="atlas-btn atlas-btn-primary"
               >
                 <MessageSquare className="w-3.5 h-3.5" /> Tutor Topic
               </Link>
               <button
                 onClick={() => handleDeleteNode(selectedNode.id)}
-                className="p-1.5 rounded-lg text-on-surface-variant hover:bg-rose-500/20 hover:text-rose-400 transition"
+                className="p-1.5 text-on-surface-variant hover:bg-rose-500/20 hover:text-rose-400 transition"
                 title="Delete Concept"
               >
                 <Trash2 className="w-4 h-4" />
@@ -496,7 +496,7 @@ export function GraphPage() {
         <div ref={modalRef} className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="add-concept-title">
           <form
             onSubmit={handleCreateNode}
-            className="glass-panel w-full max-w-md p-6 rounded-2xl border border-glass-border space-y-4 shadow-2xl"
+            className="glass-panel w-full max-w-md p-6 border border-glass-border space-y-4 shadow-2xl"
           >
             <div className="flex justify-between items-center">
               <h3 id="add-concept-title" className="font-editorial text-xl text-on-surface">Add New Concept</h3>
@@ -504,7 +504,7 @@ export function GraphPage() {
                 type="button"
                 onClick={() => setShowAddModal(false)}
                 aria-label="Close add concept dialog"
-                className="p-1 rounded-md text-on-surface-variant hover:bg-surface-bright/20"
+                className="p-1 text-on-surface-variant hover:bg-surface-bright/20"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -519,7 +519,7 @@ export function GraphPage() {
                   placeholder="e.g. Fourier Transform"
                   value={newLabel}
                   onChange={(e) => setNewLabel(e.target.value)}
-                  className="w-full px-3 py-2 bg-surface-container/50 border border-glass-border rounded-lg text-on-surface focus:outline-hidden focus:border-primary"
+                  className="w-full px-3 py-2 bg-surface-container/50 border border-glass-border text-on-surface focus:outline-hidden focus:border-primary"
                 />
               </div>
 
@@ -528,7 +528,7 @@ export function GraphPage() {
                 <select
                   value={newType}
                   onChange={(e) => setNewType(e.target.value as GraphNodeType)}
-                  className="w-full px-3 py-2 bg-surface-container/50 border border-glass-border rounded-lg text-on-surface focus:outline-hidden"
+                  className="w-full px-3 py-2 bg-surface-container/50 border border-glass-border text-on-surface focus:outline-hidden"
                 >
                   <option value="concept" className="bg-surface text-on-surface">Concept</option>
                   <option value="chapter" className="bg-surface text-on-surface">Chapter</option>
@@ -543,7 +543,7 @@ export function GraphPage() {
                   placeholder="Summary or mathematical definition..."
                   value={newDesc}
                   onChange={(e) => setNewDesc(e.target.value)}
-                  className="w-full px-3 py-2 bg-surface-container/50 border border-glass-border rounded-lg text-on-surface focus:outline-hidden focus:border-primary"
+                  className="w-full px-3 py-2 bg-surface-container/50 border border-glass-border text-on-surface focus:outline-hidden focus:border-primary"
                 />
               </div>
             </div>
@@ -552,13 +552,13 @@ export function GraphPage() {
               <button
                 type="button"
                 onClick={() => setShowAddModal(false)}
-                className="px-4 py-2 rounded-lg text-xs text-on-surface-variant hover:text-on-surface"
+                className="px-4 py-2 text-xs text-on-surface-variant hover:text-on-surface"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="px-4 py-2 bg-primary hover:opacity-90 text-on-primary text-xs font-semibold rounded-lg shadow-sm"
+                className="atlas-btn atlas-btn-primary"
               >
                 Create Concept
               </button>
@@ -572,7 +572,7 @@ export function GraphPage() {
         <div ref={modalRef} className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="link-concepts-title">
           <form
             onSubmit={handleCreateEdge}
-            className="glass-panel w-full max-w-md p-6 rounded-2xl border border-glass-border space-y-4 shadow-2xl"
+            className="glass-panel w-full max-w-md p-6 border border-glass-border space-y-4 shadow-2xl"
           >
             <div className="flex justify-between items-center">
               <h3 id="link-concepts-title" className="font-editorial text-xl text-on-surface">Link Concepts</h3>
@@ -580,7 +580,7 @@ export function GraphPage() {
                 type="button"
                 onClick={() => setShowLinkModal(false)}
                 aria-label="Close link concepts dialog"
-                className="p-1 rounded-md text-on-surface-variant hover:bg-surface-bright/20"
+                className="p-1 text-on-surface-variant hover:bg-surface-bright/20"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -593,7 +593,7 @@ export function GraphPage() {
                   required
                   value={linkSource}
                   onChange={(e) => setLinkSource(e.target.value)}
-                  className="w-full px-3 py-2 bg-surface-container/50 border border-glass-border rounded-lg text-on-surface focus:outline-hidden"
+                  className="w-full px-3 py-2 bg-surface-container/50 border border-glass-border text-on-surface focus:outline-hidden"
                 >
                   <option value="">-- Choose Source --</option>
                   {nodes.map((n) => (
@@ -609,7 +609,7 @@ export function GraphPage() {
                 <select
                   value={linkType}
                   onChange={(e) => setLinkType(e.target.value as GraphEdgeType)}
-                  className="w-full px-3 py-2 bg-surface-container/50 border border-glass-border rounded-lg text-on-surface focus:outline-hidden"
+                  className="w-full px-3 py-2 bg-surface-container/50 border border-glass-border text-on-surface focus:outline-hidden"
                 >
                   <option value="prerequisite_of" className="bg-surface text-on-surface">Prerequisite Of</option>
                   <option value="related_to" className="bg-surface text-on-surface">Related To</option>
@@ -624,7 +624,7 @@ export function GraphPage() {
                   required
                   value={linkTarget}
                   onChange={(e) => setLinkTarget(e.target.value)}
-                  className="w-full px-3 py-2 bg-surface-container/50 border border-glass-border rounded-lg text-on-surface focus:outline-hidden"
+                  className="w-full px-3 py-2 bg-surface-container/50 border border-glass-border text-on-surface focus:outline-hidden"
                 >
                   <option value="">-- Choose Target --</option>
                   {nodes
@@ -642,7 +642,7 @@ export function GraphPage() {
               <button
                 type="button"
                 onClick={() => setShowLinkModal(false)}
-                className="px-4 py-2 rounded-lg text-xs text-on-surface-variant hover:text-on-surface"
+                className="px-4 py-2 text-xs text-on-surface-variant hover:text-on-surface"
               >
                 Cancel
               </button>
@@ -651,7 +651,7 @@ export function GraphPage() {
               <button
                 type="submit"
                 disabled={!linkSource || !linkTarget || linkSource === linkTarget}
-                className="px-4 py-2 bg-primary hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed text-on-primary text-xs font-semibold rounded-lg shadow-sm transition"
+                className="atlas-btn atlas-btn-primary"
               >
                 Create Edge
               </button>
@@ -665,7 +665,7 @@ export function GraphPage() {
         <div ref={modalRef} className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-label="Enrich knowledge graph">
           <form
             onSubmit={handleEnrichGraph}
-            className="glass-panel w-full max-w-lg p-6 rounded-2xl border border-glass-border space-y-4 shadow-2xl"
+            className="glass-panel w-full max-w-lg p-6 border border-glass-border space-y-4 shadow-2xl"
           >
             <div className="flex justify-between items-center">
               <div className="flex items-center gap-2">
@@ -675,7 +675,7 @@ export function GraphPage() {
               <button
                 type="button"
                 onClick={() => setShowEnrichModal(false)}
-                className="p-1 rounded-md text-on-surface-variant hover:bg-surface-bright/20"
+                className="p-1 text-on-surface-variant hover:bg-surface-bright/20"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -691,7 +691,7 @@ export function GraphPage() {
                   placeholder="e.g. Chapter 4 Notes, Lecture 2"
                   value={enrichSourceLabel}
                   onChange={(e) => setEnrichSourceLabel(e.target.value)}
-                  className="w-full px-3 py-2 bg-surface-container/50 border border-glass-border rounded-lg text-on-surface focus:outline-hidden focus:border-primary"
+                  className="w-full px-3 py-2 bg-surface-container/50 border border-glass-border text-on-surface focus:outline-hidden focus:border-primary"
                 />
               </div>
 
@@ -703,7 +703,7 @@ export function GraphPage() {
                   placeholder="Paste lecture text, book excerpt, or syllabus concepts..."
                   value={enrichText}
                   onChange={(e) => setEnrichText(e.target.value)}
-                  className="w-full px-3 py-2 bg-surface-container/50 border border-glass-border rounded-lg text-on-surface focus:outline-hidden focus:border-primary"
+                  className="w-full px-3 py-2 bg-surface-container/50 border border-glass-border text-on-surface focus:outline-hidden focus:border-primary"
                 />
               </div>
             </div>
@@ -712,13 +712,13 @@ export function GraphPage() {
               <button
                 type="button"
                 onClick={() => setShowEnrichModal(false)}
-                className="px-4 py-2 rounded-lg text-xs text-on-surface-variant hover:text-on-surface"
+                className="px-4 py-2 text-xs text-on-surface-variant hover:text-on-surface"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="px-4 py-2 bg-primary hover:opacity-90 text-on-primary text-xs font-semibold rounded-lg shadow-[0_0_12px_rgba(var(--accent-rgb),0.3)]"
+                className="atlas-btn atlas-btn-primary"
               >
                 Extract & Map
               </button>

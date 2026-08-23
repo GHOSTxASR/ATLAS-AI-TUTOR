@@ -99,7 +99,7 @@ export function AnalyticsPage() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-primary-container/30 text-primary border border-glass-border uppercase tracking-widest">
+            <span className="atlas-label">
               Telemetry & Velocity
             </span>
           </div>
@@ -110,7 +110,7 @@ export function AnalyticsPage() {
             Study time metrics, syllabus progress, retention mastery, and concept telemetry for {activeProfile.name}.
           </p>
         </div>
-        <div className="flex items-center gap-2 bg-primary-container/25 border border-primary/30 px-3.5 py-1.5 rounded-xl text-luminous-highlight text-xs font-semibold shadow-sm">
+        <div className="flex items-center gap-2 bg-primary-container/25 border border-primary/30 px-3.5 py-1.5 text-luminous-highlight text-xs font-semibold shadow-sm">
           <Flame className="w-4 h-4 text-luminous-highlight animate-pulse" />
           <span>{overview?.active_streak_days ?? 1} Day Streak</span>
         </div>
@@ -125,7 +125,7 @@ export function AnalyticsPage() {
       )}
 
       {/* 4 Summary Metric Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="atlas-grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
         {/* 1. Total Study Time */}
         <div className="glass-card p-5 border border-glass-border space-y-2">
           <div className="flex justify-between items-center text-on-surface-variant">
@@ -152,9 +152,9 @@ export function AnalyticsPage() {
           <div className="font-editorial text-3xl sm:text-4xl text-on-surface">
             {completionPct}%
           </div>
-          <div className="w-full bg-surface-container-highest/50 rounded-full h-1.5 overflow-hidden">
+          <div className="w-full bg-surface-container-highest/50 h-1.5 overflow-hidden">
             <div
-              className="bg-primary h-1.5 rounded-full"
+              className="bg-primary h-1.5"
               style={{ width: `${completionPct}%` }}
             />
           </div>
@@ -190,7 +190,7 @@ export function AnalyticsPage() {
       </div>
 
       {/* Activity Heatmap Grid */}
-      <div className="glass-panel p-6 rounded-2xl border border-glass-border space-y-4 shadow-[0_4px_30px_rgba(0,0,0,0.1)]">
+      <div className="glass-panel p-6 border border-glass-border space-y-4 shadow-[0_4px_30px_rgba(0,0,0,0.1)]">
         <div className="flex justify-between items-center">
           <div>
             <h2 className="font-editorial text-2xl text-on-surface">30-Day Activity Heatmap</h2>
@@ -215,7 +215,7 @@ export function AnalyticsPage() {
               <div
                 key={idx}
                 title={`${item.date}: ${item.minutes} mins (${item.events_count} events)`}
-                className={`h-7 rounded-md border border-glass-border flex items-center justify-center text-[10px] font-mono transition-transform hover:scale-110 cursor-pointer ${intensity}`}
+                className={`h-7 border border-glass-border flex items-center justify-center text-[10px] font-mono transition-transform hover:scale-110 cursor-pointer ${intensity}`}
               >
                 {item.minutes > 0 ? item.minutes : ""}
               </div>
@@ -225,9 +225,9 @@ export function AnalyticsPage() {
       </div>
 
       {/* Mastery Breakdown & Weakness Focus */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="atlas-grid grid-cols-1 lg:grid-cols-3">
         {/* Mastery Distribution */}
-        <div className="lg:col-span-2 glass-panel p-6 rounded-2xl border border-glass-border space-y-4">
+        <div className="lg:col-span-2 glass-panel p-6 border border-glass-border space-y-4">
           <h2 className="font-editorial text-2xl text-on-surface">Mastery Distribution</h2>
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -240,7 +240,7 @@ export function AnalyticsPage() {
               <button
                 key={tab.id}
                 onClick={() => setSelectedMasteryTab(tab.id as any)}
-                className={`p-3 rounded-xl border text-left transition ${
+                className={`p-3 border text-left transition ${
                   selectedMasteryTab === tab.id
                     ? "bg-surface-container/70 border-primary shadow-[0_0_8px_rgba(var(--accent-rgb),0.2)] luminous-active"
                     : "bg-surface-container/30 border-glass-border hover:bg-surface-container/50"
@@ -257,7 +257,7 @@ export function AnalyticsPage() {
             {getActiveTopics().map((c, i) => (
               <div
                 key={i}
-                className="p-3 rounded-xl bg-surface-container/30 border border-glass-border flex justify-between items-center text-xs"
+                className="p-3 bg-surface-container/30 border border-glass-border flex justify-between items-center text-xs"
               >
                 <span className="font-semibold text-on-surface">{c.title}</span>
                 <span className="font-mono text-primary">
@@ -269,7 +269,7 @@ export function AnalyticsPage() {
         </div>
 
         {/* Weakness Concepts */}
-        <div className="glass-panel p-6 rounded-2xl border border-glass-border space-y-4">
+        <div className="glass-panel p-6 border border-glass-border space-y-4">
           <div className="flex items-center gap-2">
             <AlertTriangle className="w-5 h-5 text-luminous-highlight" />
             <h2 className="font-editorial text-2xl text-on-surface">Review Focus</h2>
@@ -282,7 +282,7 @@ export function AnalyticsPage() {
             {weaknesses.map((w, idx) => (
               <div
                 key={idx}
-                className="p-3 rounded-xl bg-primary-container/25 border border-primary/30 flex items-center justify-between"
+                className="p-3 bg-primary-container/25 border border-primary/30 flex items-center justify-between"
               >
                 <div>
                   <h4 className="text-xs font-semibold text-on-surface">{w.title}</h4>

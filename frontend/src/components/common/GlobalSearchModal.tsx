@@ -124,7 +124,7 @@ export function GlobalSearchModal({ isOpen, onClose }: GlobalSearchModalProps) {
     >
       <div
         ref={dialogRef}
-        className="glass-panel border border-glass-border rounded-2xl max-w-2xl w-full shadow-[0_20px_60px_rgba(0,0,0,0.4)] overflow-hidden flex flex-col max-h-[80vh] text-on-surface"
+        className="glass-panel border border-glass-border max-w-2xl w-full shadow-[0_20px_60px_rgba(0,0,0,0.4)] overflow-hidden flex flex-col max-h-[80vh] text-on-surface"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Top Search Input */}
@@ -170,7 +170,7 @@ export function GlobalSearchModal({ isOpen, onClose }: GlobalSearchModalProps) {
               onClick={() => setSelectedCategory(cat.id)}
               role="tab"
               aria-selected={selectedCategory === cat.id}
-              className={`px-3 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition ${
+              className={`px-3 py-1 text-xs font-semibold whitespace-nowrap transition ${
                 selectedCategory === cat.id
                   ? "bg-primary text-on-primary shadow-[0_0_8px_rgba(var(--accent-rgb),0.3)]"
                   : "bg-surface-container/40 text-on-surface-variant hover:text-on-surface border border-glass-border"
@@ -198,7 +198,7 @@ export function GlobalSearchModal({ isOpen, onClose }: GlobalSearchModalProps) {
                   tabIndex={0}
                   onKeyDown={(e) => e.key === "Enter" && handleNavigate(item.url_path)}
                   role="button"
-                  className="p-3.5 rounded-xl bg-surface-container/30 hover:bg-surface-container/60 border border-glass-border hover:border-primary/40 cursor-pointer transition group focus-visible:ring-2 focus-visible:ring-primary"
+                  className="p-3.5 bg-surface-container/30 hover:bg-surface-container/60 border border-glass-border hover:border-primary/40 cursor-pointer transition group focus-visible:ring-2 focus-visible:ring-primary"
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">

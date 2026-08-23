@@ -171,7 +171,7 @@ export function NotesPage() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-primary-container/30 text-primary border border-glass-border uppercase tracking-widest">
+            <span className="atlas-label">
               Synthesized Knowledge
             </span>
           </div>
@@ -185,20 +185,20 @@ export function NotesPage() {
 
         <button
           onClick={() => setShowGenModal(true)}
-          className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-primary hover:opacity-90 active:scale-95 text-on-primary text-xs font-semibold rounded-lg shadow-[0_0_12px_rgba(var(--accent-rgb),0.25)] transition"
+          className="atlas-btn atlas-btn-primary"
         >
           <Sparkles className="w-4 h-4" /> Generate AI Note
         </button>
       </div>
 
       {/* Filter Tabs & Search Bar */}
-      <div className="glass-panel p-3.5 rounded-2xl border border-glass-border flex flex-col sm:flex-row justify-between items-center gap-3 min-w-0">
+      <div className="glass-panel p-3.5 border border-glass-border flex flex-col sm:flex-row justify-between items-center gap-3 min-w-0">
         <div className="flex gap-1.5 overflow-x-auto min-w-0 w-full sm:w-auto">
           {noteTypes.map((t) => (
             <button
               key={t.id}
               onClick={() => setSelectedType(t.id)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition ${
+              className={`px-3 py-1.5 text-xs font-semibold whitespace-nowrap transition ${
                 selectedType === t.id
                   ? "bg-primary text-on-primary shadow-[0_0_8px_rgba(var(--accent-rgb),0.3)]"
                   : "bg-surface-container/40 text-on-surface-variant hover:text-on-surface border border-glass-border"
@@ -215,15 +215,15 @@ export function NotesPage() {
             placeholder="Search notes..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full px-3.5 py-1.5 bg-surface-container/50 border border-glass-border rounded-lg text-xs text-on-surface placeholder:text-on-surface-variant/60 focus:outline-hidden focus:border-primary transition"
+            className="w-full px-3.5 py-1.5 bg-surface-container/50 border border-glass-border text-xs text-on-surface placeholder:text-on-surface-variant/60 focus:outline-hidden focus:border-primary transition"
           />
         </div>
       </div>
 
       {/* Main Grid: Notes List + Selected Note Reader */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="atlas-grid grid-cols-1 lg:grid-cols-3">
         {/* Notes List Column */}
-        <div className="glass-panel p-4 rounded-2xl border border-glass-border space-y-2 max-h-[calc(100vh-18rem)] overflow-y-auto">
+        <div className="glass-panel p-4 border border-glass-border space-y-2 max-h-[calc(100vh-18rem)] overflow-y-auto">
           {loading ? (
             <CardSkeleton count={4} />
           ) : notes.length === 0 ? (
@@ -237,7 +237,7 @@ export function NotesPage() {
                 <div
                   key={note.id}
                   onClick={() => loadSingleNote(note.id)}
-                  className={`p-3.5 rounded-xl border transition-all cursor-pointer flex flex-col gap-1.5 ${
+                  className={`p-3.5 border transition-all cursor-pointer flex flex-col gap-1.5 ${
                     isSelected
                       ? "bg-surface-container/70 border-primary shadow-[0_0_10px_rgba(var(--accent-rgb),0.15)] luminous-active"
                       : "bg-surface-container/30 hover:bg-surface-container/60 border-glass-border"
@@ -261,7 +261,7 @@ export function NotesPage() {
         </div>
 
         {/* Note Reader Viewport */}
-        <div className="lg:col-span-2 glass-panel p-6 rounded-2xl border border-glass-border space-y-4 max-h-[calc(100vh-18rem)] overflow-y-auto">
+        <div className="lg:col-span-2 glass-panel p-6 border border-glass-border space-y-4 max-h-[calc(100vh-18rem)] overflow-y-auto">
           {selectedNote ? (
             <>
               <div className="flex justify-between items-start pb-3 border-b border-glass-border">
@@ -282,7 +282,7 @@ export function NotesPage() {
                   <button
                     onClick={handleCopy}
                     aria-label={copied ? "Copied markdown" : "Copy markdown"}
-                    className="p-2 rounded-lg bg-surface-container/50 hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface border border-glass-border transition"
+                    className="p-2 bg-surface-container/50 hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface border border-glass-border transition"
                     title="Copy Markdown"
                   >
                     {copied ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
@@ -290,7 +290,7 @@ export function NotesPage() {
                   <button
                     onClick={() => handleDeleteNote(selectedNote.id)}
                     aria-label="Delete note"
-                    className="p-2 rounded-lg hover:bg-rose-500/20 text-on-surface-variant hover:text-rose-400 border border-transparent hover:border-rose-500/30 transition"
+                    className="p-2 hover:bg-rose-500/20 text-on-surface-variant hover:text-rose-400 border border-transparent hover:border-rose-500/30 transition"
                     title="Delete Note"
                   >
                     <Trash2 className="w-4 h-4" />
@@ -316,7 +316,7 @@ export function NotesPage() {
         <div ref={modalRef} className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="generate-note-title">
           <form
             onSubmit={handleGenerateNote}
-            className="glass-panel w-full max-w-lg p-6 rounded-2xl border border-glass-border space-y-4 shadow-2xl"
+            className="glass-panel w-full max-w-lg p-6 border border-glass-border space-y-4 shadow-2xl"
           >
             <div className="flex justify-between items-center">
               <div className="flex items-center gap-2">
@@ -327,7 +327,7 @@ export function NotesPage() {
                 type="button"
                 onClick={() => setShowGenModal(false)}
                 aria-label="Close generate note dialog"
-                className="p-1 rounded-md text-on-surface-variant hover:bg-surface-bright/20"
+                className="p-1 text-on-surface-variant hover:bg-surface-bright/20"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -342,7 +342,7 @@ export function NotesPage() {
                   placeholder="e.g. Thermodynamics Carnot Cycle"
                   value={genTopic}
                   onChange={(e) => setGenTopic(e.target.value)}
-                  className="w-full px-3 py-2 bg-surface-container/50 border border-glass-border rounded-lg text-on-surface focus:outline-hidden focus:border-primary"
+                  className="w-full px-3 py-2 bg-surface-container/50 border border-glass-border text-on-surface focus:outline-hidden focus:border-primary"
                 />
               </div>
 
@@ -351,7 +351,7 @@ export function NotesPage() {
                 <select
                   value={genType}
                   onChange={(e) => setGenType(e.target.value as NoteType)}
-                  className="w-full px-3 py-2 bg-surface-container/50 border border-glass-border rounded-lg text-on-surface focus:outline-hidden"
+                  className="w-full px-3 py-2 bg-surface-container/50 border border-glass-border text-on-surface focus:outline-hidden"
                 >
                   <option value="lesson_note" className="bg-surface text-on-surface">Lesson Note (Deep Explanations)</option>
                   <option value="revision_note" className="bg-surface text-on-surface">Revision Note (High Yield Bullet Points)</option>
@@ -366,7 +366,7 @@ export function NotesPage() {
                   <select
                     value={selectedRoadmapNodeId}
                     onChange={(e) => setSelectedRoadmapNodeId(e.target.value)}
-                    className="w-full px-3 py-2 bg-surface-container/50 border border-glass-border rounded-lg text-on-surface focus:outline-hidden"
+                    className="w-full px-3 py-2 bg-surface-container/50 border border-glass-border text-on-surface focus:outline-hidden"
                   >
                     <option value="">-- None --</option>
                     {roadmapNodes.map((n) => (
@@ -385,7 +385,7 @@ export function NotesPage() {
                   placeholder="e.g. Focus on edge case derivations, include ASCII diagram..."
                   value={genInstructions}
                   onChange={(e) => setGenInstructions(e.target.value)}
-                  className="w-full px-3 py-2 bg-surface-container/50 border border-glass-border rounded-lg text-on-surface focus:outline-hidden focus:border-primary"
+                  className="w-full px-3 py-2 bg-surface-container/50 border border-glass-border text-on-surface focus:outline-hidden focus:border-primary"
                 />
               </div>
             </div>
@@ -394,14 +394,14 @@ export function NotesPage() {
               <button
                 type="button"
                 onClick={() => setShowGenModal(false)}
-                className="px-4 py-2 rounded-lg text-xs text-on-surface-variant hover:text-on-surface"
+                className="px-4 py-2 text-xs text-on-surface-variant hover:text-on-surface"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={generating}
-                className="px-4 py-2 bg-primary hover:opacity-90 disabled:opacity-40 text-on-primary text-xs font-semibold rounded-lg shadow-[0_0_12px_rgba(var(--accent-rgb),0.3)]"
+                className="atlas-btn atlas-btn-primary"
               >
                 {generating ? "Synthesizing..." : "Generate Note"}
               </button>

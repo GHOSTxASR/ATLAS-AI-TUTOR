@@ -63,7 +63,7 @@ export function SetupPage() {
       {/* Header */}
       <div>
         <div className="flex items-center gap-2">
-          <span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-primary-container/30 text-primary border border-glass-border uppercase tracking-widest">
+          <span className="atlas-label">
             Profile Isolation & Storage
           </span>
         </div>
@@ -76,13 +76,13 @@ export function SetupPage() {
       </div>
 
       {error && (
-        <div role="alert" className="p-4 bg-rose-500/10 border border-rose-500/20 rounded-xl text-rose-300 text-xs font-semibold">
+        <div role="alert" className="p-4 bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs font-semibold">
           {error}
         </div>
       )}
 
       {/* Profile Creation Card */}
-      <div className="glass-panel p-6 rounded-2xl border border-glass-border space-y-4 shadow-[0_4px_30px_rgba(0,0,0,0.1)]">
+      <div className="glass-panel p-6 border border-glass-border space-y-4 shadow-[0_4px_30px_rgba(0,0,0,0.1)]">
         <h2 className="font-editorial text-2xl text-on-surface flex items-center gap-2">
           <Plus className="w-5 h-5 text-primary" />
           Create New Learner Profile
@@ -99,7 +99,7 @@ export function SetupPage() {
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
               placeholder="e.g. Ashmit (JEE Prep 2026)"
-              className="w-full px-3.5 py-2 bg-surface-container/50 border border-glass-border rounded-lg text-on-surface placeholder:text-on-surface-variant/60 focus:outline-hidden focus:border-primary"
+              className="w-full px-3.5 py-2 bg-surface-container/50 border border-glass-border text-on-surface placeholder:text-on-surface-variant/60 focus:outline-hidden focus:border-primary"
             />
           </div>
 
@@ -110,7 +110,7 @@ export function SetupPage() {
             <select
               value={newType}
               onChange={(e) => setNewType(e.target.value as ProfileType)}
-              className="w-full px-3 py-2 bg-surface-container/50 border border-glass-border rounded-lg text-on-surface focus:outline-hidden focus:border-primary"
+              className="w-full px-3 py-2 bg-surface-container/50 border border-glass-border text-on-surface focus:outline-hidden focus:border-primary"
             >
               {PROFILE_TYPES.map((t) => (
                 <option key={t} value={t} className="bg-surface text-on-surface">
@@ -124,7 +124,7 @@ export function SetupPage() {
             <button
               type="submit"
               disabled={isLoading || !newName.trim()}
-              className="w-full py-2.5 bg-primary hover:opacity-90 disabled:opacity-40 text-on-primary text-xs font-semibold rounded-xl shadow-[0_0_12px_rgba(var(--accent-rgb),0.25)] transition flex items-center justify-center gap-2"
+              className="atlas-btn atlas-btn-primary w-full"
             >
               <Sparkles className="w-4 h-4" /> Create Profile
             </button>
@@ -139,17 +139,17 @@ export function SetupPage() {
         {isLoading ? (
           <CardSkeleton count={3} />
         ) : profiles.length === 0 ? (
-          <div className="glass-panel p-10 text-center rounded-2xl border border-glass-border text-xs text-on-surface-variant font-sans">
+          <div className="glass-panel p-10 text-center border border-glass-border text-xs text-on-surface-variant font-sans">
             No learner profiles found. Create your first profile above to get started.
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {profiles.map((p) => {
               const isActive = activeProfileId === p.id;
               return (
                 <div
                   key={p.id}
-                  className={`glass-card p-5 border transition-all duration-300 flex flex-col justify-between space-y-4 ${
+                  className={`atlas-hover glass-card p-5 border transition-all duration-300 flex flex-col justify-between space-y-4 ${
                     isActive
                       ? "bg-surface-container/70 border-primary shadow-[0_0_15px_rgba(var(--accent-rgb),0.2)] luminous-active"
                       : "bg-surface-container/30 border-glass-border hover:border-primary/40"
@@ -186,14 +186,14 @@ export function SetupPage() {
                     <div className="flex items-center gap-1">
                       <button
                         onClick={() => handleStartEdit(p.id, p.name)}
-                        className="p-1.5 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-bright/20 transition"
+                        className="p-1.5 text-on-surface-variant hover:text-on-surface hover:bg-surface-bright/20 transition"
                         title="Rename Profile"
                       >
                         <Edit3 className="w-3.5 h-3.5" />
                       </button>
                       <button
                         onClick={() => deleteProfile(p.id)}
-                        className="p-1.5 rounded-lg text-on-surface-variant hover:text-rose-400 hover:bg-rose-500/20 transition"
+                        className="p-1.5 text-on-surface-variant hover:text-rose-400 hover:bg-rose-500/20 transition"
                         title="Delete Profile"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
@@ -221,7 +221,7 @@ export function SetupPage() {
                     ) : (
                       <button
                         onClick={() => setActiveProfile(p.id)}
-                        className="px-3 py-1 bg-surface-container/60 hover:bg-surface-container-high text-xs font-semibold text-on-surface rounded-lg border border-glass-border transition"
+                        className="atlas-btn"
                       >
                         Switch to Profile
                       </button>

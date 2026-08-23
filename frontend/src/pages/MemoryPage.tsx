@@ -155,7 +155,7 @@ export function MemoryPage() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-primary-container/30 text-primary border border-glass-border uppercase tracking-widest">
+            <span className="atlas-label">
               Long-Term Cognitive Store
             </span>
           </div>
@@ -169,14 +169,14 @@ export function MemoryPage() {
 
         <button
           onClick={() => setShowModal(true)}
-          className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-primary hover:opacity-90 active:scale-95 text-on-primary text-xs font-semibold rounded-lg shadow-[0_0_12px_rgba(var(--accent-rgb),0.25)] transition"
+          className="atlas-btn atlas-btn-primary"
         >
           <Plus className="w-4 h-4" /> Add Memory Record
         </button>
       </div>
 
       {/* Filter Tabs & Search */}
-      <div className="glass-panel p-3.5 rounded-2xl border border-glass-border flex flex-col sm:flex-row justify-between items-center gap-3">
+      <div className="glass-panel p-3.5 border border-glass-border flex flex-col sm:flex-row justify-between items-center gap-3">
         <div className="flex gap-1.5 overflow-x-auto min-w-0 w-full sm:w-auto">
           {[
             { id: "all", label: "All Records" },
@@ -189,7 +189,7 @@ export function MemoryPage() {
             <button
               key={cat.id}
               onClick={() => setSelectedCategory(cat.id)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition ${
+              className={`px-3 py-1.5 text-xs font-semibold whitespace-nowrap transition ${
                 selectedCategory === cat.id
                   ? "bg-primary text-on-primary shadow-[0_0_8px_rgba(var(--accent-rgb),0.3)]"
                   : "bg-surface-container/40 text-on-surface-variant hover:text-on-surface border border-glass-border"
@@ -206,34 +206,34 @@ export function MemoryPage() {
             placeholder="Search memory vault..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full px-3.5 py-1.5 bg-surface-container/50 border border-glass-border rounded-lg text-xs text-on-surface placeholder:text-on-surface-variant/60 focus:outline-hidden focus:border-primary transition"
+            className="w-full px-3.5 py-1.5 bg-surface-container/50 border border-glass-border text-xs text-on-surface placeholder:text-on-surface-variant/60 focus:outline-hidden focus:border-primary transition"
           />
         </div>
       </div>
 
       {/* Memory Cards Grid */}
       {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
           <CardSkeleton count={6} />
         </div>
       ) : filteredMemories.length === 0 ? (
-        <div className="glass-panel p-12 text-center rounded-2xl border border-glass-border text-xs text-on-surface-variant font-sans">
+        <div className="glass-panel p-12 text-center border border-glass-border text-xs text-on-surface-variant font-sans">
           No cognitive memory records match this query.
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
           {filteredMemories.map((m) => {
             const conf = categoryConfig[m.category] || categoryConfig.fact;
             const Icon = conf.icon;
             return (
               <div
                 key={m.id}
-                className="glass-card p-5 border border-glass-border flex flex-col justify-between space-y-3 hover:border-primary/40 transition duration-300"
+                className="atlas-hover glass-card p-5 border border-glass-border flex flex-col justify-between space-y-3 hover:border-primary/40 transition duration-300"
               >
                 <div>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-1.5">
-                      <span className={`p-1.5 rounded-md ${conf.bg} ${conf.color}`}>
+                      <span className={`p-1.5 ${conf.bg} ${conf.color}`}>
                         <Icon className="w-3.5 h-3.5" />
                       </span>
                       <span className="text-[10px] font-mono uppercase font-semibold text-on-surface-variant">
@@ -273,7 +273,7 @@ export function MemoryPage() {
         <div ref={modalRef} className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="new-memory-title">
           <form
             onSubmit={handleCreate}
-            className="glass-panel w-full max-w-md p-6 rounded-2xl border border-glass-border space-y-4 shadow-2xl"
+            className="glass-panel w-full max-w-md p-6 border border-glass-border space-y-4 shadow-2xl"
           >
             <div className="flex justify-between items-center">
               <h3 id="new-memory-title" className="font-editorial text-xl text-on-surface">New Cognitive Memory</h3>
@@ -281,7 +281,7 @@ export function MemoryPage() {
                 type="button"
                 onClick={() => setShowModal(false)}
                 aria-label="Close new memory dialog"
-                className="p-1 rounded-md text-on-surface-variant hover:bg-surface-bright/20"
+                className="p-1 text-on-surface-variant hover:bg-surface-bright/20"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -296,7 +296,7 @@ export function MemoryPage() {
                   placeholder="e.g. Eigenvalues, Integration by Parts"
                   value={subject}
                   onChange={(e) => setSubject(e.target.value)}
-                  className="w-full px-3 py-2 bg-surface-container/50 border border-glass-border rounded-lg text-on-surface focus:outline-hidden focus:border-primary"
+                  className="w-full px-3 py-2 bg-surface-container/50 border border-glass-border text-on-surface focus:outline-hidden focus:border-primary"
                 />
               </div>
 
@@ -305,7 +305,7 @@ export function MemoryPage() {
                 <select
                   value={category}
                   onChange={(e) => setCategory(e.target.value as MemoryCategory)}
-                  className="w-full px-3 py-2 bg-surface-container/50 border border-glass-border rounded-lg text-on-surface focus:outline-hidden"
+                  className="w-full px-3 py-2 bg-surface-container/50 border border-glass-border text-on-surface focus:outline-hidden"
                 >
                   <option value="weakness" className="bg-surface text-on-surface">Weakness / Misconception</option>
                   <option value="strength" className="bg-surface text-on-surface">Strength / Mastery</option>
@@ -323,7 +323,7 @@ export function MemoryPage() {
                   placeholder="e.g. Struggles with boundary conditions in definite integrals..."
                   value={content}
                   onChange={(e) => setContent(e.target.value)}
-                  className="w-full px-3 py-2 bg-surface-container/50 border border-glass-border rounded-lg text-on-surface focus:outline-hidden focus:border-primary"
+                  className="w-full px-3 py-2 bg-surface-container/50 border border-glass-border text-on-surface focus:outline-hidden focus:border-primary"
                 />
               </div>
             </div>
@@ -332,14 +332,14 @@ export function MemoryPage() {
               <button
                 type="button"
                 onClick={() => setShowModal(false)}
-                className="px-4 py-2 rounded-lg text-xs text-on-surface-variant hover:text-on-surface"
+                className="px-4 py-2 text-xs text-on-surface-variant hover:text-on-surface"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={creating}
-                className="px-4 py-2 bg-primary hover:opacity-90 disabled:opacity-40 text-on-primary text-xs font-semibold rounded-lg shadow-sm"
+                className="atlas-btn atlas-btn-primary"
               >
                 {creating ? "Storing..." : "Store Memory"}
               </button>

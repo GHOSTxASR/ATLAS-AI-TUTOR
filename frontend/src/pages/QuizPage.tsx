@@ -157,7 +157,7 @@ export function QuizPage() {
       {/* Header */}
       <div>
         <div className="flex items-center gap-2">
-          <span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-primary-container/30 text-primary border border-glass-border uppercase tracking-widest">
+          <span className="atlas-label">
             Cognitive Diagnostics
           </span>
         </div>
@@ -171,9 +171,9 @@ export function QuizPage() {
 
       {/* VIEW: IDLE / CONFIGURATION */}
       {viewState === "idle" && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="atlas-grid grid-cols-1 lg:grid-cols-3">
           {/* Generator Form */}
-          <div className="lg:col-span-2 glass-panel p-6 rounded-2xl border border-glass-border space-y-5 shadow-[0_4px_30px_rgba(0,0,0,0.1)]">
+          <div className="lg:col-span-2 glass-panel p-6 border border-glass-border space-y-5 shadow-[0_4px_30px_rgba(0,0,0,0.1)]">
             <h2 className="font-editorial text-2xl text-on-surface">
               Configure Diagnostic Test
             </h2>
@@ -188,7 +188,7 @@ export function QuizPage() {
                   <select
                     value={selectedNodeId}
                     onChange={(e) => setSelectedNodeId(e.target.value)}
-                    className="w-full px-3 py-2 bg-surface-container/50 border border-glass-border rounded-lg text-on-surface focus:outline-hidden focus:border-primary"
+                    className="w-full px-3 py-2 bg-surface-container/50 border border-glass-border text-on-surface focus:outline-hidden focus:border-primary"
                   >
                     <option value="">-- Custom Topic --</option>
                     {activeRoadmap.nodes.map((n) => (
@@ -205,7 +205,7 @@ export function QuizPage() {
                     placeholder="Enter custom topic (e.g. Organic Reaction Mechanisms)..."
                     value={customTopic}
                     onChange={(e) => setCustomTopic(e.target.value)}
-                    className="w-full mt-2 px-3 py-2 bg-surface-container/50 border border-glass-border rounded-lg text-on-surface focus:outline-hidden focus:border-primary"
+                    className="w-full mt-2 px-3 py-2 bg-surface-container/50 border border-glass-border text-on-surface focus:outline-hidden focus:border-primary"
                   />
                 )}
               </div>
@@ -222,7 +222,7 @@ export function QuizPage() {
                       key={m.id}
                       type="button"
                       onClick={() => setQuizMode(m.id as QuizMode)}
-                      className={`p-3 rounded-xl border text-left transition ${
+                      className={`p-3 border text-left transition ${
                         quizMode === m.id
                           ? "bg-surface-container/70 border-primary shadow-[0_0_8px_rgba(var(--accent-rgb),0.2)] luminous-active"
                           : "bg-surface-container/30 border-glass-border hover:bg-surface-container/50 text-on-surface-variant"
@@ -254,7 +254,7 @@ export function QuizPage() {
             <button
               onClick={handleStartQuiz}
               disabled={loading || (!selectedNodeId && !customTopic.trim())}
-              className="w-full py-3 bg-primary hover:opacity-90 disabled:opacity-40 text-on-primary text-xs font-semibold rounded-xl shadow-[0_0_15px_rgba(var(--accent-rgb),0.3)] transition flex items-center justify-center gap-2"
+              className="atlas-btn atlas-btn-primary w-full"
             >
               <Sparkles className="w-4 h-4" />
               {loading ? "Synthesizing Assessment..." : "Launch Quiz Session"}
@@ -262,14 +262,14 @@ export function QuizPage() {
           </div>
 
           {/* Past Quiz Attempts */}
-          <div className="glass-panel p-6 rounded-2xl border border-glass-border space-y-4">
+          <div className="glass-panel p-6 border border-glass-border space-y-4">
             <h3 className="font-editorial text-2xl text-on-surface">Recent Attempts</h3>
             {history.length > 0 ? (
               <div className="space-y-2.5 max-h-96 overflow-y-auto">
                 {history.slice(0, 6).map((item) => (
                   <div
                     key={item.id}
-                    className="p-3 rounded-xl bg-surface-container/30 border border-glass-border flex justify-between items-center gap-3"
+                    className="p-3 bg-surface-container/30 border border-glass-border flex justify-between items-center gap-3"
                   >
                     {/* Labelled by subject and date. A slice of the attempt
                         UUID told the learner nothing about what was tested. */}
@@ -302,7 +302,7 @@ export function QuizPage() {
 
       {/* VIEW: TAKING QUIZ */}
       {viewState === "taking" && activeQuiz && (
-        <div className="glass-panel p-6 sm:p-8 rounded-2xl border border-glass-border space-y-6 shadow-2xl">
+        <div className="glass-panel p-6 sm:p-8 border border-glass-border space-y-6 shadow-2xl">
           <div className="flex justify-between items-center pb-4 border-b border-glass-border">
             <div>
               <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-primary-container/40 text-primary uppercase">
@@ -313,7 +313,7 @@ export function QuizPage() {
               </h2>
             </div>
             {timeRemaining !== null && (
-              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary/20 text-luminous-highlight border border-primary/30 text-xs font-mono">
+              <div className="flex items-center gap-1.5 px-3 py-1.5 bg-primary/20 text-luminous-highlight border border-primary/30 text-xs font-mono">
                 <Clock className="w-4 h-4" />
                 <span>
                   {Math.floor(timeRemaining / 60)}:{(timeRemaining % 60).toString().padStart(2, "0")}
@@ -345,13 +345,13 @@ export function QuizPage() {
                         key={opt.id}
                         type="button"
                         onClick={() => handleAnswerChange(q.id, opt.id)}
-                        className={`w-full p-3.5 rounded-xl border text-left text-xs sm:text-sm font-medium transition flex items-center gap-3 ${
+                        className={`w-full p-3.5 border text-left text-xs sm:text-sm font-medium transition flex items-center gap-3 ${
                           userAnswers[q.id] === opt.id
                             ? "bg-surface-container/70 border-primary text-primary shadow-[0_0_8px_rgba(var(--accent-rgb),0.2)]"
                             : "bg-surface-container/30 border-glass-border text-on-surface hover:bg-surface-container/60"
                         }`}
                       >
-                        <span className="w-6 h-6 rounded-md bg-surface-container-high border border-glass-border flex items-center justify-center font-mono text-xs shrink-0">
+                        <span className="w-6 h-6 bg-surface-container-high border border-glass-border flex items-center justify-center font-mono text-xs shrink-0">
                           {opt.id}
                         </span>
                         <span>{opt.text}</span>
@@ -367,7 +367,7 @@ export function QuizPage() {
                     placeholder="Type your solution or answer..."
                     value={userAnswers[q.id] || ""}
                     onChange={(e) => handleAnswerChange(q.id, e.target.value)}
-                    className="w-full p-3 bg-surface-container/50 border border-glass-border rounded-xl text-xs sm:text-sm text-on-surface focus:outline-hidden focus:border-primary"
+                    className="w-full p-3 bg-surface-container/50 border border-glass-border text-xs sm:text-sm text-on-surface focus:outline-hidden focus:border-primary"
                   />
                 )}
               </div>
@@ -379,7 +379,7 @@ export function QuizPage() {
             <button
               onClick={() => setCurrentQIndex((prev) => Math.max(0, prev - 1))}
               disabled={currentQIndex === 0}
-              className="px-4 py-2 rounded-lg bg-surface-container/50 hover:bg-surface-container-high disabled:opacity-30 text-xs font-semibold text-on-surface border border-glass-border transition"
+              className="atlas-btn"
             >
               Previous
             </button>
@@ -387,7 +387,7 @@ export function QuizPage() {
             {currentQIndex < activeQuiz.questions.length - 1 ? (
               <button
                 onClick={() => setCurrentQIndex((prev) => prev + 1)}
-                className="px-4 py-2 rounded-lg bg-primary hover:opacity-90 text-xs font-semibold text-on-primary shadow-sm transition"
+                className="atlas-btn atlas-btn-primary"
               >
                 Next Question
               </button>
@@ -395,7 +395,7 @@ export function QuizPage() {
               <button
                 onClick={handleSubmitQuiz}
                 disabled={loading}
-                className="px-5 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-xs font-semibold text-white shadow-[0_0_12px_rgba(52,211,153,0.3)] transition"
+                className="px-5 py-2 bg-emerald-500 hover:bg-emerald-600 text-xs font-semibold text-white shadow-[0_0_12px_rgba(52,211,153,0.3)] transition"
               >
                 {loading ? "Grading..." : "Submit Assessment"}
               </button>
@@ -406,7 +406,7 @@ export function QuizPage() {
 
       {/* VIEW: RESULTS */}
       {viewState === "results" && quizResult && (
-        <div className="glass-panel p-6 sm:p-8 rounded-2xl border border-glass-border space-y-6 shadow-2xl">
+        <div className="glass-panel p-6 sm:p-8 border border-glass-border space-y-6 shadow-2xl">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-4 border-b border-glass-border">
             <div>
               <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 uppercase">
@@ -422,7 +422,7 @@ export function QuizPage() {
 
             <button
               onClick={() => setViewState("idle")}
-              className="px-4 py-2 bg-primary hover:opacity-90 text-on-primary text-xs font-semibold rounded-lg shadow-sm transition flex items-center gap-1.5"
+              className="atlas-btn atlas-btn-primary"
             >
               <RotateCcw className="w-3.5 h-3.5" /> Back to Dashboard
             </button>
@@ -433,7 +433,7 @@ export function QuizPage() {
             {quizResult.question_results.map((ev, i) => (
               <div
                 key={i}
-                className={`p-4 rounded-xl border ${
+                className={`p-4 border ${
                   ev.is_correct
                     ? "bg-emerald-500/10 border-emerald-500/20"
                     : "bg-rose-500/10 border-rose-500/20"

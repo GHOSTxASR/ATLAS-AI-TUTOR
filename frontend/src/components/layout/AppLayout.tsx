@@ -97,12 +97,12 @@ export function AppLayout({ children }: AppLayoutProps) {
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             aria-label="Toggle navigation menu"
             aria-expanded={mobileMenuOpen}
-            className="p-2 rounded-lg text-on-surface-variant hover:bg-surface-bright/20 focus-visible:ring-2 focus-visible:ring-primary transition"
+            className="p-2 text-on-surface-variant hover:bg-surface-bright/20 focus-visible:ring-2 focus-visible:ring-primary transition"
           >
             {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
           <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-md bg-primary-container/40 text-luminous-highlight border border-glass-border flex items-center justify-center font-bold text-xs shadow-sm">
+            <div className="w-7 h-7 bg-primary-container/40 text-luminous-highlight border border-glass-border flex items-center justify-center font-bold text-xs shadow-sm">
               <Sparkles className="w-4 h-4" />
             </div>
             <span className="font-editorial text-xl font-normal tracking-tight text-on-surface">
@@ -116,7 +116,7 @@ export function AppLayout({ children }: AppLayoutProps) {
         <button
           onClick={() => setSearchOpen(true)}
           aria-label="Search"
-          className="p-2 rounded-lg text-on-surface-variant hover:bg-surface-bright/20 transition"
+          className="p-2 text-on-surface-variant hover:bg-surface-bright/20 transition"
         >
           <Search className="w-4 h-4" />
         </button>
@@ -147,22 +147,20 @@ export function AppLayout({ children }: AppLayoutProps) {
           {/* Brand Logo */}
           <div className="flex items-center justify-between px-2 pt-1 pb-1">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-primary-container/40 text-luminous-highlight border border-glass-border flex items-center justify-center shadow-[0_0_12px_rgba(var(--accent-rgb),0.2)]">
+              <div className="w-8 h-8 bg-primary-container/40 text-luminous-highlight border border-glass-border flex items-center justify-center shadow-[0_0_12px_rgba(var(--accent-rgb),0.2)]">
                 <Sparkles className="w-4 h-4" />
               </div>
               <div>
                 <span className="font-editorial text-2xl tracking-tight text-on-surface block leading-none">
                   Atlas
                 </span>
-                <span className="text-[10px] text-on-surface-variant/80 font-medium tracking-wider uppercase block mt-0.5">
-                  AI Learning Platform
-                </span>
+                <span className="atlas-label mt-1 block">AI Learning Platform</span>
               </div>
             </div>
             {/* Close button on mobile */}
             <button
               onClick={() => setMobileMenuOpen(false)}
-              className="md:hidden p-1.5 rounded-md text-on-surface-variant hover:bg-surface-bright/20"
+              className="md:hidden p-1.5 text-on-surface-variant hover:bg-surface-bright/20"
               aria-label="Close menu"
             >
               <X className="w-5 h-5" />
@@ -172,11 +170,11 @@ export function AppLayout({ children }: AppLayoutProps) {
           {/* Quick Search Trigger */}
           <button
             onClick={() => setSearchOpen(true)}
-            className="hidden md:flex w-full items-center justify-between px-3 py-2 rounded-lg bg-surface-container/40 hover:bg-surface-container-high/60 border border-glass-border text-on-surface-variant text-xs transition duration-200 group"
+            className="atlas-hover hidden md:flex w-full items-center justify-between px-3 py-2.5 bg-surface-container/40 border border-glass-border text-on-surface-variant group"
           >
             <div className="flex items-center gap-2">
               <Search className="w-3.5 h-3.5 group-hover:text-luminous-highlight transition-colors" />
-              <span className="font-sans">Search workstation...</span>
+              <span className="font-mono text-[11px] uppercase tracking-[0.14em]">Search</span>
             </div>
             <kbd className="text-[10px] px-1.5 py-0.5 rounded bg-surface-container-highest/60 border border-glass-border font-mono text-on-surface-variant">
               ⌘K
@@ -192,16 +190,12 @@ export function AppLayout({ children }: AppLayoutProps) {
                   key={item.to}
                   to={item.to}
                   onClick={() => setMobileMenuOpen(false)}
-                  className={({ isActive }) =>
-                    `flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition-all duration-200 group ${
-                      isActive
-                        ? "bg-surface-container/60 text-luminous-highlight border border-glass-border shadow-[0_0_10px_rgba(var(--accent-rgb),0.15)] luminous-active"
-                        : "text-on-surface-variant hover:text-on-surface hover:bg-surface-container/30 border border-transparent"
-                    }`
-                  }
+                  // Selection and hover both come from .atlas-nav-item, keyed off
+                  // the aria-current NavLink already sets.
+                  className="atlas-nav-item group flex items-center gap-3 px-3 py-2.5 font-mono text-[11px] uppercase tracking-[0.16em] text-on-surface-variant"
                 >
-                  <Icon className="w-4 h-4 shrink-0 transition-transform group-hover:scale-105" />
-                  <span className="font-sans text-xs tracking-tight">{item.label}</span>
+                  <Icon className="w-4 h-4 shrink-0" />
+                  <span>{item.label}</span>
                 </NavLink>
               );
             })}
@@ -213,15 +207,15 @@ export function AppLayout({ children }: AppLayoutProps) {
             appeared twice side by side. The select is now an invisible overlay
             covering the whole row: one visible label, still keyboard-operable. */}
         <div className="shrink-0 pt-3 mt-3 border-t border-glass-border">
-          <div className="relative flex items-center gap-2 px-2 py-1.5 rounded-lg bg-surface-container/30 border border-glass-border focus-within:border-primary transition-colors">
-            <div className="w-6 h-6 rounded-full bg-primary-container/40 text-primary border border-glass-border flex items-center justify-center shrink-0">
+          <div className="atlas-hover relative flex items-center gap-2.5 px-3 py-2.5 bg-surface-container/30 border border-glass-border focus-within:border-primary">
+            <div className="w-6 h-6 bg-primary-container/40 text-primary border border-glass-border flex items-center justify-center shrink-0">
               <User className="w-3 h-3" />
             </div>
             <div className="min-w-0 flex-1">
               <p className="text-xs font-medium text-on-surface truncate">
                 {activeProfile ? activeProfile.name : "Learner"}
               </p>
-              <p className="text-[10px] text-on-surface-variant truncate">
+              <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-on-surface-variant truncate">
                 {activeProfile ? activeProfile.profile_type : "No Profile"}
               </p>
             </div>

@@ -191,7 +191,7 @@ export function SettingsPage() {
       {/* Header */}
       <div>
         <div className="flex items-center gap-2">
-          <span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-primary-container/30 text-primary border border-glass-border uppercase tracking-widest">
+          <span className="atlas-label">
             Preferences & Telemetry
           </span>
         </div>
@@ -204,7 +204,7 @@ export function SettingsPage() {
       </div>
 
       {/* Theme Customization Section */}
-      <div className="glass-panel p-6 rounded-2xl border border-glass-border space-y-4 shadow-[0_4px_30px_rgba(0,0,0,0.1)]">
+      <div className="glass-panel p-6 border border-glass-border space-y-4 shadow-[0_4px_30px_rgba(0,0,0,0.1)]">
         <div className="flex items-center gap-2">
           <Palette className="w-5 h-5 text-primary" />
           <h2 className="font-editorial text-2xl text-on-surface">Workspace Appearance</h2>
@@ -213,7 +213,7 @@ export function SettingsPage() {
           Choose how Atlas looks:
         </p>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 font-sans text-xs">
+        <div className="atlas-grid grid-cols-1 sm:grid-cols-3 font-sans text-xs">
           {[
             { id: "light", label: "Light", icon: Sun, desc: "Frost Off-White" },
             { id: "dark", label: "Dark", icon: Moon, desc: "Ebony Slate" },
@@ -225,10 +225,8 @@ export function SettingsPage() {
               <button
                 key={mode.id}
                 onClick={() => setTheme(mode.id as ThemeMode)}
-                className={`p-3 sm:p-4 rounded-xl border flex flex-col items-center justify-center gap-2 text-center transition ${
-                  isSelected
-                    ? "bg-surface-container/70 border-primary text-primary shadow-[0_0_10px_rgba(var(--accent-rgb),0.2)] luminous-active"
-                    : "bg-surface-container/30 border-glass-border hover:bg-surface-container/60 text-on-surface-variant"
+                className={`atlas-hover p-4 sm:p-5 flex flex-col items-center justify-center gap-2 text-center ${
+                  isSelected ? "atlas-selected" : "text-on-surface-variant"
                 }`}
               >
                 <Icon className="w-5 h-5" />
@@ -241,7 +239,7 @@ export function SettingsPage() {
       </div>
 
       {/* AI Model Provider Configuration */}
-      <div className="glass-panel p-6 rounded-2xl border border-glass-border space-y-5 shadow-[0_4px_30px_rgba(0,0,0,0.1)]">
+      <div className="glass-panel p-6 border border-glass-border space-y-5 shadow-[0_4px_30px_rgba(0,0,0,0.1)]">
         <div className="flex items-center gap-2">
           <Sparkles className="w-5 h-5 text-primary" />
           <h2 className="font-editorial text-2xl text-on-surface">AI Model Provider</h2>
@@ -255,7 +253,7 @@ export function SettingsPage() {
         ) : (
           <div className="space-y-4 font-sans text-xs">
             {/* Provider Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+            <div className="atlas-grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3">
               {providersData?.providers.map((p) => {
                 const isSelected = selectedProvider === p.id;
                 return (
@@ -266,10 +264,8 @@ export function SettingsPage() {
                       setSelectedProvider(p.id);
                       setModelName(p.default_model);
                     }}
-                    className={`p-3.5 rounded-xl border text-left flex flex-col justify-between space-y-2 transition ${
-                      isSelected
-                        ? "bg-surface-container/70 border-primary shadow-[0_0_10px_rgba(var(--accent-rgb),0.2)] luminous-active"
-                        : "bg-surface-container/30 border-glass-border hover:bg-surface-container/60"
+                    className={`atlas-hover p-4 text-left flex flex-col justify-between space-y-2 ${
+                      isSelected ? "atlas-selected" : ""
                     }`}
                   >
                     <div className="flex items-start justify-between gap-2">
@@ -344,7 +340,7 @@ export function SettingsPage() {
                         placeholder={activeProviderInfo.key_set ? "•••••••••••••••• (Encrypted in Keystore)" : "Enter API key..."}
                         value={apiKey}
                         onChange={(e) => setApiKey(e.target.value)}
-                        className="w-full pl-3 pr-10 py-2 bg-surface-container/50 border border-glass-border rounded-lg text-on-surface focus:outline-hidden focus:border-primary"
+                        className="w-full pl-3 pr-10 py-2 bg-surface-container/50 border border-glass-border text-on-surface focus:outline-hidden focus:border-primary"
                       />
                       <button
                         type="button"
@@ -386,7 +382,7 @@ export function SettingsPage() {
                   </label>
 
                   {embeddingCatalog.length === 0 && embeddingError ? (
-                    <div className="p-3 rounded-lg bg-primary-container/25 border border-primary/30 text-luminous-highlight text-[11px] leading-relaxed">
+                    <div className="p-3 bg-primary-container/25 border border-primary/30 text-luminous-highlight text-[11px] leading-relaxed">
                       {embeddingError}
                       <span className="block mt-1 opacity-80">
                         Chat still works. Document search needs a provider with an
@@ -409,7 +405,7 @@ export function SettingsPage() {
                   {indexedModels.length > 0 &&
                     embeddingModel &&
                     !indexedModels.includes(embeddingModel) && (
-                      <div className="mt-2 p-3 rounded-lg bg-primary-container/25 border border-primary/30 text-luminous-highlight text-[11px] leading-relaxed">
+                      <div className="mt-2 p-3 bg-primary-container/25 border border-primary/30 text-luminous-highlight text-[11px] leading-relaxed">
                         Your documents are indexed with{" "}
                         <span className="font-mono">{indexedModels.join(", ")}</span>.
                         Switching to <span className="font-mono">{embeddingModel}</span>{" "}
@@ -422,20 +418,20 @@ export function SettingsPage() {
             )}
 
             {error && (
-              <div className="p-3 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs">
+              <div className="p-3 bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs">
                 {error}
               </div>
             )}
 
             {success && (
-              <div className="p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 text-xs">
+              <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 text-xs">
                 {success}
               </div>
             )}
 
             {testResult && (
               <div
-                className={`p-3 rounded-lg border text-xs flex items-start gap-2 ${
+                className={`p-3 border text-xs flex items-start gap-2 ${
                   testResult.ok
                     ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-300"
                     : "bg-rose-500/10 border-rose-500/20 text-rose-300"
@@ -454,7 +450,7 @@ export function SettingsPage() {
               <button
                 onClick={handleSave}
                 disabled={saving}
-                className="flex-1 py-2.5 bg-primary hover:opacity-90 disabled:opacity-40 text-on-primary text-xs font-semibold rounded-xl shadow-[0_0_12px_rgba(var(--accent-rgb),0.25)] transition flex items-center justify-center gap-2"
+                className="atlas-btn atlas-btn-primary flex-1"
               >
                 {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
                 <span>{saving ? "Saving Configuration..." : "Save Settings"}</span>
@@ -463,7 +459,7 @@ export function SettingsPage() {
               <button
                 onClick={handleTestConnection}
                 disabled={testing || !selectedProvider}
-                className="flex-1 py-2.5 bg-surface-container/60 hover:bg-surface-container border border-glass-border disabled:opacity-40 text-on-surface text-xs font-semibold rounded-xl transition flex items-center justify-center gap-2"
+                className="atlas-btn flex-1"
                 title="Send a minimal request to verify the key and model work"
               >
                 {testing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
