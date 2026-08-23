@@ -13,14 +13,15 @@ import {
   Search,
   Menu,
   X,
-  User,
-  ChevronsUpDown,
   Sparkles,
   HelpCircle,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from "lucide-react";
 import { GlobalSearchModal } from "../common/GlobalSearchModal";
 import { ParticleSwarm } from "../landing/ParticleSwarm";
 import { PageTransition } from "./PageTransition";
+import { ProfileMenu } from "./ProfileMenu";
 import { useThemeStore } from "../../stores/themeStore";
 import { useProfileStore } from "../../stores/profileStore";
 import { useFocusTrap } from "../../hooks/useFocusTrap";
@@ -38,6 +39,8 @@ const navItems = [
   { to: "/settings", label: "Settings", icon: Settings },
 ];
 
+const SIDEBAR_KEY = "atlas_sidebar_collapsed";
+
 interface AppLayoutProps {
   children: ReactNode;
 }
@@ -45,6 +48,11 @@ interface AppLayoutProps {
 export function AppLayout({ children }: AppLayoutProps) {
   const [searchOpen, setSearchOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  // Read synchronously on first render: resolving this in an effect would show
+  // the expanded rail for a frame and then snap it shut.
+  const [collapsed, setCollapsed] = useState(
+    () => typeof localStorage !== "undefined" && localStorage.getItem(SIDEBAR_KEY) === "1",
+  );
 
   const { initializeTheme } = useThemeStore();
   const { activeProfileId, profiles, setActiveProfile, loadProfiles } = useProfileStore();
@@ -55,6 +63,10 @@ export function AppLayout({ children }: AppLayoutProps) {
   useEffect(() => {
     initializeTheme();
   }, [initializeTheme]);
+
+  useEffect(() => {
+    localStorage.setItem(SIDEBAR_KEY, collapsed ? "1" : "0");
+  }, [collapsed]);
 
   useEffect(() => {
     loadProfiles();
@@ -137,7 +149,9 @@ export function AppLayout({ children }: AppLayoutProps) {
         role={mobileMenuOpen ? "dialog" : undefined}
         aria-modal={mobileMenuOpen ? true : undefined}
         aria-label={mobileMenuOpen ? "Mobile navigation menu" : "Main Navigation"}
-        className={`fixed md:relative inset-y-0 left-0 z-40 md:z-20 h-full w-64 md:w-60 lg:w-64 shrink-0 glass-panel border-r border-glass-border flex flex-col p-3.5 transition-transform duration-300 ease-in-out ${
+        className={`fixed md:relative inset-y-0 left-0 z-40 md:z-20 h-full w-64 shrink-0 glass-panel border-r border-glass-border flex flex-col p-3.5 transition-[transform,width] duration-300 ease-in-out ${
+          collapsed ? "md:w-[4.5rem] md:px-2" : "md:w-60 lg:w-64"
+        } ${
           mobileMenuOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
         }`}
       >
@@ -145,17 +159,18 @@ export function AppLayout({ children }: AppLayoutProps) {
             instead of pushing the profile switcher off-screen. */}
         <div className="flex-1 min-h-0 overflow-y-auto space-y-4">
           {/* Brand Logo */}
-          <div className="flex items-center justify-between px-2 pt-1 pb-1">
+          <div className={`flex items-center justify-between px-2 pt-1 pb-1 ${collapsed ? "md:justify-center md:px-0" : ""}`}>
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 bg-primary-container/40 text-luminous-highlight border border-glass-border flex items-center justify-center shadow-[0_0_12px_rgba(var(--accent-rgb),0.2)]">
+              <div className="w-8 h-8 shrink-0 bg-primary-container/40 text-luminous-highlight border border-glass-border flex items-center justify-center shadow-[0_0_12px_rgba(var(--accent-rgb),0.2)]">
                 <Sparkles className="w-4 h-4" />
               </div>
-              <div>
-                <span className="font-editorial text-2xl tracking-tight text-on-surface block leading-none">
-                  Atlas
-                </span>
-                <span className="atlas-label mt-1 block">AI Learning Platform</span>
-              </div>
+              <span
+                className={`font-editorial text-2xl tracking-tight text-on-surface leading-none ${
+                  collapsed ? "md:hidden" : ""
+                }`}
+              >
+                Atlas
+              </span>
             </div>
             {/* Close button on mobile */}
             <button
@@ -170,13 +185,23 @@ export function AppLayout({ children }: AppLayoutProps) {
           {/* Quick Search Trigger */}
           <button
             onClick={() => setSearchOpen(true)}
-            className="atlas-hover hidden md:flex w-full items-center justify-between px-3 py-2.5 bg-surface-container/40 border border-glass-border text-on-surface-variant group"
+            aria-label="Search"
+            title={collapsed ? "Search" : undefined}
+            className={`atlas-hover hidden md:flex w-full items-center py-2.5 bg-surface-container/40 border border-glass-border text-on-surface-variant group ${
+              collapsed ? "md:justify-center md:px-0" : "justify-between px-3"
+            }`}
           >
-            <div className="flex items-center gap-2">
+            <span className="flex items-center gap-2">
               <Search className="w-3.5 h-3.5 group-hover:text-luminous-highlight transition-colors" />
-              <span className="font-mono text-[11px] uppercase tracking-[0.14em]">Search</span>
-            </div>
-            <kbd className="text-[10px] px-1.5 py-0.5 rounded bg-surface-container-highest/60 border border-glass-border font-mono text-on-surface-variant">
+              <span className={`font-mono text-[11px] uppercase tracking-[0.14em] ${collapsed ? "md:hidden" : ""}`}>
+                Search
+              </span>
+            </span>
+            <kbd
+              className={`text-[10px] px-1.5 py-0.5 bg-surface-container-highest/60 border border-glass-border font-mono text-on-surface-variant ${
+                collapsed ? "md:hidden" : ""
+              }`}
+            >
               ⌘K
             </kbd>
           </button>
@@ -192,54 +217,40 @@ export function AppLayout({ children }: AppLayoutProps) {
                   onClick={() => setMobileMenuOpen(false)}
                   // Selection and hover both come from .atlas-nav-item, keyed off
                   // the aria-current NavLink already sets.
-                  className="atlas-nav-item group flex items-center gap-3 px-3 py-2.5 font-mono text-[11px] uppercase tracking-[0.16em] text-on-surface-variant"
+                  title={collapsed ? item.label : undefined}
+                  className={`atlas-nav-item group flex items-center gap-3 px-3 py-2.5 font-mono text-[11px] uppercase tracking-[0.16em] text-on-surface-variant ${
+                    collapsed ? "md:justify-center md:gap-0 md:px-0" : ""
+                  }`}
                 >
                   <Icon className="w-4 h-4 shrink-0" />
-                  <span>{item.label}</span>
+                  <span className={collapsed ? "md:hidden" : ""}>{item.label}</span>
                 </NavLink>
               );
             })}
           </nav>
         </div>
 
-        {/* Footer / Profile Switcher.
-            The badge and the <select> both rendered the profile name, so it
-            appeared twice side by side. The select is now an invisible overlay
-            covering the whole row: one visible label, still keyboard-operable. */}
-        <div className="shrink-0 pt-3 mt-3 border-t border-glass-border">
-          <div className="atlas-hover relative flex items-center gap-2.5 px-3 py-2.5 bg-surface-container/30 border border-glass-border focus-within:border-primary">
-            <div className="w-6 h-6 bg-primary-container/40 text-primary border border-glass-border flex items-center justify-center shrink-0">
-              <User className="w-3 h-3" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-xs font-medium text-on-surface truncate">
-                {activeProfile ? activeProfile.name : "Learner"}
-              </p>
-              <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-on-surface-variant truncate">
-                {activeProfile ? activeProfile.profile_type : "No Profile"}
-              </p>
-            </div>
-            {profiles.length > 1 && (
-              <>
-                <ChevronsUpDown
-                  className="w-3.5 h-3.5 text-on-surface-variant shrink-0"
-                  aria-hidden="true"
-                />
-                <select
-                  value={activeProfileId || ""}
-                  onChange={(e) => setActiveProfile(e.target.value)}
-                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                  aria-label="Switch profile"
-                >
-                  {profiles.map((p) => (
-                    <option key={p.id} value={p.id} className="bg-surface text-on-surface">
-                      {p.name} — {p.profile_type}
-                    </option>
-                  ))}
-                </select>
-              </>
+        <div className="shrink-0 pt-3 mt-3 border-t border-glass-border space-y-2">
+          <ProfileMenu collapsed={collapsed} />
+
+          {/* Desktop only: the mobile rail is a drawer that closes outright. */}
+          <button
+            type="button"
+            onClick={() => setCollapsed((v) => !v)}
+            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            aria-pressed={collapsed}
+            title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            className={`atlas-hover hidden md:flex w-full items-center gap-3 px-3 py-2 border border-transparent font-mono text-[10px] uppercase tracking-[0.16em] text-on-surface-variant ${
+              collapsed ? "md:justify-center md:gap-0 md:px-0" : ""
+            }`}
+          >
+            {collapsed ? (
+              <PanelLeftOpen className="w-4 h-4 shrink-0" aria-hidden="true" />
+            ) : (
+              <PanelLeftClose className="w-4 h-4 shrink-0" aria-hidden="true" />
             )}
-          </div>
+            <span className={collapsed ? "md:hidden" : ""}>Collapse</span>
+          </button>
         </div>
       </aside>
 
