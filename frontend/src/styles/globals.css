@@ -79,13 +79,12 @@ html {
 }
 
 /* Surfaces.
-   Flat rectangles with a hairline border, matching the landing page. The
-   sidebar keeps a backdrop blur because it is structural chrome sitting over
-   a moving background and needs to separate from it; content cards do not. */
+   Flat, opaque rectangles with a hairline border. Nothing here is translucent:
+   letting the particle field read through every panel made surfaces shimmer
+   and no two cards look alike. Opaque also means no backdrop-filter, which
+   would otherwise cost a compositor layer per surface for no visible gain. */
 .glass-panel {
   background-color: var(--color-glass-surface);
-  backdrop-filter: blur(20px) saturate(140%);
-  -webkit-backdrop-filter: blur(20px) saturate(140%);
   border: 1px solid var(--color-glass-border);
   border-radius: 0;
   box-shadow: none;
@@ -93,15 +92,13 @@ html {
 
 .glass-panel-deep {
   background-color: var(--color-glass-surface-deep);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
   border: 1px solid var(--color-glass-border);
   border-radius: 0;
   box-shadow: none;
 }
 
 .glass-card {
-  background-color: color-mix(in srgb, var(--color-on-surface) 3%, transparent);
+  background-color: var(--color-glass-surface);
   border: 1px solid var(--color-glass-border);
   border-radius: 0;
   box-shadow: none;
@@ -339,6 +336,41 @@ html {
    position: sticky and confuses nested scroll regions. */
 .page-enter > .page-no-stagger > * {
   animation: none;
+}
+
+/* Fill the viewport rather than stopping halfway down with bare background
+   below. The page root becomes a column and its last block takes up the
+   slack, so a sparse page still reads as a full, uniform surface. */
+.page-enter > *:not(.page-own-layout) {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.page-enter > *:not(.page-own-layout) > *:last-child {
+  flex: 1 1 auto;
+}
+
+/* A page that already declares its own flex direction gets the sizing only --
+   overriding the direction would rotate its layout. */
+.page-enter > .page-own-layout {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+/* Where the trailing block is a <section> wrapper (a heading plus a card), the
+   section stretches but the card inside it does not, leaving a hole under a
+   short empty state. Scoped to `section` on purpose: the grid and panel
+   variants already stretch correctly, and forcing a column on those would
+   disturb layouts that are fine. */
+.page-enter > *:not(.page-own-layout) > section:last-child {
+  display: flex;
+  flex-direction: column;
+}
+
+.page-enter > *:not(.page-own-layout) > section:last-child > *:last-child {
+  flex: 1 1 auto;
 }
 
 @media (prefers-reduced-motion: reduce) {

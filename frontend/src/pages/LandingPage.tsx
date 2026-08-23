@@ -90,7 +90,7 @@ export function LandingPage() {
               style={{ "--d": "0.3s" } as React.CSSProperties}
             >
               Your personal AI{" "}
-              <em className="font-serif not-italic text-[#EDEDED] italic">learning</em> platform —
+              <span className="font-medium text-[#EDEDED]">learning</span> platform —
               private, local, and built around what you actually study.
             </p>
           </div>

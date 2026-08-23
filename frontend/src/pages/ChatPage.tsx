@@ -179,7 +179,7 @@ export function ChatPage() {
   ];
 
   return (
-    <div className="flex-1 min-h-0 flex glass-panel rounded-2xl border border-glass-border overflow-hidden shadow-[0_4px_30px_rgba(0,0,0,0.1)]">
+    <div className="page-own-layout flex-1 min-h-0 flex glass-panel border border-glass-border overflow-hidden">
       {/* Session Drawer (Desktop sidebar + Mobile overlay) */}
       <div
         className={`w-72 glass-panel-deep border-r border-glass-border flex flex-col shrink-0 transition-transform duration-300 z-20 ${

@@ -22,9 +22,9 @@
   --color-luminous-highlight: #B31229;
   /* Accent as an RGB triplet so glows can be written rgba(var(--accent-rgb), a). */
   --accent-rgb: 200, 30, 55;
-  --color-glass-border: rgba(0, 0, 0, 0.08);
-  --color-glass-surface: rgba(255, 255, 255, 0.72);
-  --color-glass-surface-deep: rgba(244, 243, 246, 0.85);
+  --color-glass-border: rgba(0, 0, 0, 0.12);
+  --color-glass-surface: #ffffff;
+  --color-glass-surface-deep: #f4f3f6;
 
   --color-border: #d8d7db;
   --color-text: #191c1d;
@@ -74,9 +74,9 @@
   --color-tertiary-container: #4b2f22;
   --color-luminous-highlight: #FF4D5E;
   --accent-rgb: 255, 77, 94;
-  --color-glass-border: rgba(255, 255, 255, 0.08);
-  --color-glass-surface: rgba(32, 31, 32, 0.45);
-  --color-glass-surface-deep: rgba(28, 27, 28, 0.65);
+  --color-glass-border: rgba(255, 255, 255, 0.12);
+  --color-glass-surface: #1b1b1d;
+  --color-glass-surface-deep: #161617;
 
   --color-border: rgba(255, 255, 255, 0.08);
   --color-text: #e5e2e3;

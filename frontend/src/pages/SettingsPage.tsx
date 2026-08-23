@@ -187,7 +187,7 @@ export function SettingsPage() {
   );
 
   return (
-    <div className="w-full min-w-0 max-w-4xl mx-auto space-y-6">
+    <div className="w-full min-w-0 space-y-6">
       {/* Header */}
       <div>
         <div className="flex items-center gap-2">

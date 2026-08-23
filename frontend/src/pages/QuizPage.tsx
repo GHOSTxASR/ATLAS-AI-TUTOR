@@ -148,11 +148,11 @@ export function QuizPage() {
   }
 
   if (historyError && viewState === "idle") {
-    return <div className="p-4 sm:p-6 lg:p-8 max-w-5xl mx-auto"><ErrorState message={historyError} onRetry={loadQuizData} /></div>;
+    return <div className="w-full min-w-0"><ErrorState message={historyError} onRetry={loadQuizData} /></div>;
   }
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 max-w-5xl mx-auto space-y-6">
+    <div className="w-full min-w-0 space-y-6">
       {actionError && <ErrorState message={actionError} actionLabel="Dismiss" onRetry={() => setActionError(null)} />}
       {/* Header */}
       <div>

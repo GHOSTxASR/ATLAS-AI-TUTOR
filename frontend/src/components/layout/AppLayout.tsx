@@ -253,7 +253,7 @@ export function AppLayout({ children }: AppLayoutProps) {
           The only scrolling region, so the nav rail stays put. The inner
           wrapper carries the max-width so the scrollbar sits at the edge. */}
       <main className="flex-1 min-w-0 relative z-10 overflow-y-auto overflow-x-hidden">
-        <div className="mx-auto w-full min-w-0 max-w-7xl min-h-full flex flex-col p-4 sm:p-6 lg:p-8">
+        <div className="w-full min-w-0 min-h-full flex flex-col p-4 sm:p-6 lg:p-8">
           <PageTransition>{children}</PageTransition>
         </div>
       </main>
