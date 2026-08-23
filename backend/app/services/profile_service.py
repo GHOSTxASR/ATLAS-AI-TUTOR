@@ -24,7 +24,7 @@ from app.db.models import (
     RoadmapNode,
 )
 from app.db.repositories.profile_repo import ProfileRepository
-from app.exceptions import LearningOSError
+from app.exceptions import AtlasError
 from app.schemas.profile import ProfileCreate, ProfileUpdate
 
 
@@ -39,7 +39,7 @@ class ProfileService:
     async def get_profile(self, profile_id: str) -> Profile:
         profile = await self.repo.get_by_id(profile_id)
         if not profile:
-            raise LearningOSError(status_code=404, code="NOT_FOUND", message="Profile not found")
+            raise AtlasError(status_code=404, code="NOT_FOUND", message="Profile not found")
         return profile
 
     async def create_profile(self, data: ProfileCreate) -> Profile:
@@ -55,7 +55,7 @@ class ProfileService:
     async def delete_profile(self, profile_id: str) -> None:
         deleted = await self.repo.delete(profile_id)
         if not deleted:
-            raise LearningOSError(status_code=404, code="NOT_FOUND", message="Profile not found")
+            raise AtlasError(status_code=404, code="NOT_FOUND", message="Profile not found")
         self._cleanup_profile_directories(profile_id)
         # Drop all profile vector collections from ChromaDB
         from app.rag.vector_store import VectorStore
@@ -260,7 +260,7 @@ class ProfileService:
         with zipfile.ZipFile(buf, "r") as zf:
             members = zf.namelist()
             if "profile.json" not in members:
-                raise LearningOSError(status_code=422, code="INVALID_ZIP", message="ZIP missing profile.json")
+                raise AtlasError(status_code=422, code="INVALID_ZIP", message="ZIP missing profile.json")
 
             # Validate archive paths before creating a profile or writing files.
             archive_root = Path("profile").resolve()
@@ -269,7 +269,7 @@ class ProfileService:
                     continue
                 relative_path = member[len("files/") :]
                 if not (archive_root / relative_path).resolve().is_relative_to(archive_root):
-                    raise LearningOSError(
+                    raise AtlasError(
                         status_code=422,
                         code="INVALID_ZIP",
                         message="ZIP contains a file outside the profile directory",
@@ -289,7 +289,7 @@ class ProfileService:
                     rel_path = member[len("files/") :]
                     out_path = (p_dir / rel_path).resolve()
                     if not out_path.is_relative_to(p_dir.resolve()):
-                        raise LearningOSError(
+                        raise AtlasError(
                             status_code=422,
                             code="INVALID_ZIP",
                             message="ZIP contains a file outside the profile directory",

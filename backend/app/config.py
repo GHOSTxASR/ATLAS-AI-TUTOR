@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import logging
 import os
 import tomllib
 from dataclasses import dataclass
@@ -11,7 +12,17 @@ from typing import Any
 from app.utils.env_utils import load_dotenv_file
 
 
-APP_NAME = "LearningOS"
+logger = logging.getLogger(__name__)
+
+APP_NAME = "Atlas"
+APP_TAGLINE = "Personal AI learning platform"
+
+# Configuration moved from the LEARNINGOS_ prefix when the project was renamed.
+# The old names are still honoured so an existing .env keeps working.
+ENV_PREFIX = "ATLAS_"
+LEGACY_ENV_PREFIX = "LEARNINGOS_"
+
+_legacy_env_warned: set[str] = set()
 DEFAULT_VERSION = "0.1.0"
 
 
@@ -80,7 +91,26 @@ def project_root() -> Path:
 
 
 def default_data_dir() -> Path:
-    return Path.home() / ".learningos"
+    """Where profiles, documents, vectors and the keystore live.
+
+    New installs use ``~/.atlas``. An existing ``~/.learningos`` from before
+    the rename is kept in place and used as-is: moving it would orphan the
+    encrypted keystore along with every profile and document.
+    """
+    current = Path.home() / ".atlas"
+    legacy = Path.home() / ".learningos"
+    if not current.exists() and legacy.exists():
+        return legacy
+    return current
+
+
+def database_file(sqlite_dir: Path) -> Path:
+    """Database path, preferring the current name but honouring the old one."""
+    current = sqlite_dir / "atlas.db"
+    legacy = sqlite_dir / "learningos.db"
+    if not current.exists() and legacy.exists():
+        return legacy
+    return current
 
 
 def _read_toml(path: Path) -> dict[str, Any]:
@@ -95,8 +125,22 @@ def _setting(raw: dict[str, Any], section: str, key: str, default: Any) -> Any:
 
 
 def _env(name: str, default: Any) -> Any:
+    """Read a setting, accepting the pre-rename LEARNINGOS_ name as a fallback."""
     value = os.getenv(name)
+    if value is None or value == "":
+        legacy = name.replace(ENV_PREFIX, LEGACY_ENV_PREFIX, 1)
+        legacy_value = os.getenv(legacy)
+        if legacy_value:
+            if legacy not in _legacy_env_warned:
+                _legacy_env_warned.add(legacy)
+                logger.info("Using deprecated %s; rename it to %s.", legacy, name)
+            value = legacy_value
     return default if value is None or value == "" else value
+
+
+def _env_data_dir() -> str:
+    """ATLAS_DATA_DIR, or the pre-rename ATLAS_DATA_DIR."""
+    return os.getenv("ATLAS_DATA_DIR") or os.getenv("ATLAS_DATA_DIR") or ""
 
 
 def _int_env(name: str, default: int) -> int:
@@ -110,7 +154,7 @@ def _float_env(name: str, default: float) -> float:
 
 
 def build_paths(app_settings: AppSettings) -> PathSettings:
-    configured = os.getenv("LEARNINGOS_DATA_DIR") or app_settings.data_dir
+    configured = _env_data_dir() or app_settings.data_dir
     data_dir = Path(configured).expanduser() if configured else default_data_dir()
     data_dir = data_dir.resolve()
     return PathSettings(
@@ -130,7 +174,7 @@ def build_paths(app_settings: AppSettings) -> PathSettings:
 def load_settings(config_path: Path | None = None) -> Settings:
     load_dotenv_file(project_root() / ".env")
 
-    env_data_dir = os.getenv("LEARNINGOS_DATA_DIR", "")
+    env_data_dir = _env_data_dir()
     bootstrap_data_dir = Path(env_data_dir).expanduser() if env_data_dir else None
     default_settings_file = (
         bootstrap_data_dir / "config" / "settings.toml"
@@ -140,41 +184,43 @@ def load_settings(config_path: Path | None = None) -> Settings:
     raw = _read_toml(config_path or default_settings_file)
 
     app = AppSettings(
-        name=str(_setting(raw, "app", "name", APP_NAME)),
+        # Not read from settings.toml: a file written before the rename
+        # would keep reporting the old product name.
+        name=APP_NAME,
         version=str(_setting(raw, "app", "version", DEFAULT_VERSION)),
-        environment=str(_env("LEARNINGOS_ENV", _setting(raw, "app", "environment", "development"))),
-        data_dir=str(_env("LEARNINGOS_DATA_DIR", _setting(raw, "app", "data_dir", ""))),
+        environment=str(_env("ATLAS_ENV", _setting(raw, "app", "environment", "development"))),
+        data_dir=str(_env("ATLAS_DATA_DIR", _setting(raw, "app", "data_dir", ""))),
     )
     server = ServerSettings(
-        host=str(_env("LEARNINGOS_HOST", _setting(raw, "server", "host", "127.0.0.1"))),
-        port=_int_env("LEARNINGOS_PORT", int(_setting(raw, "server", "port", 8000))),
-        log_level=str(_env("LEARNINGOS_LOG_LEVEL", _setting(raw, "server", "log_level", "info"))),
+        host=str(_env("ATLAS_HOST", _setting(raw, "server", "host", "127.0.0.1"))),
+        port=_int_env("ATLAS_PORT", int(_setting(raw, "server", "port", 8000))),
+        log_level=str(_env("ATLAS_LOG_LEVEL", _setting(raw, "server", "log_level", "info"))),
     )
     model = ModelSettings(
-        provider=str(_env("LEARNINGOS_MODEL_PROVIDER", _setting(raw, "model", "provider", "openai"))),
-        chat_model=str(_env("LEARNINGOS_CHAT_MODEL", _setting(raw, "model", "chat_model", "gpt-4o"))),
+        provider=str(_env("ATLAS_MODEL_PROVIDER", _setting(raw, "model", "provider", "openai"))),
+        chat_model=str(_env("ATLAS_CHAT_MODEL", _setting(raw, "model", "chat_model", "gpt-4o"))),
         embedding_model=str(
-            _env("LEARNINGOS_EMBEDDING_MODEL", _setting(raw, "model", "embedding_model", "text-embedding-3-small"))
+            _env("ATLAS_EMBEDDING_MODEL", _setting(raw, "model", "embedding_model", "text-embedding-3-small"))
         ),
-        temperature=_float_env("LEARNINGOS_TEMPERATURE", float(_setting(raw, "model", "temperature", 0.7))),
-        max_tokens=_int_env("LEARNINGOS_MAX_TOKENS", int(_setting(raw, "model", "max_tokens", 4096))),
+        temperature=_float_env("ATLAS_TEMPERATURE", float(_setting(raw, "model", "temperature", 0.7))),
+        max_tokens=_int_env("ATLAS_MAX_TOKENS", int(_setting(raw, "model", "max_tokens", 4096))),
         context_window=_int_env(
-            "LEARNINGOS_CONTEXT_WINDOW",
+            "ATLAS_CONTEXT_WINDOW",
             int(_setting(raw, "model", "context_window", 128000)),
         ),
         embedding_backend=str(
-            _env("LEARNINGOS_EMBEDDING_BACKEND", _setting(raw, "model", "embedding_backend", "auto"))
+            _env("ATLAS_EMBEDDING_BACKEND", _setting(raw, "model", "embedding_backend", "auto"))
         ).strip().lower(),
     )
     ingestion = IngestionSettings(
         max_file_size_mb=_int_env(
-            "LEARNINGOS_MAX_FILE_SIZE_MB", int(_setting(raw, "ingestion", "max_file_size_mb", 50))
+            "ATLAS_MAX_FILE_SIZE_MB", int(_setting(raw, "ingestion", "max_file_size_mb", 50))
         ),
         ocr_language=str(
-            _env("LEARNINGOS_OCR_LANGUAGE", _setting(raw, "ingestion", "ocr_language", "eng"))
+            _env("ATLAS_OCR_LANGUAGE", _setting(raw, "ingestion", "ocr_language", "eng"))
         ),
         tesseract_path=str(
-            _env("LEARNINGOS_TESSERACT_PATH", _setting(raw, "ingestion", "tesseract_path", ""))
+            _env("ATLAS_TESSERACT_PATH", _setting(raw, "ingestion", "tesseract_path", ""))
         ),
     )
     return Settings(app=app, server=server, model=model, paths=build_paths(app), ingestion=ingestion)
@@ -229,7 +275,7 @@ def ensure_data_directories(settings: Settings | None = None) -> None:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="LearningOS configuration utilities")
+    parser = argparse.ArgumentParser(description="Atlas configuration utilities")
     parser.add_argument("--init-data", action="store_true", help="Create local data directories and settings.toml")
     args = parser.parse_args()
     if args.init_data:

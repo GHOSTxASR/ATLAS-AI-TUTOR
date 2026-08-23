@@ -1,4 +1,4 @@
-# LearningOS PowerShell Server Launcher
+# Atlas PowerShell Server Launcher
 $ErrorActionPreference = "Continue"
 
 $Root = Split-Path -Parent $MyInvocation.MyCommand.Path
@@ -16,11 +16,11 @@ if (Test-Path $EnvFile) {
     }
 }
 
-$Port = if ($env:LEARNINGOS_PORT) { $env:LEARNINGOS_PORT } else { "8000" }
-$HostName = if ($env:LEARNINGOS_HOST) { $env:LEARNINGOS_HOST } else { "127.0.0.1" }
+$Port = if ($env:ATLAS_PORT) { $env:ATLAS_PORT } else { "8000" }
+$HostName = if ($env:ATLAS_HOST) { $env:ATLAS_HOST } else { "127.0.0.1" }
 
 Write-Host "===================================================" -ForegroundColor Cyan
-Write-Host "             Starting LearningOS Server            " -ForegroundColor Cyan
+Write-Host "             Starting Atlas Server            " -ForegroundColor Cyan
 Write-Host "===================================================" -ForegroundColor Cyan
 
 if (-not (Test-Path "backend\.venv")) {
@@ -44,9 +44,9 @@ if ($existing) {
 }
 
 $env:PYTHONPATH = "$Root\backend"
-$env:LEARNINGOS_ENV = "production"
-$env:LEARNINGOS_PORT = $Port
-$env:LEARNINGOS_HOST = $HostName
+$env:ATLAS_ENV = "production"
+$env:ATLAS_PORT = $Port
+$env:ATLAS_HOST = $HostName
 
 Write-Host "Launching unified server on http://$HostName`:$Port..." -ForegroundColor Green
 
@@ -72,7 +72,7 @@ for ($i = 0; $i -lt 30; $i++) {
 }
 
 if ($ready) {
-    Write-Host "LearningOS is healthy! Opening browser..." -ForegroundColor Green
+    Write-Host "Atlas is healthy! Opening browser..." -ForegroundColor Green
     Start-Process "http://$HostName`:$Port"
     Write-Host ""
     Write-Host "Running at http://$HostName`:$Port. Run .\stop.bat to shut down." -ForegroundColor Cyan

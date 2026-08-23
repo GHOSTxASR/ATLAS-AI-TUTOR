@@ -2,7 +2,7 @@ from fastapi.testclient import TestClient
 
 
 def test_api_startup_health_and_profile_crud(tmp_path, monkeypatch):
-    monkeypatch.setenv("LEARNINGOS_DATA_DIR", str(tmp_path / "learningos-data"))
+    monkeypatch.setenv("ATLAS_DATA_DIR", str(tmp_path / "atlas-data"))
 
     from app.config import get_settings
     from app.main import create_app

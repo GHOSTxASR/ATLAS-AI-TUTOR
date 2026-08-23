@@ -4,7 +4,7 @@ import os
 from typing import Any
 
 from app.config import Settings, project_root, get_settings
-from app.exceptions import LearningOSError
+from app.exceptions import AtlasError
 from app.models.model_catalog import FALLBACK_MODELS, get_models, indexed_embedding_models
 from app.models.provider_factory import get_all_providers, get_model_client
 from app.models.resilience import provider_error_from
@@ -140,7 +140,7 @@ class SettingsService:
         all_providers = get_all_providers()
         provider_info = next((p for p in all_providers if p["id"] == provider), None)
         if not provider_info:
-            raise LearningOSError(
+            raise AtlasError(
                 status_code=422,
                 code="INVALID_PROVIDER",
                 message=f"Unknown provider: {provider}",
@@ -156,17 +156,17 @@ class SettingsService:
             self.keystore.set(provider, api_key)
             os.environ[env_key] = api_key
 
-        self._persist_env_choice("LEARNINGOS_MODEL_PROVIDER", provider)
-        os.environ["LEARNINGOS_MODEL_PROVIDER"] = provider
+        self._persist_env_choice("ATLAS_MODEL_PROVIDER", provider)
+        os.environ["ATLAS_MODEL_PROVIDER"] = provider
 
-        self._persist_env_choice("LEARNINGOS_CHAT_MODEL", model)
-        os.environ["LEARNINGOS_CHAT_MODEL"] = model
+        self._persist_env_choice("ATLAS_CHAT_MODEL", model)
+        os.environ["ATLAS_CHAT_MODEL"] = model
 
         # Previously read from config but never writable from the UI.
         embedding_model = (embedding_model or "").strip()
         if embedding_model:
-            self._persist_env_choice("LEARNINGOS_EMBEDDING_MODEL", embedding_model)
-            os.environ["LEARNINGOS_EMBEDDING_MODEL"] = embedding_model
+            self._persist_env_choice("ATLAS_EMBEDDING_MODEL", embedding_model)
+            os.environ["ATLAS_EMBEDDING_MODEL"] = embedding_model
 
         # Clear cache again after env vars are updated so next get_settings()
         # picks up the new environment values
@@ -185,7 +185,7 @@ class SettingsService:
         all_providers = get_all_providers()
         provider_info = next((p for p in all_providers if p["id"] == provider), None)
         if not provider_info:
-            raise LearningOSError(
+            raise AtlasError(
                 status_code=422,
                 code="INVALID_PROVIDER",
                 message=f"Unknown provider: {provider}",
@@ -205,6 +205,7 @@ class SettingsService:
         env_content = env_path.read_text(encoding="utf-8") if env_path.exists() else ""
         lines = env_content.splitlines()
 
+        legacy_key = key.replace("ATLAS_", "LEARNINGOS_", 1)
         found = False
         new_lines = []
         for line in lines:
@@ -212,6 +213,9 @@ class SettingsService:
             if stripped.startswith(f"{key}=") or stripped.startswith(f"# {key}="):
                 new_lines.append(f"{key}={value}")
                 found = True
+            elif legacy_key != key and stripped.startswith(f"{legacy_key}="):
+                # Superseded by the renamed key; drop it so .env has one answer.
+                continue
             else:
                 new_lines.append(line)
         if not found:

@@ -1,4 +1,4 @@
-# LearningOS — Complete Implementation Specification
+# Atlas — Complete Implementation Specification
 
 > **Document Version**: 1.0.0  
 > **Status**: Implementation-Ready  
@@ -77,7 +77,7 @@
 
 ### 1.1 Concept
 
-LearningOS is a **local-first, AI-powered personal learning operating system** that runs entirely on the user's computer. It combines the conversational intelligence of a personal AI tutor with the structural depth of a knowledge management system and the pedagogical rigor of a learning platform.
+Atlas is a **local-first, AI-powered personal learning operating system** that runs entirely on the user's computer. It combines the conversational intelligence of a personal AI tutor with the structural depth of a knowledge management system and the pedagogical rigor of a learning platform.
 
 The system is designed to feel like a deeply personalized educational companion — one that knows the learner's history, adapts to their pace, remembers every concept they've studied, and orchestrates their learning journey from first contact with a subject to mastery.
 
@@ -316,7 +316,7 @@ The system is designed to feel like a deeply personalized educational companion 
 
 ### 5.1 Architectural Style
 
-LearningOS uses a **local microkernel architecture** with a **service-oriented backend** running on `localhost`. The architecture has the following tiers:
+Atlas uses a **local microkernel architecture** with a **service-oriented backend** running on `localhost`. The architecture has the following tiers:
 
 ```
 [Browser UI] ←→ [Frontend Dev Server / Static Bundle]
@@ -378,7 +378,7 @@ All services run within the backend process. No external service processes requi
 │                    USER'S MACHINE                        │
 │                                                         │
 │  ┌───────────┐    HTTP/WS     ┌─────────────────────┐  │
-│  │  Browser  │ ◄────────────► │  LearningOS Backend │  │
+│  │  Browser  │ ◄────────────► │  Atlas Backend │  │
 │  │  (React)  │                │  (FastAPI, Port 8000)│  │
 │  └───────────┘                └─────────┬───────────┘  │
 │                                         │               │
@@ -761,7 +761,7 @@ On application startup (`lifespan` context manager):
 4. Load Knowledge Graph from JSON file into NetworkX.
 5. Initialize background task scheduler.
 6. Register shutdown handlers.
-7. Log "LearningOS Backend ready" with version and port.
+7. Log "Atlas Backend ready" with version and port.
 
 ### 10.6 Middleware Stack
 
@@ -778,7 +778,7 @@ Applied in order (outermost to innermost):
 
 ### 11.1 SQLite Design Principles
 
-- Single SQLite database file per LearningOS installation.
+- Single SQLite database file per Atlas installation.
 - All tables use integer primary keys with UUID stored as TEXT for external references.
 - All timestamps stored as ISO 8601 strings in UTC.
 - Foreign key constraints enforced (`PRAGMA foreign_keys = ON`).
@@ -967,14 +967,14 @@ Full-text search (FTS5) virtual tables on: `chat_messages.content`, `memory_reco
 
 ### 12.2 Data Directory Structure
 
-All application data is stored in `~/.learningos/data/` (or `%USERPROFILE%\.learningos\data\` on Windows).
+All application data is stored in `~/.atlas/data/` (or `%USERPROFILE%\.atlas\data\` on Windows).
 
 This location is configurable in `settings.toml`.
 
 ### 12.3 Backup Strategy
 
 - SQLite database is backed up automatically every 24 hours using SQLite's online backup API.
-- Backups are stored in `~/.learningos/backups/` with rotation (keep last 7 backups).
+- Backups are stored in `~/.atlas/backups/` with rotation (keep last 7 backups).
 - ChromaDB data directory is included in backups via file copy.
 - Knowledge graph JSON is included in backups.
 - Documents directory is NOT backed up automatically (user manages their own files).
@@ -998,9 +998,9 @@ A profile with 20 documents, 1,000 chat messages, 200 memory records:
 ## 13. File System Layout
 
 ```
-~/.learningos/
+~/.atlas/
 ├── data/
-│   ├── learningos.db              # Main SQLite database
+│   ├── atlas.db              # Main SQLite database
 │   ├── vector_store/              # ChromaDB directory
 │   │   ├── chroma.sqlite3
 │   │   └── {collection_uuid}/
@@ -1018,7 +1018,7 @@ A profile with 20 documents, 1,000 chat messages, 200 memory records:
 │           └── roadmap_cache.json
 ├── backups/
 │   ├── 2026-06-13T00-00-00/
-│   │   ├── learningos.db
+│   │   ├── atlas.db
 │   │   ├── vector_store/
 │   │   └── knowledge_graph.json
 │   └── ...
@@ -1038,7 +1038,7 @@ A profile with 20 documents, 1,000 chat messages, 200 memory records:
 ## 14. Repository Structure
 
 ```
-learningos/
+atlas/
 ├── README.md
 ├── start.bat                      # Windows launcher
 ├── start.sh                       # Unix launcher
@@ -1227,7 +1227,7 @@ The above section (14) contains the complete directory tree. Key notes:
 
 ### 16.1 Profile Data Model
 
-A Profile is the top-level organizational unit. Every piece of data in LearningOS belongs to a profile. Profiles are completely isolated from each other.
+A Profile is the top-level organizational unit. Every piece of data in Atlas belongs to a profile. Profiles are completely isolated from each other.
 
 ### 16.2 Profile Attributes
 
@@ -1276,7 +1276,7 @@ Import: Reverse of above. Detects ID conflicts and resolves via re-mapping.
 
 ### 17.1 Memory Philosophy
 
-Memory is the core differentiator of LearningOS. The system must remember not just facts, but the learner's behavioral patterns, emotional relationship with topics, historical performance, and evolving understanding.
+Memory is the core differentiator of Atlas. The system must remember not just facts, but the learner's behavioral patterns, emotional relationship with topics, historical performance, and evolving understanding.
 
 ### 17.2 Memory Categories
 
@@ -1590,7 +1590,7 @@ Each OCR result includes an average confidence score. Documents with confidence 
 
 ### 23.1 RAG Overview
 
-LearningOS uses a **multi-source RAG** approach where retrieval draws from:
+Atlas uses a **multi-source RAG** approach where retrieval draws from:
 1. Document chunks (primary corpus).
 2. Memory records (personalization context).
 3. Past chat summaries (conversation history).
@@ -1718,7 +1718,7 @@ If the embedding model changes:
 
 ### 25.1 ChromaDB Embedded Mode
 
-ChromaDB runs in embedded (in-process) mode, writing to disk at `~/.learningos/data/vector_store/`. No external ChromaDB server process is needed.
+ChromaDB runs in embedded (in-process) mode, writing to disk at `~/.atlas/data/vector_store/`. No external ChromaDB server process is needed.
 
 ### 25.2 Collections Structure
 
@@ -2692,7 +2692,7 @@ The caching layer uses Python `functools.lru_cache` and `cachetools.TTLCache` fo
 ### 42.3 Log Files
 
 ```
-~/.learningos/logs/
+~/.atlas/logs/
 ├── backend.log          # All INFO+ logs, rotating 10MB, 5 files
 ├── ingestion.log        # Document processing pipeline logs
 ├── errors.log           # ERROR+ only, for quick error review
@@ -2728,7 +2728,7 @@ Every log entry includes:
 ### 43.1 Backend Error Hierarchy
 
 ```
-LearningOSError (base)
+AtlasError (base)
 ├── ValidationError     (400) — Invalid input
 ├── NotFoundError       (404) — Resource not found
 ├── ConflictError       (409) — Duplicate, state conflict
@@ -2779,7 +2779,7 @@ Since the application is local-only, the primary threats are:
 2. API keys exposed in plaintext.
 3. Accidental network exposure if binding settings are misconfigured.
 
-LearningOS is NOT designed to be multi-user or networked. Security measures reflect this scope.
+Atlas is NOT designed to be multi-user or networked. Security measures reflect this scope.
 
 ### 44.2 API Key Storage
 
@@ -2822,7 +2822,7 @@ On startup, the data directory permissions are set:
 
 ### 45.1 Data Residency
 
-All data — chats, documents, memory, knowledge graph, analytics — is stored exclusively on the user's machine. No telemetry, no analytics, no data is transmitted to LearningOS servers (there are none).
+All data — chats, documents, memory, knowledge graph, analytics — is stored exclusively on the user's machine. No telemetry, no analytics, no data is transmitted to Atlas servers (there are none).
 
 ### 45.2 AI Provider Data Policy
 
@@ -2846,7 +2846,7 @@ Deleting a profile performs:
 1. Cascade delete all SQLite rows for that profile.
 2. Delete all ChromaDB embeddings with `profile_id` filter.
 3. Remove NetworkX graph nodes with `profile_id` attribute.
-4. Delete `~/.learningos/data/profiles/{profile_id}/` directory.
+4. Delete `~/.atlas/data/profiles/{profile_id}/` directory.
 5. Write a deletion log entry (no profile content, just the ID and timestamp).
 
 ---
@@ -2966,7 +2966,7 @@ stages:
 
 **Option B: NSIS Installer**
 - Professional Windows installer.
-- Installs to `%LOCALAPPDATA%\LearningOS\`.
+- Installs to `%LOCALAPPDATA%\Atlas\`.
 - Creates Start Menu shortcut and Desktop icon.
 - Handles Tesseract dependency installation.
 - Size estimate: ~200 MB installer.
@@ -2990,7 +2990,7 @@ python -m venv .venv
 
 The `start.bat` activates this venv.
 
-**Alternative**: PyInstaller to create a single executable `learningos-backend.exe`. This eliminates Python dependency. Used for Option B installer.
+**Alternative**: PyInstaller to create a single executable `atlas-backend.exe`. This eliminates Python dependency. Used for Option B installer.
 
 ### 48.4 Node.js Dependency
 
@@ -3012,7 +3012,7 @@ For production static serving: Node.js not required (FastAPI serves the built st
 7. Build frontend: `npm run build` in `frontend/`.
 8. Run database migrations: `alembic upgrade head`.
 9. Create default `settings.toml` if not exists.
-10. Display "Setup complete. Run start.bat to launch LearningOS."
+10. Display "Setup complete. Run start.bat to launch Atlas."
 
 ### 49.2 Standard Launch (`start.bat`)
 
@@ -3040,12 +3040,12 @@ A future `update.bat` script:
 
 ```
 File: start.bat
-Location: learningos/ (root of repository)
+Location: atlas/ (root of repository)
 ```
 
 **Execution steps in order**:
 
-1. **Title**: Sets terminal window title to "LearningOS".
+1. **Title**: Sets terminal window title to "Atlas".
 
 2. **Admin check**: NOT required. All paths are user-space.
 
@@ -3056,8 +3056,8 @@ Location: learningos/ (root of repository)
 5. **Activate venv**: Call `backend\.venv\Scripts\activate.bat`.
 
 6. **Set environment variables**:
-   - `LEARNINGOS_ENV=production`
-   - `LEARNINGOS_DATA_DIR=%USERPROFILE%\.learningos`
+   - `ATLAS_ENV=production`
+   - `ATLAS_DATA_DIR=%USERPROFILE%\.atlas`
    - `PYTHONPATH=backend`
 
 7. **Start backend**: Launch `uvicorn app.main:app --host 127.0.0.1 --port 8000 --log-level warning` in a new minimized terminal window (`start /min cmd /k`).
@@ -3066,7 +3066,7 @@ Location: learningos/ (root of repository)
 
 9. **Open browser**: Execute `start http://localhost:8000` (in production mode, FastAPI serves static frontend files on same port).
 
-10. **Status message**: Print "LearningOS is running at http://localhost:8000 — Press Ctrl+C to stop."
+10. **Status message**: Print "Atlas is running at http://localhost:8000 — Press Ctrl+C to stop."
 
 11. **Wait**: Keep the main terminal window open. On Ctrl+C: send SIGTERM to backend process and exit cleanly.
 
@@ -3113,7 +3113,7 @@ Six plugin hook points are exposed (see Section 52):
 
 ### 52.1 Plugin Architecture
 
-Plugins are Python packages placed in `~/.learningos/plugins/`. On startup, the plugin loader:
+Plugins are Python packages placed in `~/.atlas/plugins/`. On startup, the plugin loader:
 1. Scans the plugins directory.
 2. For each directory with a valid `plugin.toml` manifest, attempts to import.
 3. Failed plugin imports are logged and skipped (never crash the main app).
@@ -3127,7 +3127,7 @@ name = "my-plugin"
 version = "1.0.0"
 author = "Developer Name"
 description = "What this plugin does"
-min_learningos_version = "1.0.0"
+min_atlas_version = "1.0.0"
 entry_point = "my_plugin.main:register"
 hooks = ["pre_prompt", "post_ingestion"]
 ```
@@ -3599,10 +3599,10 @@ This is the precise ordered list of implementation tasks for coding agents. Each
 
 ```toml
 [app]
-name = "LearningOS"
+name = "Atlas"
 version = "1.0.0"
 environment = "production"  # development | production
-data_dir = ""  # Empty = default (~/.learningos)
+data_dir = ""  # Empty = default (~/.atlas)
 
 [server]
 host = "127.0.0.1"
@@ -3694,6 +3694,6 @@ spaced_repetition_enabled = true
 
 ---
 
-*End of LearningOS Implementation Specification v1.0.0*
+*End of Atlas Implementation Specification v1.0.0*
 
-*This document is the single source of truth for the LearningOS system. All implementation decisions must align with this specification. Deviations must be documented as amendments with rationale.*
+*This document is the single source of truth for the Atlas system. All implementation decisions must align with this specification. Deviations must be documented as amendments with rationale.*

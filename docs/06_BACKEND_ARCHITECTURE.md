@@ -1,7 +1,7 @@
 # 06. Backend Architecture
 
 ## 1. Backend Overview
-LearningOS runs a single Python FastAPI process served by Uvicorn on `127.0.0.1:8000`. It is entirely self-contained, handling HTTP requests, WebSocket streaming, and background task scheduling within the same process.
+Atlas runs a single Python FastAPI process served by Uvicorn on `127.0.0.1:8000`. It is entirely self-contained, handling HTTP requests, WebSocket streaming, and background task scheduling within the same process.
 
 ## 2. Application Factory
 `app/main.py` uses the Application Factory pattern. It initializes the FastAPI instance, configures CORS, applies middleware, and imports all routers. It uses the `lifespan` context manager to handle startup/shutdown sequences.
@@ -97,7 +97,7 @@ Tasks registered:
 
 ## 12. Error Hierarchy
 Custom Python Exceptions mapping to HTTP codes:
-*   `LearningOSError` (Base)
+*   `AtlasError` (Base)
     *   `ValidationError` -> 422
     *   `NotFoundError` -> 404
     *   `ConflictError` -> 409
@@ -114,7 +114,7 @@ Keys include: `db_path`, `chroma_path`, `default_model`, `tesseract_path`, `log_
 *   **Path Traversal**: File upload paths are sanitized.
 
 ## 15. Logging Implementation
-Uses `loguru`. Logs are written to `~/.learningos/logs/`.
+Uses `loguru`. Logs are written to `~/.atlas/logs/`.
 Log rotation is set to 10MB or 1 week.
 Format includes timestamp, log level, module, and `request_id` for tracing errors across asynchronous boundaries.
 
@@ -174,7 +174,7 @@ loguru==0.7.2
 
 ### Required Exception Classes
 Create `app/exceptions.py` with:
-*   `LearningOSError(code: str, message: str, status_code: int, details: dict | None)`
+*   `AtlasError(code: str, message: str, status_code: int, details: dict | None)`
 *   `ValidationError`
 *   `NotFoundError`
 *   `ConflictError`

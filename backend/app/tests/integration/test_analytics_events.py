@@ -15,7 +15,7 @@ from app.tests.conftest import StubLLM
 
 
 def _make_app(tmp_path, monkeypatch):
-    monkeypatch.setenv("LEARNINGOS_DATA_DIR", str(tmp_path / "analytics-events-data"))
+    monkeypatch.setenv("ATLAS_DATA_DIR", str(tmp_path / "analytics-events-data"))
 
     from app.config import get_settings
     from app.main import create_app
@@ -41,9 +41,9 @@ def _events(profile_id: str) -> list[dict]:
     """
     import sqlite3
 
-    from app.config import get_settings
+    from app.config import database_file, get_settings
 
-    db_path = get_settings().paths.sqlite_dir / "learningos.db"
+    db_path = database_file(get_settings().paths.sqlite_dir)
     connection = sqlite3.connect(db_path)
     try:
         connection.row_factory = sqlite3.Row

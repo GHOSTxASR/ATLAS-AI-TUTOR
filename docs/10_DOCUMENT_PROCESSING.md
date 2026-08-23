@@ -10,7 +10,7 @@ Milestone 08/09 (`app/services/ingestion_service.py`, `app/pipelines/document_ex
 * Extraction (including OCR) currently runs inline on the upload request (via `asyncio.to_thread` to avoid blocking the event loop) rather than through a background queue, since there is no embedding step yet to justify one. The APScheduler-based queue arrives with the embedder in Milestone 10.
 
 ## 1. Document Processing Overview
-The Document Processing pipeline in LearningOS is responsible for taking raw user uploads and transforming them into searchable, semantic chunks stored in ChromaDB, while updating the Knowledge Graph.
+The Document Processing pipeline in Atlas is responsible for taking raw user uploads and transforming them into searchable, semantic chunks stored in ChromaDB, while updating the Knowledge Graph.
 **Five Stages**: Upload → Extract → OCR (if needed) → Chunk → Embed.
 
 ## 2. Supported File Types
@@ -22,10 +22,10 @@ Validated via MIME types upon upload:
 
 ## 3. File Upload Flow
 1.  **Endpoint**: `POST /api/v1/profiles/{pid}/documents` (multipart/form-data)
-2.  **Staging**: File is temporarily saved to `~/.learningos/temp/uploads/`.
+2.  **Staging**: File is temporarily saved to `~/.atlas/temp/uploads/`.
 3.  **Hashing**: A SHA-256 hash of the file content is computed.
 4.  **Deduplication**: If the hash exists in the `documents` table for this profile, the upload is rejected as a duplicate.
-5.  **Storage**: Moved to `~/.learningos/profiles/{pid}/documents/raw/{uuid}_{filename}`.
+5.  **Storage**: Moved to `~/.atlas/profiles/{pid}/documents/raw/{uuid}_{filename}`.
 6.  **Database**: Record created in SQLite `documents` with status `pending`.
 
 ## 4. File Type Detection
@@ -108,7 +108,7 @@ A specialized pipeline step triggered *only* when the user marks a document as a
 When a document reaches `indexed` status, it triggers the `graph_enricher_task`. This asynchronous job scans the document text to extract technical concepts and adds them to the Knowledge Graph as `concept` nodes, linked to the `document` node via `taught_in` edges.
 
 ## 17. File System Organization
-`~/.learningos/profiles/{profile_id}/documents/`
+`~/.atlas/profiles/{profile_id}/documents/`
 *   `raw/`: The original files exactly as uploaded.
 *   `extracted/`: `.txt` files containing the raw text output from the Extractor/OCR pipeline. Used for debugging and fast re-chunking without re-running OCR.
 

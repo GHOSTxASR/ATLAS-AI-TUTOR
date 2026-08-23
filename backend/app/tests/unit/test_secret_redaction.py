@@ -117,7 +117,7 @@ def test_redacting_formatter_scrubs_exception_tracebacks():
 
 async def test_test_connection_error_does_not_leak_the_key(tmp_path, monkeypatch):
     """Regression: /settings/test-connection returned str(e) straight to the UI."""
-    monkeypatch.setenv("LEARNINGOS_DATA_DIR", str(tmp_path / "redaction-data"))
+    monkeypatch.setenv("ATLAS_DATA_DIR", str(tmp_path / "redaction-data"))
 
     from app.config import get_settings
     from app.services.settings_service import SettingsService
@@ -143,7 +143,7 @@ async def test_test_connection_error_does_not_leak_the_key(tmp_path, monkeypatch
 
 
 def test_keystore_registers_keys_it_reads(tmp_path, monkeypatch):
-    monkeypatch.setenv("LEARNINGOS_DATA_DIR", str(tmp_path / "keystore-data"))
+    monkeypatch.setenv("ATLAS_DATA_DIR", str(tmp_path / "keystore-data"))
 
     from app.config import get_settings
     from app.security.keystore import KeyStore
@@ -168,7 +168,7 @@ def test_keystore_registers_keys_it_reads(tmp_path, monkeypatch):
 
 def test_keystore_files_are_not_world_readable(tmp_path, monkeypatch):
     """The Fernet key and ciphertext sit together, so file ACLs matter."""
-    monkeypatch.setenv("LEARNINGOS_DATA_DIR", str(tmp_path / "perms-data"))
+    monkeypatch.setenv("ATLAS_DATA_DIR", str(tmp_path / "perms-data"))
 
     from app.config import get_settings
     from app.security.keystore import KeyStore

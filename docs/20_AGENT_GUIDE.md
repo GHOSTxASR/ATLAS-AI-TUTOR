@@ -1,7 +1,7 @@
 # 20. Agent Guide
 
 ## 1. Project Overview
-LearningOS is a local-first AI tutoring and learning operating system. It runs on the user's machine and combines profile-specific learning history, uploaded documents, RAG, long-term learner memory, roadmaps, quizzes, analytics, and a knowledge graph.
+Atlas is a local-first AI tutoring and learning operating system. It runs on the user's machine and combines profile-specific learning history, uploaded documents, RAG, long-term learner memory, roadmaps, quizzes, analytics, and a knowledge graph.
 
 The system is not a generic chatbot. It is a persistent learning workspace where the AI tutor can:
 * Answer from uploaded documents with citations.
@@ -30,7 +30,7 @@ The repository is a monorepo with a FastAPI backend and React/Vite frontend.
 
 Required root structure:
 ```text
-learningos/
+atlas/
 ├── README.md
 ├── setup.bat
 ├── setup.sh
@@ -96,7 +96,7 @@ frontend/
 
 Local user data lives outside the repository:
 ```text
-~/.learningos/
+~/.atlas/
 ├── data/
 ├── profiles/
 ├── config/
@@ -197,7 +197,7 @@ Rules:
 * SQLite is the source of truth for structured state.
 * ChromaDB is the vector index, not the source of truth.
 * Graph JSON/NetworkX owns concept relationships.
-* Raw/extracted files live under `~/.learningos/profiles/{profile_id}/`.
+* Raw/extracted files live under `~/.atlas/profiles/{profile_id}/`.
 * `settings.toml` is runtime config.
 * `secrets.enc` stores encrypted API keys.
 
@@ -366,7 +366,7 @@ Agents must not change these without explicit user approval:
 * SQLite as structured source of truth.
 * ChromaDB as local vector store.
 * `00_IMPLEMENTATION_PLAN.md` source-of-truth status.
-* Existing user data under `~/.learningos/`.
+* Existing user data under `~/.atlas/`.
 
 Agents must never:
 * Store raw API keys in code, logs, SQLite, TOML, frontend state, or exports.

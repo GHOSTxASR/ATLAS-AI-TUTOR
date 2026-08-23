@@ -12,7 +12,7 @@ from typing import Any
 import networkx as nx
 
 from app.config import Settings, get_settings
-from app.exceptions import LearningOSError
+from app.exceptions import AtlasError
 
 logger = logging.getLogger(__name__)
 
@@ -172,7 +172,7 @@ class GraphRepository:
         """Create a directed edge between two nodes in the graph."""
         g = await self.get_graph(profile_id)
         if source not in g or target not in g:
-            raise LearningOSError(status_code=404, code="NOT_FOUND", message="Source or Target node not found in graph")
+            raise AtlasError(status_code=404, code="NOT_FOUND", message="Source or Target node not found in graph")
 
         now_str = datetime.now(timezone.utc).isoformat()
         edge_attrs: dict[str, Any] = {

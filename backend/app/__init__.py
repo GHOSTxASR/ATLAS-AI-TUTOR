@@ -1,2 +1,2 @@
-"""LearningOS backend package."""
+"""Atlas backend package."""
 

@@ -5,7 +5,7 @@ import { defineConfig, loadEnv } from "vite";
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, "..", "");
-  const backendPort = env.LEARNINGOS_PORT || process.env.LEARNINGOS_PORT || "8000";
+  const backendPort = env.ATLAS_PORT || process.env.ATLAS_PORT || "8000";
   const backendHttp = `http://127.0.0.1:${backendPort}`;
   const backendWs = `ws://127.0.0.1:${backendPort}`;
 

@@ -9,7 +9,7 @@ from app.db.repositories.graph_repo import GraphRepository
 from app.db.repositories.memory_repo import MemoryRepository
 from app.db.repositories.profile_repo import ProfileRepository
 from app.db.repositories.roadmap_repo import RoadmapRepository
-from app.exceptions import LearningOSError
+from app.exceptions import AtlasError
 from app.pipelines.chunker import DocumentChunker
 from app.rag.pipeline import RAGPipeline
 from app.schemas.context import (
@@ -56,7 +56,7 @@ class UnifiedContextService:
         """Aggregate all 5 learning pillars into a coherent, token-budgeted prompt structure."""
         profile = await self.profile_repo.get_by_id(profile_id)
         if not profile:
-            raise LearningOSError(status_code=404, code="NOT_FOUND", message="Profile not found")
+            raise AtlasError(status_code=404, code="NOT_FOUND", message="Profile not found")
 
         # 1. ROADMAP & SYLLABUS PILLAR
         roadmap_summary = RoadmapContextSummary()
@@ -182,7 +182,7 @@ class UnifiedContextService:
         #    was previously accepted and then ignored, so the prompt could grow
         #    past the model's context window and be rejected outright.
         prompt_blocks: list[str] = [
-            f"You are the LearningOS Unified AI Tutor. Personalized learner: {profile.name} (Target Track: {profile.profile_type}).",
+            f"You are the Atlas Unified AI Tutor. Personalized learner: {profile.name} (Target Track: {profile.profile_type}).",
             f"Active Learning Mode: {mode.upper()}.",
             "",
             "### 1. LEARNER MEMORY PROFILE:",

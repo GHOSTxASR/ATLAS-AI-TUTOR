@@ -1,7 +1,7 @@
 # 08. Memory System
 
 ## 1. Memory System Philosophy
-The core differentiator of LearningOS is **Persistent Intelligence**. A standard chatbot forgets the user between sessions. LearningOS "remembers" the learner. The Memory System is responsible for extracting, storing, and seamlessly injecting facts, struggles, and preferences into the AI's context window, allowing the Tutor to adapt its teaching style and reference past interactions.
+The core differentiator of Atlas is **Persistent Intelligence**. A standard chatbot forgets the user between sessions. Atlas "remembers" the learner. The Memory System is responsible for extracting, storing, and seamlessly injecting facts, struggles, and preferences into the AI's context window, allowing the Tutor to adapt its teaching style and reference past interactions.
 
 ## 2. Memory Categories
 Every memory record is classified into one of 7 categories:

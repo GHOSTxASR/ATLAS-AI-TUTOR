@@ -14,7 +14,7 @@ from app.pipelines.embedder import (
 
 
 def _embedder(monkeypatch, tmp_path, **env) -> DocumentEmbedder:
-    monkeypatch.setenv("LEARNINGOS_DATA_DIR", str(tmp_path / "embedder-data"))
+    monkeypatch.setenv("ATLAS_DATA_DIR", str(tmp_path / "embedder-data"))
     for key, value in env.items():
         monkeypatch.setenv(key, value)
 
@@ -69,9 +69,9 @@ def test_gemini_provider_gets_a_gemini_embedding_model(monkeypatch, tmp_path):
     embedder = _embedder(
         monkeypatch,
         tmp_path,
-        LEARNINGOS_EMBEDDING_BACKEND="auto",
-        LEARNINGOS_MODEL_PROVIDER="gemini",
-        LEARNINGOS_EMBEDDING_MODEL="text-embedding-3-small",
+        ATLAS_EMBEDDING_BACKEND="auto",
+        ATLAS_MODEL_PROVIDER="gemini",
+        ATLAS_EMBEDDING_MODEL="text-embedding-3-small",
     )
     assert embedder.embedding_model == "gemini-embedding-001"
 
@@ -80,9 +80,9 @@ def test_explicit_embedding_model_is_honoured(monkeypatch, tmp_path):
     embedder = _embedder(
         monkeypatch,
         tmp_path,
-        LEARNINGOS_EMBEDDING_BACKEND="auto",
-        LEARNINGOS_MODEL_PROVIDER="gemini",
-        LEARNINGOS_EMBEDDING_MODEL="gemini-embedding-2",
+        ATLAS_EMBEDDING_BACKEND="auto",
+        ATLAS_MODEL_PROVIDER="gemini",
+        ATLAS_EMBEDDING_MODEL="gemini-embedding-2",
     )
     assert embedder.embedding_model == "gemini-embedding-2"
 
@@ -92,8 +92,8 @@ def test_explicit_embedding_model_is_honoured(monkeypatch, tmp_path):
 
 def test_production_default_never_uses_hash_backend(monkeypatch, tmp_path):
     """Regression: fake vectors used to be the implicit fallback."""
-    monkeypatch.delenv("LEARNINGOS_EMBEDDING_BACKEND", raising=False)
-    embedder = _embedder(monkeypatch, tmp_path, LEARNINGOS_MODEL_PROVIDER="openai")
+    monkeypatch.delenv("ATLAS_EMBEDDING_BACKEND", raising=False)
+    embedder = _embedder(monkeypatch, tmp_path, ATLAS_MODEL_PROVIDER="openai")
     assert embedder.use_hash_backend is False
     assert embedder.embedding_model != HASH_BACKEND_MODEL
 
@@ -103,8 +103,8 @@ async def test_provider_without_embeddings_api_raises(monkeypatch, tmp_path):
     embedder = _embedder(
         monkeypatch,
         tmp_path,
-        LEARNINGOS_EMBEDDING_BACKEND="auto",
-        LEARNINGOS_MODEL_PROVIDER="anthropic",
+        ATLAS_EMBEDDING_BACKEND="auto",
+        ATLAS_MODEL_PROVIDER="anthropic",
     )
     with pytest.raises(EmbeddingUnavailableError) as excinfo:
         await embedder.generate_embeddings(["some chunk of text"])
@@ -116,8 +116,8 @@ async def test_missing_api_key_raises_instead_of_fabricating(monkeypatch, tmp_pa
     embedder = _embedder(
         monkeypatch,
         tmp_path,
-        LEARNINGOS_EMBEDDING_BACKEND="auto",
-        LEARNINGOS_MODEL_PROVIDER="openai",
+        ATLAS_EMBEDDING_BACKEND="auto",
+        ATLAS_MODEL_PROVIDER="openai",
     )
     monkeypatch.setattr(
         "app.pipelines.embedder.resolve_api_key", lambda *args, **kwargs: ""
@@ -132,8 +132,8 @@ async def test_short_provider_response_raises_rather_than_misaligning(monkeypatc
     embedder = _embedder(
         monkeypatch,
         tmp_path,
-        LEARNINGOS_EMBEDDING_BACKEND="auto",
-        LEARNINGOS_MODEL_PROVIDER="openai",
+        ATLAS_EMBEDDING_BACKEND="auto",
+        ATLAS_MODEL_PROVIDER="openai",
     )
 
     async def _short(texts):
@@ -147,7 +147,7 @@ async def test_short_provider_response_raises_rather_than_misaligning(monkeypatc
 
 
 async def test_hash_backend_is_usable_when_explicitly_selected(monkeypatch, tmp_path):
-    embedder = _embedder(monkeypatch, tmp_path, LEARNINGOS_EMBEDDING_BACKEND="hash")
+    embedder = _embedder(monkeypatch, tmp_path, ATLAS_EMBEDDING_BACKEND="hash")
     vectors = await embedder.generate_embeddings(["First sentence", "Second sentence"])
 
     assert len(vectors) == 2

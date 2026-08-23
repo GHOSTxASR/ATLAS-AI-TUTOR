@@ -23,7 +23,7 @@ def _clear_cache():
 
 @pytest.fixture
 def settings(tmp_path, monkeypatch):
-    monkeypatch.setenv("LEARNINGOS_DATA_DIR", str(tmp_path / "catalog-data"))
+    monkeypatch.setenv("ATLAS_DATA_DIR", str(tmp_path / "catalog-data"))
     from app.config import get_settings
 
     get_settings.cache_clear()

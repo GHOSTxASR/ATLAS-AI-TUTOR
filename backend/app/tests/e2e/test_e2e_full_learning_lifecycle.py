@@ -39,7 +39,7 @@ class StubTutorLLM(BaseModelClient):
 
 
 def _make_app(tmp_path, monkeypatch):
-    monkeypatch.setenv("LEARNINGOS_DATA_DIR", str(tmp_path / "learningos-e2e-data"))
+    monkeypatch.setenv("ATLAS_DATA_DIR", str(tmp_path / "atlas-e2e-data"))
 
     from app.config import get_settings
     from app.main import create_app
@@ -50,7 +50,7 @@ def _make_app(tmp_path, monkeypatch):
 
 def test_end_to_end_full_learning_lifecycle(tmp_path, monkeypatch, stub_quiz_llm, stub_notes_llm):
     """
-    End-to-End validation of the complete LearningOS learning lifecycle:
+    End-to-End validation of the complete Atlas learning lifecycle:
     1. Learner Profile Creation
     2. Syllabus Upload & Parsing
     3. Document Ingestion, Text Extraction & Vector Indexing

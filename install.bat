@@ -1,26 +1,26 @@
 @echo off
 setlocal enabledelayedexpansion
 
-title LearningOS One-Click Installer
+title Atlas One-Click Installer
 cd /d "%~dp0"
 
 echo ===================================================
-echo           LearningOS Installer (Production)
+echo           Atlas Installer (Production)
 echo ===================================================
 echo.
 
 :: 1. Check Environment File (.env)
 if not exist ".env" (
   if exist ".env.example" (
-    echo [LearningOS] Creating .env from .env.example...
+    echo [Atlas] Creating .env from .env.example...
     copy .env.example .env >nul
   ) else (
-    echo [LearningOS] Creating default .env configuration...
+    echo [Atlas] Creating default .env configuration...
     (
-      echo LEARNINGOS_ENV=production
-      echo LEARNINGOS_PORT=8000
-      echo LEARNINGOS_HOST=127.0.0.1
-      echo LEARNINGOS_DATA_DIR=data
+      echo ATLAS_ENV=production
+      echo ATLAS_PORT=8000
+      echo ATLAS_HOST=127.0.0.1
+      echo ATLAS_DATA_DIR=data
       echo AI_PROVIDER=offline
     ) > .env
   )
@@ -110,18 +110,18 @@ if not defined TESSERACT_FOUND (
 if defined TESSERACT_FOUND (
   echo   [+] Tesseract OCR detected: %TESSERACT_FOUND%
 ) else (
-  echo   [-] Tesseract OCR not found (optional for scanned images/OCR).
+  echo   [-] Tesseract OCR not found - optional, for scanned images/OCR.
 )
 
 echo.
 echo ===================================================
-echo       LearningOS Installation Successful!
+echo       Atlas Installation Successful!
 echo ===================================================
 echo.
-echo To launch LearningOS:
+echo To launch Atlas:
 echo   Double-click 'start.bat'
 echo.
-echo To stop LearningOS:
+echo To stop Atlas:
 echo   Double-click 'stop.bat'
 echo.
 echo Server will be accessible at: http://127.0.0.1:8000

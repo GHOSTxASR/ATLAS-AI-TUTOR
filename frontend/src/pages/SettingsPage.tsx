@@ -199,7 +199,7 @@ export function SettingsPage() {
           System Settings
         </h1>
         <p className="text-xs sm:text-sm text-on-surface-variant mt-1 font-sans">
-          Configure local AI model backends, API key encryptions, and Liquid Glass workspace themes.
+          Choose your AI provider, manage encrypted API keys, and set the workspace appearance.
         </p>
       </div>
 
@@ -210,7 +210,7 @@ export function SettingsPage() {
           <h2 className="font-editorial text-2xl text-on-surface">Workspace Appearance</h2>
         </div>
         <p className="text-xs text-on-surface-variant font-sans">
-          Choose your visual appearance mode for the liquid glass environment:
+          Choose how Atlas looks:
         </p>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 font-sans text-xs">
@@ -247,7 +247,7 @@ export function SettingsPage() {
           <h2 className="font-editorial text-2xl text-on-surface">AI Model Provider</h2>
         </div>
         <p className="text-xs text-on-surface-variant font-sans">
-          Select your inference provider. API keys are encrypted at rest using AES-GCM Fernet tokens.
+          Select your inference provider. API keys are encrypted at rest with Fernet (AES-128-CBC + HMAC-SHA256).
         </p>
 
         {loading ? (

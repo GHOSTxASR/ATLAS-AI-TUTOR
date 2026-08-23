@@ -1,14 +1,14 @@
 @echo off
 setlocal enabledelayedexpansion
-title LearningOS - Stopping Services
+title Atlas - Stopping Services
 cd /d "%~dp0"
 
 call scripts\load-env.bat
-if "%LEARNINGOS_PORT%"=="" set LEARNINGOS_PORT=8000
+if "%ATLAS_PORT%"=="" set ATLAS_PORT=8000
 
-echo [LearningOS] Stopping services...
+echo [Atlas] Stopping services...
 
-for %%P in (%LEARNINGOS_PORT% 5173) do (
+for %%P in (%ATLAS_PORT% 5173) do (
   for /f "tokens=5" %%A in ('netstat -ano ^| findstr ":%%P"') do (
     if not "%%A"=="0" (
       echo Killing process on port %%P, PID %%A...
@@ -17,5 +17,5 @@ for %%P in (%LEARNINGOS_PORT% 5173) do (
   )
 )
 
-echo [LearningOS] Services stopped.
+echo [Atlas] Services stopped.
 exit /b 0

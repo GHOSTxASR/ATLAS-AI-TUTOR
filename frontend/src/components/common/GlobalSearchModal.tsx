@@ -241,7 +241,7 @@ export function GlobalSearchModal({ isOpen, onClose }: GlobalSearchModalProps) {
           <div>
             {results
               ? `${results.total_results} results found`
-              : "Liquid Intelligence Omnisearch"}
+              : "Search everything in Atlas"}
           </div>
           <div className="flex gap-3">
             <span>

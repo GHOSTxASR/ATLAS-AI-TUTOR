@@ -5,7 +5,7 @@ from typing import AsyncGenerator
 from sqlalchemy import event
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker, create_async_engine
 
-from app.config import get_settings
+from app.config import database_file, get_settings
 
 _settings = get_settings()
 _engine: AsyncEngine | None = None
@@ -13,7 +13,7 @@ _session_factory = None
 
 
 def _create_engine(settings) -> AsyncEngine:
-    db_path = (settings.paths.sqlite_dir / "learningos.db").as_posix()
+    db_path = database_file(settings.paths.sqlite_dir).as_posix()
     created_engine = create_async_engine(
         f"sqlite+aiosqlite:///{db_path}",
         echo=settings.server.log_level.lower() == "debug",

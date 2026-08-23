@@ -1,7 +1,7 @@
 # 16. Testing Strategy
 
 ## 1. Purpose
-This document defines the complete testing approach for LearningOS. It turns the implementation plan into concrete test layers, fixtures, commands, quality gates, and acceptance checks.
+This document defines the complete testing approach for Atlas. It turns the implementation plan into concrete test layers, fixtures, commands, quality gates, and acceptance checks.
 
 Related documents:
 * `03_DATABASE_DESIGN.md`: schema and migration requirements.

@@ -1,8 +1,8 @@
-# LearningOS PowerShell One-Click Installer
+# Atlas PowerShell One-Click Installer
 $ErrorActionPreference = "Stop"
 
 Write-Host "===================================================" -ForegroundColor Cyan
-Write-Host "          LearningOS Installer (PowerShell)        " -ForegroundColor Cyan
+Write-Host "          Atlas Installer (PowerShell)        " -ForegroundColor Cyan
 Write-Host "===================================================" -ForegroundColor Cyan
 Write-Host ""
 
@@ -12,15 +12,15 @@ Set-Location $Root
 # 1. Check or Create .env
 if (-not (Test-Path ".env")) {
     if (Test-Path ".env.example") {
-        Write-Host "[LearningOS] Creating .env from .env.example..." -ForegroundColor Green
+        Write-Host "[Atlas] Creating .env from .env.example..." -ForegroundColor Green
         Copy-Item ".env.example" ".env"
     } else {
-        Write-Host "[LearningOS] Creating default .env configuration..." -ForegroundColor Green
+        Write-Host "[Atlas] Creating default .env configuration..." -ForegroundColor Green
         @"
-LEARNINGOS_ENV=production
-LEARNINGOS_PORT=8000
-LEARNINGOS_HOST=127.0.0.1
-LEARNINGOS_DATA_DIR=data
+ATLAS_ENV=production
+ATLAS_PORT=8000
+ATLAS_HOST=127.0.0.1
+ATLAS_DATA_DIR=data
 AI_PROVIDER=offline
 "@ | Out-File -FilePath ".env" -Encoding utf8
     }
@@ -73,7 +73,7 @@ $env:PYTHONPATH = "$Root\backend"
 
 Write-Host ""
 Write-Host "===================================================" -ForegroundColor Green
-Write-Host "      LearningOS Installation Complete!            " -ForegroundColor Green
+Write-Host "      Atlas Installation Complete!            " -ForegroundColor Green
 Write-Host "===================================================" -ForegroundColor Green
 Write-Host "To start: .\start.bat or .\start.ps1" -ForegroundColor Cyan
 Write-Host "To stop:  .\stop.bat or .\stop.ps1" -ForegroundColor Cyan

@@ -10,7 +10,7 @@ from app.config import Settings, get_settings
 from app.db.models import MemoryRecord
 from app.db.repositories.memory_repo import MemoryRepository
 from app.db.repositories.profile_repo import ProfileRepository
-from app.exceptions import LearningOSError
+from app.exceptions import AtlasError
 from app.models.abstraction import ChatMessage
 from app.models.provider_factory import get_model_client
 from app.rag.vector_store import VectorStore
@@ -33,7 +33,7 @@ class MemoryService:
     async def _require_profile(self, profile_id: str) -> None:
         profile = await self.profile_repo.get_by_id(profile_id)
         if not profile:
-            raise LearningOSError(status_code=404, code="NOT_FOUND", message="Profile not found")
+            raise AtlasError(status_code=404, code="NOT_FOUND", message="Profile not found")
 
     async def create_memory(self, profile_id: str, data: MemoryCreate) -> MemoryRecord:
         """Create a new memory record and index it into ChromaDB."""
@@ -73,7 +73,7 @@ class MemoryService:
         """Get a single memory record by ID."""
         record = await self.repo.get_by_id(memory_id)
         if not record or record.profile_id != profile_id:
-            raise LearningOSError(status_code=404, code="NOT_FOUND", message="Memory record not found")
+            raise AtlasError(status_code=404, code="NOT_FOUND", message="Memory record not found")
         return record
 
     async def list_memories(

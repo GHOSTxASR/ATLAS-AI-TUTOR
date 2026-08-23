@@ -8,7 +8,7 @@ from app.db.models import Base
 from app.db.repositories.chat_repo import ChatSessionRepository
 from app.db.repositories.profile_repo import ProfileRepository
 from app.models.abstraction import BaseModelClient, ChatMessage, ChatResponse, StreamChunk
-from app.exceptions import LearningOSError
+from app.exceptions import AtlasError
 from app.schemas.chat import TutorChatRequest
 from app.services.tutor_orchestrator import TutorOrchestrator
 
@@ -51,7 +51,7 @@ async def async_db_session():
 
 @pytest.mark.asyncio
 async def test_tutor_mode_prompt_construction(async_db_session: AsyncSession, tmp_path, monkeypatch):
-    monkeypatch.setenv("LEARNINGOS_DATA_DIR", str(tmp_path / "learningos-data"))
+    monkeypatch.setenv("ATLAS_DATA_DIR", str(tmp_path / "atlas-data"))
     from app.config import get_settings
     get_settings.cache_clear()
 
@@ -101,7 +101,7 @@ async def test_tutor_mode_prompt_construction(async_db_session: AsyncSession, tm
 
 @pytest.mark.asyncio
 async def test_tutor_orchestrator_chat_turn(async_db_session: AsyncSession, tmp_path, monkeypatch):
-    monkeypatch.setenv("LEARNINGOS_DATA_DIR", str(tmp_path / "learningos-data"))
+    monkeypatch.setenv("ATLAS_DATA_DIR", str(tmp_path / "atlas-data"))
     mock_llm = MockTutorLLM()
     monkeypatch.setattr("app.services.tutor_orchestrator.get_model_client", lambda s: mock_llm)
 
@@ -138,7 +138,7 @@ async def test_tutor_chat_rejects_session_from_another_profile(async_db_session:
 
     orchestrator = TutorOrchestrator(session=async_db_session)
 
-    with pytest.raises(LearningOSError) as error:
+    with pytest.raises(AtlasError) as error:
         await orchestrator.handle_chat_turn(
             other_profile.id,
             TutorChatRequest(session_id=session.id, content="Attempted cross-profile access"),

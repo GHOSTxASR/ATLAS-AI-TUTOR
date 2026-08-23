@@ -3,7 +3,7 @@ setlocal
 
 cd /d "%~dp0"
 
-echo [LearningOS] Updating dependencies and rebuilding...
+echo [Atlas] Updating dependencies and rebuilding...
 if exist "backend\.venv" (
   call backend\.venv\Scripts\activate.bat
   pip install -r backend\requirements.txt
@@ -16,6 +16,6 @@ if exist "frontend\package.json" (
   popd
 )
 
-echo [LearningOS] Update complete.
+echo [Atlas] Update complete.
 exit /b 0
 

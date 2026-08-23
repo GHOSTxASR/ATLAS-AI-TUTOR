@@ -55,7 +55,7 @@ Edges are directed (`source` -> `target`).
 ```
 
 ## 7. Graph Storage
-The graph is serialized to a local JSON file at `~/.learningos/data/graph/knowledge_graph.json`.
+The graph is serialized to a local JSON file at `~/.atlas/data/graph/knowledge_graph.json`.
 It uses the `NetworkX` `node_link_data()` format for easy serialization.
 **Atomic Writes**: To prevent corruption, the graph is saved to a temporary file (`graph.tmp.json`) and then atomically renamed to `knowledge_graph.json`.
 

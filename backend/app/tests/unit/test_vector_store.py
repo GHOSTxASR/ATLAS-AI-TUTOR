@@ -6,7 +6,7 @@ from app.rag.vector_store import VectorStore
 
 @pytest.mark.asyncio
 async def test_vector_store_indexing_and_query_documents(tmp_path, monkeypatch):
-    monkeypatch.setenv("LEARNINGOS_DATA_DIR", str(tmp_path / "learningos-data"))
+    monkeypatch.setenv("ATLAS_DATA_DIR", str(tmp_path / "atlas-data"))
     from app.config import get_settings
     get_settings.cache_clear()
 
@@ -43,7 +43,7 @@ async def test_vector_store_indexing_and_query_documents(tmp_path, monkeypatch):
 
 @pytest.mark.asyncio
 async def test_vector_store_metadata_filtering(tmp_path, monkeypatch):
-    monkeypatch.setenv("LEARNINGOS_DATA_DIR", str(tmp_path / "learningos-data"))
+    monkeypatch.setenv("ATLAS_DATA_DIR", str(tmp_path / "atlas-data"))
     from app.config import get_settings
     get_settings.cache_clear()
 
@@ -91,7 +91,7 @@ async def test_vector_store_metadata_filtering(tmp_path, monkeypatch):
 
 @pytest.mark.asyncio
 async def test_vector_store_memory_notes_and_multi_source(tmp_path, monkeypatch):
-    monkeypatch.setenv("LEARNINGOS_DATA_DIR", str(tmp_path / "learningos-data"))
+    monkeypatch.setenv("ATLAS_DATA_DIR", str(tmp_path / "atlas-data"))
     from app.config import get_settings
     get_settings.cache_clear()
 
@@ -139,7 +139,7 @@ async def test_vector_store_memory_notes_and_multi_source(tmp_path, monkeypatch)
 
 @pytest.mark.asyncio
 async def test_profile_isolation_and_cleanup(tmp_path, monkeypatch):
-    monkeypatch.setenv("LEARNINGOS_DATA_DIR", str(tmp_path / "learningos-data"))
+    monkeypatch.setenv("ATLAS_DATA_DIR", str(tmp_path / "atlas-data"))
     from app.config import get_settings
     get_settings.cache_clear()
 

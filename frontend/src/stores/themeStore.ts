@@ -10,7 +10,23 @@ interface ThemeState {
   initializeTheme: () => void;
 }
 
-const STORAGE_KEY = "learningos_theme";
+const STORAGE_KEY = "atlas_theme";
+const LEGACY_STORAGE_KEY = "learningos_theme";
+
+/** Reads the saved theme, moving a pre-rename value onto the new key so an
+ *  existing install does not silently revert to "system". */
+function readStoredTheme(): ThemeMode {
+  if (typeof localStorage === "undefined") return "system";
+  const current = localStorage.getItem(STORAGE_KEY) as ThemeMode | null;
+  if (current) return current;
+  const legacy = localStorage.getItem(LEGACY_STORAGE_KEY) as ThemeMode | null;
+  if (legacy) {
+    localStorage.setItem(STORAGE_KEY, legacy);
+    localStorage.removeItem(LEGACY_STORAGE_KEY);
+    return legacy;
+  }
+  return "system";
+}
 
 function getSystemTheme(): "light" | "dark" {
   if (typeof window !== "undefined" && window.matchMedia) {
@@ -32,7 +48,7 @@ function applyThemeClass(resolved: "light" | "dark") {
 }
 
 export const useThemeStore = create<ThemeState>((set, get) => ({
-  theme: (typeof localStorage !== "undefined" ? (localStorage.getItem(STORAGE_KEY) as ThemeMode) : null) || "system",
+  theme: readStoredTheme(),
   resolvedTheme: "dark",
 
   setTheme: (theme: ThemeMode) => {
@@ -51,7 +67,7 @@ export const useThemeStore = create<ThemeState>((set, get) => ({
   },
 
   initializeTheme: () => {
-    const saved = (typeof localStorage !== "undefined" ? (localStorage.getItem(STORAGE_KEY) as ThemeMode) : null) || "system";
+    const saved = readStoredTheme();
     const resolved = saved === "system" ? getSystemTheme() : saved;
     applyThemeClass(resolved);
     set({ theme: saved, resolvedTheme: resolved });

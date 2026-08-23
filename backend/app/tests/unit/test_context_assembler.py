@@ -9,7 +9,7 @@ def test_context_assembler_empty_chunks():
     assembled = assembler.assemble([])
     assert assembled.context_block == ""
     assert len(assembled.citations) == 0
-    assert "LearningOS" in assembled.system_prompt
+    assert "Atlas" in assembled.system_prompt
 
 
 def test_context_assembler_with_chunks_and_topic():

@@ -1,7 +1,7 @@
 # 01. Architecture
 
 ## 1. Architectural Overview
-LearningOS utilizes a **local microkernel architecture** with a **service-oriented backend**. It operates on a **two-process model**:
+Atlas utilizes a **local microkernel architecture** with a **service-oriented backend**. It operates on a **two-process model**:
 1.  **FastAPI Backend Process**: Handles all core logic, orchestration, database interactions, and communication with AI providers.
 2.  **Vite/React Frontend Process**: Handles the user interface, state management, and real-time updates.
 
@@ -19,7 +19,7 @@ This architecture ensures strict separation of concerns while keeping deployment
 │                    USER'S MACHINE                       │
 │                                                         │
 │  ┌───────────┐    HTTP/WS     ┌─────────────────────┐   │
-│  │  Browser  │ ◄────────────► │  LearningOS Backend │   │
+│  │  Browser  │ ◄────────────► │  Atlas Backend │   │
 │  │  (React)  │                │  (FastAPI, Port 8000)   │
 │  └───────────┘                └─────────┬───────────┘   │
 │                                         │               │

@@ -1,7 +1,7 @@
 # 18. Model Integration
 
 ## 1. Purpose
-This document defines how LearningOS integrates with chat models, embedding models, local providers, streaming APIs, fallback chains, token counting, and cost tracking.
+This document defines how Atlas integrates with chat models, embedding models, local providers, streaming APIs, fallback chains, token counting, and cost tracking.
 
 Related documents:
 * `07_RAG_ARCHITECTURE.md`: retrieval and context assembly.

@@ -15,8 +15,8 @@ from app.rag.vector_store import VectorStore
 
 @pytest.fixture
 def store(tmp_path, monkeypatch):
-    monkeypatch.setenv("LEARNINGOS_DATA_DIR", str(tmp_path / "reuse-data"))
-    monkeypatch.setenv("LEARNINGOS_EMBEDDING_BACKEND", "hash")
+    monkeypatch.setenv("ATLAS_DATA_DIR", str(tmp_path / "reuse-data"))
+    monkeypatch.setenv("ATLAS_EMBEDDING_BACKEND", "hash")
 
     from app.config import get_settings
 

@@ -7,7 +7,7 @@ from PIL import Image
 
 
 def _make_app(tmp_path, monkeypatch):
-    monkeypatch.setenv("LEARNINGOS_DATA_DIR", str(tmp_path / "learningos-data"))
+    monkeypatch.setenv("ATLAS_DATA_DIR", str(tmp_path / "atlas-data"))
 
     from app.config import get_settings
     from app.main import create_app
@@ -122,7 +122,7 @@ def test_pdf_and_docx_extraction(tmp_path, monkeypatch):
         fitz = __import__("fitz")
         pdf_doc = fitz.open()
         page = pdf_doc.new_page()
-        page.insert_text((72, 72), "Hello LearningOS PDF content for extraction testing.")
+        page.insert_text((72, 72), "Hello Atlas PDF content for extraction testing.")
         pdf_bytes = pdf_doc.tobytes()
         pdf_doc.close()
 
@@ -140,7 +140,7 @@ def test_pdf_and_docx_extraction(tmp_path, monkeypatch):
 
         docx_module = __import__("docx")
         word_doc = docx_module.Document()
-        word_doc.add_paragraph("Hello LearningOS DOCX content for extraction testing.")
+        word_doc.add_paragraph("Hello Atlas DOCX content for extraction testing.")
         buffer = io.BytesIO()
         word_doc.save(buffer)
 
@@ -231,7 +231,7 @@ def test_image_upload_extracts_text_with_ocr(tmp_path, monkeypatch):
         # The OCR text must be written to the extracted-text file on disk.
         extracted_path = (
             tmp_path
-            / "learningos-data"
+            / "atlas-data"
             / "profiles"
             / profile_id
             / "documents"
@@ -277,7 +277,7 @@ def test_upload_returns_before_extraction_runs(tmp_path, monkeypatch):
     inside the request, so a large scanned PDF held the connection open for
     minutes and timed out in the browser.
     """
-    monkeypatch.setenv("LEARNINGOS_DATA_DIR", str(tmp_path / "async-upload-data"))
+    monkeypatch.setenv("ATLAS_DATA_DIR", str(tmp_path / "async-upload-data"))
 
     from app.config import get_settings
     from app.services.ingestion_service import IngestionService

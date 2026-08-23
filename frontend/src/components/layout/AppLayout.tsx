@@ -105,7 +105,7 @@ export function AppLayout({ children }: AppLayoutProps) {
               <Sparkles className="w-4 h-4" />
             </div>
             <span className="font-editorial text-xl font-normal tracking-tight text-on-surface">
-              LearningOS
+              Atlas
             </span>
           </div>
         </div>
@@ -151,10 +151,10 @@ export function AppLayout({ children }: AppLayoutProps) {
               </div>
               <div>
                 <span className="font-editorial text-2xl tracking-tight text-on-surface block leading-none">
-                  LearningOS
+                  Atlas
                 </span>
                 <span className="text-[10px] text-on-surface-variant/80 font-medium tracking-wider uppercase block mt-0.5">
-                  Liquid Intelligence
+                  AI Learning Platform
                 </span>
               </div>
             </div>

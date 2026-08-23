@@ -7,7 +7,7 @@ from app.config import Settings
 from app.db.database import get_db
 from app.db.repositories.profile_repo import ProfileRepository
 from app.dependencies import get_settings_dependency
-from app.exceptions import LearningOSError
+from app.exceptions import AtlasError
 from app.rag.retriever import MultiSourceRetriever
 from app.schemas.search import (
     GlobalCategory,
@@ -41,7 +41,7 @@ async def semantic_search(
     profile_repo = ProfileRepository(session)
     profile = await profile_repo.get_by_id(profile_id)
     if not profile:
-        raise LearningOSError(status_code=404, code="NOT_FOUND", message="Profile not found")
+        raise AtlasError(status_code=404, code="NOT_FOUND", message="Profile not found")
 
     retriever = MultiSourceRetriever(settings=settings)
     results = await retriever.retrieve(

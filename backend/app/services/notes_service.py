@@ -11,7 +11,7 @@ from app.db.repositories.graph_repo import GraphRepository
 from app.db.repositories.notes_repo import NotesRepository
 from app.db.repositories.profile_repo import ProfileRepository
 from app.db.repositories.roadmap_repo import RoadmapRepository
-from app.exceptions import LearningOSError
+from app.exceptions import AtlasError
 from app.models.abstraction import ChatMessage
 from app.models.provider_factory import get_model_client
 from app.models.resilience import provider_error_from
@@ -60,7 +60,7 @@ class NotesService:
     async def _require_profile(self, profile_id: str) -> None:
         profile = await self.profile_repo.get_by_id(profile_id)
         if not profile:
-            raise LearningOSError(status_code=404, code="NOT_FOUND", message="Profile not found")
+            raise AtlasError(status_code=404, code="NOT_FOUND", message="Profile not found")
 
     async def generate_note(
         self, profile_id: str, request: NoteGenerateRequest
@@ -73,7 +73,7 @@ class NotesService:
         if request.roadmap_node_id:
             node = await self.roadmap_repo.get_node(request.roadmap_node_id)
             if not node or node.profile_id != profile_id:
-                raise LearningOSError(status_code=404, code="NOT_FOUND", message="Roadmap node not found")
+                raise AtlasError(status_code=404, code="NOT_FOUND", message="Roadmap node not found")
             topic = node.title
 
         # 2. Assemble 5-Pillar Unified Context
@@ -146,7 +146,7 @@ class NotesService:
             finally:
                 await client.close()
         except ValueError as e:
-            raise LearningOSError(
+            raise AtlasError(
                 status_code=503, code="PROVIDER_NOT_CONFIGURED", message=str(e)
             ) from None
         except Exception as e:
@@ -155,12 +155,12 @@ class NotesService:
             # than no note, because the learner revises from it later.
             error = provider_error_from(e)
             logger.warning("Note generation failed: %s", error.message)
-            raise LearningOSError(
+            raise AtlasError(
                 status_code=502, code="PROVIDER_ERROR", message=error.message
             ) from None
 
         if not note_content:
-            raise LearningOSError(
+            raise AtlasError(
                 status_code=502,
                 code="PROVIDER_EMPTY_RESPONSE",
                 message="The AI provider returned an empty note. Try again.",
@@ -305,7 +305,7 @@ class NotesService:
         await self._require_profile(profile_id)
         note = await self.repo.get_by_id(note_id)
         if not note or note.profile_id != profile_id:
-            raise LearningOSError(status_code=404, code="NOT_FOUND", message="Note not found")
+            raise AtlasError(status_code=404, code="NOT_FOUND", message="Note not found")
         return NoteResponse(
             id=note.id,
             profile_id=note.profile_id,
@@ -326,7 +326,7 @@ class NotesService:
         await self._require_profile(profile_id)
         note = await self.repo.get_by_id(note_id)
         if not note or note.profile_id != profile_id:
-            raise LearningOSError(status_code=404, code="NOT_FOUND", message="Note not found")
+            raise AtlasError(status_code=404, code="NOT_FOUND", message="Note not found")
 
         updated = await self.repo.update(note, **data.model_dump(exclude_unset=True))
         return NoteResponse(
@@ -347,6 +347,6 @@ class NotesService:
         await self._require_profile(profile_id)
         note = await self.repo.get_by_id(note_id)
         if not note or note.profile_id != profile_id:
-            raise LearningOSError(status_code=404, code="NOT_FOUND", message="Note not found")
+            raise AtlasError(status_code=404, code="NOT_FOUND", message="Note not found")
         await self.repo.delete(note)
         return True

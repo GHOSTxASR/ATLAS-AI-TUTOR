@@ -1,8 +1,8 @@
-# LearningOS PowerShell Stop Script
-$Port = if ($env:LEARNINGOS_PORT) { [int]$env:LEARNINGOS_PORT } else { 8000 }
+# Atlas PowerShell Stop Script
+$Port = if ($env:ATLAS_PORT) { [int]$env:ATLAS_PORT } else { 8000 }
 $DevPort = 5173
 
-Write-Host "Stopping LearningOS instances on ports $Port and $DevPort..." -ForegroundColor Yellow
+Write-Host "Stopping Atlas instances on ports $Port and $DevPort..." -ForegroundColor Yellow
 
 foreach ($p in @($Port, $DevPort)) {
     try {
@@ -20,4 +20,4 @@ foreach ($p in @($Port, $DevPort)) {
     }
 }
 
-Write-Host "LearningOS stopped." -ForegroundColor Green
+Write-Host "Atlas stopped." -ForegroundColor Green

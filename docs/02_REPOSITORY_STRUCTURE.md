@@ -1,7 +1,7 @@
 # 02. Repository Structure
 
 ## 1. Repository Overview
-LearningOS uses a monorepo structure containing two primary domains: a Python/FastAPI `backend` and a React/TypeScript/Vite `frontend`. This structure ensures tight coupling of the API contracts and simplifies deployment.
+Atlas uses a monorepo structure containing two primary domains: a Python/FastAPI `backend` and a React/TypeScript/Vite `frontend`. This structure ensures tight coupling of the API contracts and simplifies deployment.
 
 ## 2. Root Level Files
 *   `README.md`: High-level project description, features, and quickstart instructions.
@@ -13,7 +13,7 @@ LearningOS uses a monorepo structure containing two primary domains: a Python/Fa
 
 ## 3. Complete Directory Tree
 ```text
-learningos/
+atlas/
 ├── README.md
 ├── start.bat
 ├── start.sh
@@ -100,13 +100,13 @@ learningos/
 *   **React Components**: `PascalCase.tsx` (e.g., `ChatPanel.tsx`).
 *   **TypeScript Utilities/Hooks**: `camelCase.ts` (e.g., `useChat.ts`, `apiClient.ts`).
 
-## 7. Data Directory Structure (`~/.learningos/`)
+## 7. Data Directory Structure (`~/.atlas/`)
 ```text
-~/.learningos/
+~/.atlas/
 ├── data/
 │   ├── sqlite/
-│   │   ├── learningos.db
-│   │   └── learningos.db-wal
+│   │   ├── atlas.db
+│   │   └── atlas.db-wal
 │   ├── chroma/ (Vector database files)
 │   └── graph/
 │       └── knowledge_graph.json

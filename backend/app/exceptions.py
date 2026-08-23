@@ -5,7 +5,7 @@ from typing import Any
 
 
 @dataclass
-class LearningOSError(Exception):
+class AtlasError(Exception):
     code: str
     message: str
     status_code: int = 500
@@ -15,12 +15,12 @@ class LearningOSError(Exception):
         return self.message
 
 
-class ConfigurationError(LearningOSError):
+class ConfigurationError(AtlasError):
     def __init__(self, message: str, details: dict[str, Any] | None = None) -> None:
         super().__init__("CONFIGURATION_ERROR", message, 500, details or {})
 
 
-class NotFoundError(LearningOSError):
+class NotFoundError(AtlasError):
     def __init__(self, message: str, details: dict[str, Any] | None = None) -> None:
         super().__init__("NOT_FOUND", message, 404, details or {})
 

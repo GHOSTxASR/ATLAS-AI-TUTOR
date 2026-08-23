@@ -1,7 +1,7 @@
 # 15. UI/UX Specification
 
 ## 1. Purpose
-This document defines the product experience, interaction model, visual system, and page-level acceptance criteria for LearningOS. It expands the frontend architecture into concrete UI/UX instructions that a coding agent can implement without guessing.
+This document defines the product experience, interaction model, visual system, and page-level acceptance criteria for Atlas. It expands the frontend architecture into concrete UI/UX instructions that a coding agent can implement without guessing.
 
 Related documents:
 * `00_IMPLEMENTATION_PLAN.md`: master source of truth.
@@ -10,7 +10,7 @@ Related documents:
 * `14_DEVELOPMENT_ROADMAP.md`: implementation sequence and phase gates.
 
 ## 2. Product Experience Goals
-LearningOS should feel like a focused local learning workspace, not a marketing website or generic chatbot.
+Atlas should feel like a focused local learning workspace, not a marketing website or generic chatbot.
 
 Core experience goals:
 * The first screen after setup should help the learner continue studying immediately.
@@ -59,7 +59,7 @@ Desktop breakpoints:
 * `< 1024px`: sidebar becomes drawer; context panel becomes slide-over.
 
 ### Mobile/Small Layout
-LearningOS is primarily desktop-first, but mobile should remain usable:
+Atlas is primarily desktop-first, but mobile should remain usable:
 * Sidebar becomes bottom navigation or hamburger drawer.
 * Context panel becomes a full-height sheet.
 * Tables become stacked list rows.

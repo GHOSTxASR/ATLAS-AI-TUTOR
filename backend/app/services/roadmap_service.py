@@ -12,7 +12,7 @@ from app.config import Settings, get_settings
 from app.db.models import Roadmap, RoadmapNode
 from app.db.repositories.profile_repo import ProfileRepository
 from app.db.repositories.roadmap_repo import RoadmapRepository
-from app.exceptions import LearningOSError
+from app.exceptions import AtlasError
 from app.models.abstraction import ChatMessage
 from app.models.provider_factory import get_model_client
 from app.schemas.roadmap import (
@@ -98,7 +98,7 @@ class RoadmapService:
     async def _require_profile(self, profile_id: str) -> None:
         profile = await self.profile_repo.get_by_id(profile_id)
         if not profile:
-            raise LearningOSError(status_code=404, code="NOT_FOUND", message="Profile not found")
+            raise AtlasError(status_code=404, code="NOT_FOUND", message="Profile not found")
 
     async def generate_roadmap(
         self, profile_id: str, data: RoadmapCreate, version: int = 1
@@ -116,7 +116,7 @@ class RoadmapService:
                 text=data.syllabus_text, title=data.title or "Curriculum Roadmap"
             )
         else:
-            raise LearningOSError(
+            raise AtlasError(
                 status_code=422,
                 code="VALIDATION_ERROR",
                 message="Either document_id or syllabus_text must be provided to generate a roadmap.",
@@ -453,7 +453,7 @@ class RoadmapService:
         await self._require_profile(profile_id)
         roadmap = await self.repo.get_active_roadmap(profile_id)
         if not roadmap:
-            raise LearningOSError(status_code=404, code="NOT_FOUND", message="No active roadmap found for profile")
+            raise AtlasError(status_code=404, code="NOT_FOUND", message="No active roadmap found for profile")
         return self._format_roadmap_response(roadmap)
 
     async def get_roadmap_by_id(self, profile_id: str, roadmap_id: str) -> RoadmapResponse:
@@ -461,7 +461,7 @@ class RoadmapService:
         await self._require_profile(profile_id)
         roadmap = await self.repo.get_full_roadmap(roadmap_id)
         if not roadmap or roadmap.profile_id != profile_id:
-            raise LearningOSError(status_code=404, code="NOT_FOUND", message="Roadmap not found")
+            raise AtlasError(status_code=404, code="NOT_FOUND", message="Roadmap not found")
         return self._format_roadmap_response(roadmap)
 
     async def list_roadmaps(self, profile_id: str) -> list[RoadmapSummaryResponse]:
@@ -492,7 +492,7 @@ class RoadmapService:
         await self._require_profile(profile_id)
         node = await self.repo.get_node(node_id)
         if not node or node.profile_id != profile_id or node.roadmap_id != roadmap_id:
-            raise LearningOSError(status_code=404, code="NOT_FOUND", message="Roadmap node not found")
+            raise AtlasError(status_code=404, code="NOT_FOUND", message="Roadmap node not found")
 
         update_fields = data.model_dump(exclude_unset=True)
         if data.status == "completed" and not node.completed_at:
@@ -507,7 +507,7 @@ class RoadmapService:
         """Regenerate a roadmap as a new version and migrate progress from matching old nodes."""
         old_roadmap = await self.repo.get_full_roadmap(roadmap_id)
         if not old_roadmap or old_roadmap.profile_id != profile_id:
-            raise LearningOSError(status_code=404, code="NOT_FOUND", message="Roadmap not found")
+            raise AtlasError(status_code=404, code="NOT_FOUND", message="Roadmap not found")
 
         gen_mode = mode or old_roadmap.mode
         new_version = old_roadmap.version + 1

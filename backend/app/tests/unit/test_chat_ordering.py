@@ -14,7 +14,7 @@ import pytest
 
 @pytest.fixture
 async def session(tmp_path, monkeypatch):
-    monkeypatch.setenv("LEARNINGOS_DATA_DIR", str(tmp_path / "ordering-data"))
+    monkeypatch.setenv("ATLAS_DATA_DIR", str(tmp_path / "ordering-data"))
 
     from app.config import get_settings
     from app.db import database

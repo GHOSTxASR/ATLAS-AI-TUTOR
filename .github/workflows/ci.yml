@@ -1,0 +1,155 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12", "3.13"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: backend/requirements-dev.txt
+
+      - name: Install dependencies
+        working-directory: backend
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+
+      - name: Lint
+        working-directory: backend
+        run: ruff check app/ alembic/
+
+      - name: Test
+        working-directory: backend
+        run: pytest -q
+
+  # Installs runtime dependencies ONLY, then actually boots the app.
+  #
+  # This exists because a working local venv proves nothing about a clean one.
+  # SQLAlchemy declares `greenlet` conditionally (python_version < "3.13"), so a
+  # fresh install on 3.13 once produced an app where every database call raised
+  # at runtime while the whole test suite still passed locally. Import checks
+  # alone would not have caught it -- the failure only appears once the async
+  # engine opens a connection, so this job drives a real request.
+  fresh-install:
+    name: Fresh install smoke test
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install runtime dependencies only
+        working-directory: backend
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Boot the app and exercise the database
+        working-directory: backend
+        env:
+          ATLAS_DATA_DIR: ${{ runner.temp }}/atlas-fresh
+          ATLAS_ENV: development
+        run: |
+          python -m uvicorn app.main:app --host 127.0.0.1 --port 8000 &
+          server_pid=$!
+          trap 'kill $server_pid 2>/dev/null || true' EXIT
+
+          for _ in $(seq 1 40); do
+            if curl -sf http://127.0.0.1:8000/api/v1/health >/dev/null; then
+              break
+            fi
+            sleep 2
+          done
+
+          echo "--- health ---"
+          curl -sf http://127.0.0.1:8000/api/v1/health || {
+            echo "health check failed"; exit 1; }
+
+          # Hits the async SQLAlchemy engine for real; a missing greenlet fails here.
+          echo "--- profiles (exercises the DB) ---"
+          curl -sf http://127.0.0.1:8000/api/v1/profiles || {
+            echo "database call failed"; exit 1; }
+
+          echo "--- creating a profile (write path) ---"
+          curl -sf -X POST http://127.0.0.1:8000/api/v1/profiles \
+            -H 'Content-Type: application/json' \
+            -d '{"name":"CI Smoke","profile_type":"Custom Learning"}' || {
+            echo "profile creation failed"; exit 1; }
+
+          echo ""
+          echo "fresh install is functional"
+
+  frontend:
+    name: Frontend
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Typecheck
+        working-directory: frontend
+        run: npm run typecheck
+
+      - name: Test
+        working-directory: frontend
+        run: npm test
+
+      - name: Build
+        working-directory: frontend
+        run: npm run build
+
+  secrets-scan:
+    name: No committed secrets
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Ensure .env is not tracked
+        run: |
+          if git ls-files --error-unmatch .env >/dev/null 2>&1; then
+            echo "::error::.env is tracked by git and may contain API keys"
+            exit 1
+          fi
+          echo ".env is not tracked"
+
+      - name: Ensure .env.example carries no real values
+        run: |
+          if grep -nE '^[A-Z_]*(API_KEY|TOKEN|SECRET)=.+' .env.example; then
+            echo "::error::.env.example contains a non-empty credential"
+            exit 1
+          fi
+          echo ".env.example has no populated credentials"

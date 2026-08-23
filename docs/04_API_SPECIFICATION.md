@@ -1,7 +1,7 @@
 # 04. API Specification
 
 ## 1. API Overview
-The LearningOS backend exposes a local REST API running on `localhost:8000`.
+The Atlas backend exposes a local REST API running on `localhost:8000`.
 *   **Base URL**: `http://127.0.0.1:8000/api/v1`
 *   **Authentication**: None. The system relies on local machine access.
 *   **WebSocket Base**: `ws://127.0.0.1:8000/ws`

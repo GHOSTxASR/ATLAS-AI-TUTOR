@@ -16,6 +16,19 @@ interface ProfileState {
   setActiveProfile: (id: string | null) => void;
 }
 
+const PROFILE_STORAGE_KEY = "atlas-profile-storage";
+const LEGACY_PROFILE_STORAGE_KEY = "learningos-profile-storage";
+
+// Carry the selected profile across the rename; without this an existing
+// install comes back with no active profile and an empty dashboard.
+if (typeof localStorage !== "undefined") {
+  const legacy = localStorage.getItem(LEGACY_PROFILE_STORAGE_KEY);
+  if (legacy && !localStorage.getItem(PROFILE_STORAGE_KEY)) {
+    localStorage.setItem(PROFILE_STORAGE_KEY, legacy);
+  }
+  if (legacy) localStorage.removeItem(LEGACY_PROFILE_STORAGE_KEY);
+}
+
 export const useProfileStore = create<ProfileState>()(
   persist(
     (set, get) => ({
@@ -85,7 +98,7 @@ export const useProfileStore = create<ProfileState>()(
       },
     }),
     {
-      name: "learningos-profile-storage",
+      name: PROFILE_STORAGE_KEY,
       // Only persist the activeProfileId. Profiles themselves should be loaded from the backend.
       partialize: (state) => ({ activeProfileId: state.activeProfileId }),
     }

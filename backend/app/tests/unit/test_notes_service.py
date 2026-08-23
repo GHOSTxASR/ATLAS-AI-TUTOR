@@ -58,7 +58,7 @@ async def async_db_session():
 
 @pytest.mark.asyncio
 async def test_notes_generation_across_all_modalities(async_db_session: AsyncSession, tmp_path, monkeypatch):
-    monkeypatch.setenv("LEARNINGOS_DATA_DIR", str(tmp_path / "learningos-data"))
+    monkeypatch.setenv("ATLAS_DATA_DIR", str(tmp_path / "atlas-data"))
     monkeypatch.setattr("app.services.notes_service.get_model_client", lambda s: MockNoteLLM())
 
     from app.config import get_settings
@@ -129,7 +129,7 @@ async def test_notes_generation_across_all_modalities(async_db_session: AsyncSes
 
 @pytest.mark.asyncio
 async def test_user_authored_note_crud(async_db_session: AsyncSession, tmp_path, monkeypatch):
-    monkeypatch.setenv("LEARNINGOS_DATA_DIR", str(tmp_path / "learningos-data"))
+    monkeypatch.setenv("ATLAS_DATA_DIR", str(tmp_path / "atlas-data"))
     from app.config import get_settings
     get_settings.cache_clear()
 

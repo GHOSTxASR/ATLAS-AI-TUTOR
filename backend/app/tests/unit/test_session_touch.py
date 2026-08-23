@@ -14,7 +14,7 @@ import pytest
 
 @pytest.fixture
 async def db(tmp_path, monkeypatch):
-    monkeypatch.setenv("LEARNINGOS_DATA_DIR", str(tmp_path / "touch-data"))
+    monkeypatch.setenv("ATLAS_DATA_DIR", str(tmp_path / "touch-data"))
 
     from app.config import get_settings
     from app.db import database

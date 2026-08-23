@@ -134,7 +134,7 @@ class DocumentEmbedder:
         if self.use_hash_backend and not DocumentEmbedder._hash_backend_warned:
             DocumentEmbedder._hash_backend_warned = True
             logger.warning(
-                "LEARNINGOS_EMBEDDING_BACKEND=%s: using deterministic pseudo-embeddings. "
+                "ATLAS_EMBEDDING_BACKEND=%s: using deterministic pseudo-embeddings. "
                 "Semantic search results will be meaningless. Do not use this outside "
                 "offline development or tests.",
                 HASH_BACKEND_NAME,

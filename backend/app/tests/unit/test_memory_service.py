@@ -53,7 +53,7 @@ async def async_db_session():
 
 @pytest.mark.asyncio
 async def test_memory_service_crud_and_learner_context(async_db_session: AsyncSession, tmp_path, monkeypatch):
-    monkeypatch.setenv("LEARNINGOS_DATA_DIR", str(tmp_path / "learningos-data"))
+    monkeypatch.setenv("ATLAS_DATA_DIR", str(tmp_path / "atlas-data"))
     from app.config import get_settings
     get_settings.cache_clear()
 
@@ -102,7 +102,7 @@ async def test_memory_service_crud_and_learner_context(async_db_session: AsyncSe
 
 @pytest.mark.asyncio
 async def test_memory_extraction_and_summarization(async_db_session: AsyncSession, tmp_path, monkeypatch):
-    monkeypatch.setenv("LEARNINGOS_DATA_DIR", str(tmp_path / "learningos-data"))
+    monkeypatch.setenv("ATLAS_DATA_DIR", str(tmp_path / "atlas-data"))
     monkeypatch.setattr("app.services.memory_service.get_model_client", lambda s: MockExtractionLLM())
 
     from app.config import get_settings

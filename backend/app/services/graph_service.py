@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.config import Settings, get_settings
 from app.db.repositories.graph_repo import GraphRepository
 from app.db.repositories.profile_repo import ProfileRepository
-from app.exceptions import LearningOSError
+from app.exceptions import AtlasError
 from app.models.abstraction import ChatMessage
 from app.models.provider_factory import get_model_client
 from app.schemas.graph import (
@@ -41,7 +41,7 @@ class GraphService:
         if self.profile_repo:
             profile = await self.profile_repo.get_by_id(profile_id)
             if not profile:
-                raise LearningOSError(status_code=404, code="NOT_FOUND", message="Profile not found")
+                raise AtlasError(status_code=404, code="NOT_FOUND", message="Profile not found")
 
     async def get_graph_data(self, profile_id: str) -> GraphDataResponse:
         """Fetch all graph nodes and edges with aggregate summary statistics."""
@@ -107,7 +107,7 @@ class GraphService:
             **data.model_dump(exclude_unset=True),
         )
         if not updated:
-            raise LearningOSError(status_code=404, code="NOT_FOUND", message="Graph node not found")
+            raise AtlasError(status_code=404, code="NOT_FOUND", message="Graph node not found")
         return GraphNode.model_validate(updated)
 
     async def delete_node(self, profile_id: str, node_id: str) -> bool:
@@ -115,7 +115,7 @@ class GraphService:
         await self._require_profile(profile_id)
         deleted = await self.repo.delete_node(profile_id, node_id)
         if not deleted:
-            raise LearningOSError(status_code=404, code="NOT_FOUND", message="Graph node not found")
+            raise AtlasError(status_code=404, code="NOT_FOUND", message="Graph node not found")
         return True
 
     async def create_edge(self, profile_id: str, data: GraphEdgeCreate) -> GraphEdge:
@@ -135,7 +135,7 @@ class GraphService:
         await self._require_profile(profile_id)
         deleted = await self.repo.delete_edge(profile_id, source, target)
         if not deleted:
-            raise LearningOSError(status_code=404, code="NOT_FOUND", message="Graph edge not found")
+            raise AtlasError(status_code=404, code="NOT_FOUND", message="Graph edge not found")
         return True
 
     async def enrich_from_text(
@@ -275,7 +275,7 @@ class GraphService:
         g = await self.repo.get_graph(profile_id)
 
         if source_id not in g or target_id not in g:
-            raise LearningOSError(status_code=404, code="NOT_FOUND", message="Source or target concept not found")
+            raise AtlasError(status_code=404, code="NOT_FOUND", message="Source or target concept not found")
 
         try:
             path_ids = nx.shortest_path(g, source=source_id, target=target_id)

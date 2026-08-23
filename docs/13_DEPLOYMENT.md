@@ -1,7 +1,7 @@
 # 13. Deployment
 
 ## 1. Deployment Overview
-LearningOS is designed exclusively for local deployment. It runs directly on the user's personal computer. There are no cloud servers, no Docker containers (to keep installation simple for non-developers), and no centralized databases. The system consists of a FastAPI backend and a static React frontend.
+Atlas is designed exclusively for local deployment. It runs directly on the user's personal computer. There are no cloud servers, no Docker containers (to keep installation simple for non-developers), and no centralized databases. The system consists of a FastAPI backend and a static React frontend.
 
 ## 2. System Requirements
 *   **Operating System**: Windows 10/11 (Primary Target), macOS 12+, Ubuntu 20.04+.
@@ -19,16 +19,16 @@ The initialization script for Windows users. Steps:
 6.  **Install Node Deps**: `cd frontend` -> `npm install`.
 7.  **Build Frontend**: `npm run build`.
 8.  **Run Migrations**: `cd ..\backend` -> `alembic upgrade head`.
-9.  **Create Config**: Copy `.env.example` to `~/.learningos/config/settings.toml` if it doesn't exist.
+9.  **Create Config**: Copy `.env.example` to `~/.atlas/config/settings.toml` if it doesn't exist.
 10. **Success**: `echo Setup Complete. Run start.bat to launch.`
 
 ## 4. `start.bat` — Complete Specification
 The daily launch script.
-1.  **Terminal Title**: `title LearningOS Server`.
+1.  **Terminal Title**: `title Atlas Server`.
 2.  **Venv Check**: Ensure `backend\.venv` exists.
 3.  **Port Conflict Check**: `netstat -ano | findstr :8000`. Warn if in use.
 4.  **Activate**: `call backend\.venv\Scripts\activate.bat`.
-5.  **Environment Variables**: Set `PYTHONPATH=app`, `LEARNINGOS_ENV=production`.
+5.  **Environment Variables**: Set `PYTHONPATH=app`, `ATLAS_ENV=production`.
 6.  **Launch Backend**: `start /MIN uvicorn app.main:app --host 127.0.0.1 --port 8000`. (Minimizes the terminal window).
 7.  **Health Check Loop**: Ping `http://localhost:8000/api/v1/health` using PowerShell `Invoke-WebRequest` every 500ms. Timeout after 30s.
 8.  **Launch Browser**: `start http://localhost:8000`.
@@ -48,7 +48,7 @@ Exact equivalents of the `.bat` files using `bash` syntax.
 *   `setup.sh` checks for Tesseract OCR via `command -v tesseract` and warns (with a distro-specific install hint) if missing, but continues — matching `setup.bat`.
 
 ## 7. Data Directory Initialization
-On the very first run of `main.py`, `lifespan.py` checks for the existence of `~/.learningos/`.
+On the very first run of `main.py`, `lifespan.py` checks for the existence of `~/.atlas/`.
 If missing, it creates the full directory tree:
 `data/sqlite`, `data/chroma`, `data/graph`, `profiles/`, `config/`, `logs/`.
 On Unix, it applies `chmod 700` to ensure only the local user can read the files. On Windows, it sets ACLs restricting access to the current user.
@@ -60,7 +60,7 @@ environment = "production"
 port = 8000
 
 [paths]
-data_dir = "~/.learningos/"
+data_dir = "~/.atlas/"
 tesseract_path = "C:\\Program Files\\Tesseract-OCR\\tesseract.exe"
 
 [models]
@@ -105,7 +105,7 @@ A self-contained ZIP (~150MB) containing:
 
 ## 13. Packaging — Option B (NSIS Installer)
 A formal Windows `.exe` installer built using NSIS.
-1. Installs to `%LOCALAPPDATA%\LearningOS`.
+1. Installs to `%LOCALAPPDATA%\Atlas`.
 2. Bundles the Python runtime and Tesseract binaries.
 3. Creates a Start Menu shortcut and Desktop icon pointing to a hidden `uvicorn` runner script.
 4. Total size ~200MB.
@@ -147,29 +147,29 @@ Triggered by pushing a semver tag (e.g., `v1.0.0`):
 *   [x] API keys encrypted with Fernet symmetric encryption.
 *   [x] Uploaded files renamed with UUIDs to prevent path traversal (`../../../windows/system32`).
 *   [x] No API keys or sensitive user facts logged to `backend.log`.
-*   [x] `~/.learningos` directory restricted to the current OS user.
+*   [x] `~/.atlas` directory restricted to the current OS user.
 
 ## 19. Troubleshooting Guide
 *   **Port 8000 in use**: Check Task Manager for dangling `python.exe` processes, or edit `settings.toml` to change the port to 8080.
 *   **Python not found**: Ensure Python is added to the system PATH during installation.
 *   **OCR Disabled**: Ensure Tesseract is installed and the path in `settings.toml` matches the actual installation directory.
-*   **Database Migration Failed**: Usually implies database corruption. Stop server, rename `learningos.db` to `.bak`, restart to build fresh schema.
+*   **Database Migration Failed**: Usually implies database corruption. Stop server, rename `atlas.db` to `.bak`, restart to build fresh schema.
 *   **Frontend White Screen**: Ensure `npm run build` was executed successfully.
 
 ## 20. Log File Locations
-All logs are in `~/.learningos/logs/`.
+All logs are in `~/.atlas/logs/`.
 *   `backend.log`: General server info, API requests, routing.
 *   `ingestion.log`: Specific logs for PyMuPDF, chunking, and embedding.
 *   `errors.log`: Only contains stack traces and HTTP 500 errors.
 
 ## 21. Backup and Restore
-*   **Auto Backup**: `APScheduler` runs daily at 3 AM. It copies `learningos.db` and the `chroma` folder to `~/.learningos/backups/`.
+*   **Auto Backup**: `APScheduler` runs daily at 3 AM. It copies `atlas.db` and the `chroma` folder to `~/.atlas/backups/`.
 *   **Manual Restore**: Stop the server. Copy the DB and Chroma folders from the backup directory over the live ones. Restart the server.
 
 ## 22. macOS / Linux Differences
 *   `Tesseract` is installed via `brew install tesseract` or `apt-get install tesseract-ocr`.
 *   Paths use `/` instead of `\`.
-*   The data directory defaults to `~/.learningos/` which expands to `/home/user/.learningos` or `/Users/user/.learningos`.
+*   The data directory defaults to `~/.atlas/` which expands to `/home/user/.atlas` or `/Users/user/.atlas`.
 
 ## 23. Testing the Installation
 After running `setup.bat` and `start.bat`:
@@ -182,10 +182,10 @@ After running `setup.bat` and `start.bat`:
 ## 24. Master Plan Deployment Addendum
 
 ### Complete `settings.toml` Template
-Use this as the initial file written to `~/.learningos/config/settings.toml`:
+Use this as the initial file written to `~/.atlas/config/settings.toml`:
 ```toml
 [app]
-name = "LearningOS"
+name = "Atlas"
 version = "1.0.0"
 environment = "production"
 data_dir = ""
@@ -258,7 +258,7 @@ After dependency installation, `setup.bat` should verify:
 3. `frontend\node_modules` exists.
 4. `npm run build` creates `frontend\dist\index.html`.
 5. Alembic can run `upgrade head`.
-6. `~/.learningos/config/settings.toml` exists.
+6. `~/.atlas/config/settings.toml` exists.
 7. Required data directories exist.
 
 ### `start.bat` Process Rules
@@ -273,7 +273,7 @@ After dependency installation, `setup.bat` should verify:
 Before publishing a ZIP or installer, test on a clean Windows user profile:
 1. No global Python packages assumed.
 2. No global Node packages assumed unless using source setup.
-3. No existing `~/.learningos` directory.
+3. No existing `~/.atlas` directory.
 4. Run setup.
 5. Launch app.
 6. Create profile.

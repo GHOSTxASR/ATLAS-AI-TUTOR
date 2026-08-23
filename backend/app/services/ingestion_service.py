@@ -12,7 +12,7 @@ from app.db.models import Document
 from app.db.repositories.document_repo import DocumentRepository
 from app.db.repositories.embedding_repo import EmbeddingRepository
 from app.db.repositories.profile_repo import ProfileRepository
-from app.exceptions import LearningOSError
+from app.exceptions import AtlasError
 from app.pipelines.chunker import DocumentChunker
 from app.pipelines.document_extractor import DocumentExtractor, detect_file_type
 from app.pipelines.embedder import DocumentEmbedder
@@ -42,7 +42,7 @@ class IngestionService:
     async def _require_profile(self, profile_id: str) -> None:
         profile = await self.profile_repo.get_by_id(profile_id)
         if not profile:
-            raise LearningOSError(status_code=404, code="NOT_FOUND", message="Profile not found")
+            raise AtlasError(status_code=404, code="NOT_FOUND", message="Profile not found")
 
     def _raw_dir(self, profile_id: str) -> Path:
         return self.settings.paths.profiles_dir / profile_id / "documents" / "raw"
@@ -57,7 +57,7 @@ class IngestionService:
     async def get_document(self, profile_id: str, document_id: str) -> Document:
         document = await self.repo.get_by_id(document_id)
         if not document or document.profile_id != profile_id:
-            raise LearningOSError(status_code=404, code="NOT_FOUND", message="Document not found")
+            raise AtlasError(status_code=404, code="NOT_FOUND", message="Document not found")
         return document
 
     async def upload_document(
@@ -66,13 +66,13 @@ class IngestionService:
         await self._require_profile(profile_id)
 
         if not content:
-            raise LearningOSError(
+            raise AtlasError(
                 status_code=422, code="VALIDATION_ERROR", message="Uploaded file is empty"
             )
 
         max_bytes = self.settings.ingestion.max_file_size_mb * 1024 * 1024
         if len(content) > max_bytes:
-            raise LearningOSError(
+            raise AtlasError(
                 status_code=422,
                 code="VALIDATION_ERROR",
                 message=f"File exceeds the {self.settings.ingestion.max_file_size_mb}MB upload limit.",
@@ -81,7 +81,7 @@ class IngestionService:
 
         file_type = detect_file_type(filename, content)
         if file_type is None or file_type not in ALLOWED_FILE_TYPES:
-            raise LearningOSError(
+            raise AtlasError(
                 status_code=422,
                 code="VALIDATION_ERROR",
                 message="Unsupported file type. Supported: PDF, DOCX, TXT, and common image formats.",
@@ -90,7 +90,7 @@ class IngestionService:
         content_hash = sha256_bytes(content)
         existing = await self.repo.get_by_hash(profile_id, content_hash)
         if existing:
-            raise LearningOSError(
+            raise AtlasError(
                 status_code=409,
                 code="CONFLICT",
                 message=f"This file was already uploaded as '{existing.filename}'.",

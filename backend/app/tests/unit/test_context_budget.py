@@ -17,8 +17,8 @@ from app.rag.context_assembler import AssembledContext
 
 @pytest.fixture
 def service(tmp_path, monkeypatch):
-    monkeypatch.setenv("LEARNINGOS_DATA_DIR", str(tmp_path / "budget-data"))
-    monkeypatch.setenv("LEARNINGOS_EMBEDDING_BACKEND", "hash")
+    monkeypatch.setenv("ATLAS_DATA_DIR", str(tmp_path / "budget-data"))
+    monkeypatch.setenv("ATLAS_EMBEDDING_BACKEND", "hash")
 
     from app.config import get_settings
 

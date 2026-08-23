@@ -21,7 +21,7 @@ def main() -> int:
         for path in missing:
             print(f"missing: {path}")
         return 1
-    print("LearningOS structure verification passed.")
+    print("Atlas structure verification passed.")
     return 0
 
 

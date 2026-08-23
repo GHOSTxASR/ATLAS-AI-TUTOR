@@ -345,7 +345,10 @@ async def _dispatch(
     # OpenRouter publishes its catalogue without authentication, so the list
     # works before the user has pasted a key.
     if not key and provider != "openrouter":
-        raise ValueError(f"Add a {info['label']} API key to load the live model list.")
+        article = "an" if info["label"][:1].upper() in "AEIOU" else "a"
+        raise ValueError(
+            f"Add {article} {info['label']} API key to load the live model list."
+        )
 
     base_url = (
         OPENAI_COMPATIBLE_EMBEDDING_URLS.get(provider, info["base_url"])

@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.config import Settings, get_settings
 from app.db.repositories.document_repo import DocumentRepository
 from app.db.repositories.profile_repo import ProfileRepository
-from app.exceptions import LearningOSError
+from app.exceptions import AtlasError
 from app.pipelines.document_extractor import DocumentExtractor
 from app.pipelines.syllabus_parser import SyllabusParser
 from app.schemas.syllabus import ParsedSyllabus
@@ -30,7 +30,7 @@ class SyllabusService:
     async def _require_profile(self, profile_id: str) -> None:
         profile = await self.profile_repo.get_by_id(profile_id)
         if not profile:
-            raise LearningOSError(status_code=404, code="NOT_FOUND", message="Profile not found")
+            raise AtlasError(status_code=404, code="NOT_FOUND", message="Profile not found")
 
     async def parse_document_syllabus(self, profile_id: str, document_id: str) -> ParsedSyllabus:
         """Extract structured syllabus from an uploaded document."""
@@ -38,7 +38,7 @@ class SyllabusService:
 
         document = await self.doc_repo.get_by_id(document_id)
         if not document or document.profile_id != profile_id:
-            raise LearningOSError(status_code=404, code="NOT_FOUND", message="Document not found")
+            raise AtlasError(status_code=404, code="NOT_FOUND", message="Document not found")
 
         # 1. Read from extracted text file if available
         extracted_path = (
@@ -71,7 +71,7 @@ class SyllabusService:
                 text = res.text
 
         if not text.strip():
-            raise LearningOSError(
+            raise AtlasError(
                 status_code=422,
                 code="EXTRACTION_EMPTY",
                 message="No text content could be extracted from the document to parse syllabus.",

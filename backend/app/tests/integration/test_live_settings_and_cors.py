@@ -11,7 +11,7 @@ from app.models.abstraction import BaseModelClient, ChatMessage, ChatResponse, S
 
 
 def _make_app(tmp_path, monkeypatch):
-    monkeypatch.setenv("LEARNINGOS_DATA_DIR", str(tmp_path / "live-settings-data"))
+    monkeypatch.setenv("ATLAS_DATA_DIR", str(tmp_path / "live-settings-data"))
 
     from app.config import get_settings
     from app.main import create_app
@@ -46,8 +46,8 @@ def test_model_change_applies_without_reconnecting(tmp_path, monkeypatch):
     Changing provider/model/API key on the Settings page had no effect until
     the user reloaded the page.
     """
-    monkeypatch.setenv("LEARNINGOS_MODEL_PROVIDER", "ollama")
-    monkeypatch.setenv("LEARNINGOS_CHAT_MODEL", "model-before")
+    monkeypatch.setenv("ATLAS_MODEL_PROVIDER", "ollama")
+    monkeypatch.setenv("ATLAS_CHAT_MODEL", "model-before")
     app = _make_app(tmp_path, monkeypatch)
     monkeypatch.setattr("app.routers.ws_chat.get_model_client", EchoModelClient)
 
@@ -66,7 +66,7 @@ def test_model_change_applies_without_reconnecting(tmp_path, monkeypatch):
             # Change the model while the socket stays open.
             from app.config import get_settings
 
-            monkeypatch.setenv("LEARNINGOS_CHAT_MODEL", "model-after")
+            monkeypatch.setenv("ATLAS_CHAT_MODEL", "model-after")
             get_settings.cache_clear()
 
             second = _one_turn(ws, "hello again")

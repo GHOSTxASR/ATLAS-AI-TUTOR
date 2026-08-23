@@ -1,7 +1,7 @@
 # 12. AI Tutor Engine
 
 ## 1. AI Tutor Overview
-The AI Tutor Engine is the core intelligence of LearningOS. It is not a standard pass-through chatbot. It is a highly orchestrated system that utilizes persistent memory, multi-source RAG, roadmap context, and formal assessments to simulate a personalized human tutor.
+The AI Tutor Engine is the core intelligence of Atlas. It is not a standard pass-through chatbot. It is a highly orchestrated system that utilizes persistent memory, multi-source RAG, roadmap context, and formal assessments to simulate a personalized human tutor.
 
 ## 2. Tutor Orchestrator (`tutor_orchestrator.py`)
 The central "brain" responsible for every chat turn.
@@ -37,7 +37,7 @@ The user can switch the Tutor's behavior on the fly:
 
 ## 5. Tutor Persona
 Defined by a foundational system prompt injected into every request:
-*"You are the LearningOS AI Tutor. Your name is {TutorName}. Your goal is to guide the user to mastery of the subject, not just give them the answers. Employ the Socratic method when appropriate. Do not be overly verbose. Never be condescending. You are currently teaching {ActiveNode}. Treat the user according to their known profile: {MemoryContext}."*
+*"You are the Atlas AI Tutor. Your name is {TutorName}. Your goal is to guide the user to mastery of the subject, not just give them the answers. Employ the Socratic method when appropriate. Do not be overly verbose. Never be condescending. You are currently teaching {ActiveNode}. Treat the user according to their known profile: {MemoryContext}."*
 
 ## 6. Token Budget Management
 To prevent `context_length_exceeded` errors and manage costs.

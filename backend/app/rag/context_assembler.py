@@ -26,7 +26,7 @@ class ContextAssembler:
     """Assembles retrieved and reranked knowledge chunks into a token-budgeted prompt block."""
 
     BASE_SYSTEM_PROMPT = (
-        "You are LearningOS, an expert AI learning tutor. "
+        "You are Atlas, an expert AI learning tutor. "
         "Your goal is to help the student learn effectively, clarify concepts, and solve problems. "
         "Be concise, clear, and encouraging. Use step-by-step explanations and examples when helpful."
     )

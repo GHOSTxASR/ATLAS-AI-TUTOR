@@ -9,7 +9,7 @@ from alembic import command
 from alembic.config import Config
 from fastapi import FastAPI
 
-from app.config import ensure_data_directories, get_settings, project_root
+from app.config import database_file, ensure_data_directories, get_settings, project_root
 from app.db.database import close_database, init_database
 from app.models.provider_factory import register_known_secrets
 from app.tasks.background import drain as drain_background_tasks
@@ -46,7 +46,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         app.state.settings = settings
 
         # Run Alembic migrations automatically on startup
-        db_url = f"sqlite:///{(settings.paths.sqlite_dir / 'learningos.db').as_posix()}"
+        db_url = f"sqlite:///{database_file(settings.paths.sqlite_dir).as_posix()}"
         await asyncio.to_thread(run_migrations, db_url)
 
         # Start background task scheduler

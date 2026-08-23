@@ -10,7 +10,7 @@ from app.config import Settings, get_settings
 from app.db.repositories.analytics_repo import AnalyticsRepository
 from app.db.repositories.chat_repo import ChatMessageRepository, ChatSessionRepository
 from app.db.repositories.profile_repo import ProfileRepository
-from app.exceptions import LearningOSError
+from app.exceptions import AtlasError
 from app.models.abstraction import ChatMessage as LLMMessage
 from app.models.provider_factory import get_model_client
 from app.models.resilience import provider_error_from
@@ -82,7 +82,7 @@ class TutorOrchestrator:
         mode_instruction = MODE_SYSTEM_DIRECTIVES.get(mode, MODE_SYSTEM_DIRECTIVES["teaching"])
 
         sections: list[str] = [
-            f"You are the LearningOS AI Tutor, a personalized expert tutor for {profile_name} (Target Track: {profile_type}).",
+            f"You are the Atlas AI Tutor, a personalized expert tutor for {profile_name} (Target Track: {profile_type}).",
             "Your mission is to guide the student toward true deep mastery and conceptual clarity.",
             "",
             mode_instruction,
@@ -111,7 +111,7 @@ class TutorOrchestrator:
         turn_started_at = datetime.now(UTC)
         profile = await self.profile_repo.get_by_id(profile_id)
         if not profile:
-            raise LearningOSError(status_code=404, code="NOT_FOUND", message="Profile not found")
+            raise AtlasError(status_code=404, code="NOT_FOUND", message="Profile not found")
 
         # 1. Ensure or create session
         session_id = request.session_id
@@ -121,7 +121,7 @@ class TutorOrchestrator:
         else:
             session = await self.session_repo.get_by_id(session_id)
             if not session or session.profile_id != profile_id:
-                raise LearningOSError(
+                raise AtlasError(
                     status_code=404,
                     code="NOT_FOUND",
                     message="Chat session not found",
@@ -167,7 +167,7 @@ class TutorOrchestrator:
         except ValueError as e:
             # No provider/API key configured - an actionable setup problem.
             logger.warning("Tutor chat blocked by provider configuration: %s", e)
-            raise LearningOSError(
+            raise AtlasError(
                 status_code=503,
                 code="PROVIDER_NOT_CONFIGURED",
                 message=str(e),
@@ -175,7 +175,7 @@ class TutorOrchestrator:
         except Exception as e:
             error = provider_error_from(e)
             logger.warning("Tutor chat failed: %s", error.message)
-            raise LearningOSError(
+            raise AtlasError(
                 status_code=502,
                 code="PROVIDER_ERROR",
                 message=error.message,
@@ -183,7 +183,7 @@ class TutorOrchestrator:
             ) from None
 
         if not ai_content:
-            raise LearningOSError(
+            raise AtlasError(
                 status_code=502,
                 code="PROVIDER_EMPTY_RESPONSE",
                 message="The AI provider returned an empty response. Try again.",

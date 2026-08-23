@@ -1,7 +1,7 @@
 # 17. Security and Privacy
 
 ## 1. Purpose
-This document defines the security and privacy requirements for LearningOS. The application is local-first, but local applications still need careful handling of secrets, files, logs, deletion, and outbound AI-provider calls.
+This document defines the security and privacy requirements for Atlas. The application is local-first, but local applications still need careful handling of secrets, files, logs, deletion, and outbound AI-provider calls.
 
 Related documents:
 * `00_IMPLEMENTATION_PLAN.md`: master source of truth.
@@ -20,14 +20,14 @@ Related documents:
 * Fail safely when configuration is missing.
 
 ## 3. Trust Model
-LearningOS assumes:
+Atlas assumes:
 * The local OS user is authorized to use the app.
 * There is no multi-user authentication server.
 * Browser and backend run on the same machine.
 * AI provider calls are outbound and user-configured.
 * The local filesystem may contain sensitive educational, personal, or exam-prep data.
 
-LearningOS does not assume:
+Atlas does not assume:
 * Uploaded files are safe.
 * Browser-provided MIME types are truthful.
 * Model providers are always available.
@@ -74,7 +74,7 @@ Local data includes:
 
 Data directory:
 ```text
-~/.learningos/
+~/.atlas/
 ├── data/
 ├── profiles/
 ├── config/
@@ -118,7 +118,7 @@ Invalid profile/session should close gracefully or emit a structured error.
 ### Storage
 API keys must be stored only in:
 ```text
-~/.learningos/config/secrets.enc
+~/.atlas/config/secrets.enc
 ```
 
 Rules:
@@ -167,12 +167,12 @@ All file writes must use safe path join:
 ### Storage
 Raw uploads:
 ```text
-~/.learningos/profiles/{profile_id}/documents/raw/
+~/.atlas/profiles/{profile_id}/documents/raw/
 ```
 
 Extracted text:
 ```text
-~/.learningos/profiles/{profile_id}/documents/extracted/
+~/.atlas/profiles/{profile_id}/documents/extracted/
 ```
 
 Never serve raw uploaded files directly as static files without a controlled API route.
@@ -332,13 +332,13 @@ If a vulnerability exists in a non-exposed local-only dependency, document the r
 
 ## 15. Windows Permission Requirements
 On first run:
-* Create `~/.learningos`.
+* Create `~/.atlas`.
 * Restrict directory access to current OS user where practical.
 * Avoid requiring administrator privileges.
 * Install into user-writable locations for packaged builds.
 
 On Unix:
-* Apply `chmod 700` to `~/.learningos`.
+* Apply `chmod 700` to `~/.atlas`.
 * Avoid writing outside the user home directory unless configured.
 
 ## 16. Security Test Checklist
@@ -360,7 +360,7 @@ Automated or manual checks:
 ## 17. Incident Recovery
 If data corruption occurs:
 1. Stop server.
-2. Preserve current `~/.learningos` by copying it.
+2. Preserve current `~/.atlas` by copying it.
 3. Restore latest backup.
 4. Restart server.
 5. Run health/storage checks.

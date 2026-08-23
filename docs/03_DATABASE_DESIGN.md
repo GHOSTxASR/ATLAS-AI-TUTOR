@@ -1,7 +1,7 @@
 # 03. Database Design
 
 ## 1. Database Overview
-LearningOS utilizes three distinct data stores, each chosen for its specific strengths in a local-first architecture:
+Atlas utilizes three distinct data stores, each chosen for its specific strengths in a local-first architecture:
 1.  **SQLite (Relational)**: The source of truth for structured data (profiles, document metadata, chat history, roadmap progress, settings).
 2.  **ChromaDB (Vector)**: An embedded vector database used for Retrieval-Augmented Generation (RAG). It stores embeddings of document chunks, memory records, and notes to enable semantic search.
 3.  **JSON + NetworkX (Graph)**: A local JSON file representing the Knowledge Graph, loaded into memory via NetworkX at runtime for complex relationship traversals and D3.js visualization.
@@ -165,7 +165,7 @@ Defined in `app/db/models.py`, mapping exactly to the schema above. Relationship
 *   Migrations run automatically on app startup inside `lifespan.py` before the web server binds.
 
 ## 9. ChromaDB Vector Store Design
-ChromaDB uses persistent local storage (`~/.learningos/data/chroma`).
+ChromaDB uses persistent local storage (`~/.atlas/data/chroma`).
 Collections are scoped per profile:
 *   `{profile_id}_documents`: Embeddings of all document chunks. Metadata: `doc_id`, `chunk_index`, `page_number`.
 *   `{profile_id}_memory`: Embeddings of memory records. Metadata: `memory_id`, `category`, `confidence`.
@@ -179,7 +179,7 @@ The HNSW index in ChromaDB is configured for optimal local performance:
 *   `ef`: 100 (Depth of search during query).
 
 ## 11. Graph Store (JSON + NetworkX)
-Stored locally at `~/.learningos/data/graph/knowledge_graph.json`.
+Stored locally at `~/.atlas/data/graph/knowledge_graph.json`.
 *   **Node Schema**: `{"id": "uuid", "label": "String", "type": "concept", "mastery_score": 0.5}`
 *   **Edge Schema**: `{"source": "uuid1", "target": "uuid2", "type": "prerequisite_of"}`
 Loaded entirely into memory as a `networkx.DiGraph` on boot. Writes are flushed back to JSON atomically.
@@ -194,7 +194,7 @@ SQLite table `embedding_cache` maps a `SHA-256(text)` to a ChromaDB `embedding_i
 ## 14. Backup Strategy
 *   **SQLite**: Handled by APScheduler weekly using SQLite's built-in online backup API (copies without locking the DB).
 *   **ChromaDB**: File-level copy of the directory during an idle period.
-*   **Retention**: 7 rolling backups stored in `~/.learningos/backups/`.
+*   **Retention**: 7 rolling backups stored in `~/.atlas/backups/`.
 
 ## 15. Storage Estimates
 *   **100-page PDF**: ~300 chunks. SQLite metadata (~50KB), ChromaDB vectors (~1.5MB for 1536-dim).

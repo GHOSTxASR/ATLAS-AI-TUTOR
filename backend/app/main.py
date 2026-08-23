@@ -11,8 +11,8 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from app.config import get_settings
-from app.exceptions import LearningOSError
+from app.config import APP_TAGLINE, get_settings
+from app.exceptions import AtlasError
 from app.lifespan import lifespan
 from app.security.redaction import redact_secrets
 from app.utils.file_utils import ensure_within_directory
@@ -44,7 +44,12 @@ logger = logging.getLogger(__name__)
 def create_app() -> FastAPI:
     settings = get_settings()
     configure_logging(settings.server.log_level)
-    app = FastAPI(title=settings.app.name, version=settings.app.version, lifespan=lifespan)
+    app = FastAPI(
+        title=settings.app.name,
+        description=APP_TAGLINE,
+        version=settings.app.version,
+        lifespan=lifespan,
+    )
     # In production the SPA is served from this same origin, so no cross-origin
     # access is needed at all. Development allows only the Vite dev server.
     # `allow_origins=["*"]` together with `allow_credentials=True` is an invalid
@@ -62,8 +67,8 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
 
-    @app.exception_handler(LearningOSError)
-    async def learningos_error_handler(_: Request, exc: LearningOSError) -> JSONResponse:
+    @app.exception_handler(AtlasError)
+    async def atlas_error_handler(_: Request, exc: AtlasError) -> JSONResponse:
         return JSONResponse(
             status_code=exc.status_code,
             content=envelope(

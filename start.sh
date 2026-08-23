@@ -17,7 +17,7 @@ fi
 
 source backend/.venv/bin/activate
 export PYTHONPATH="$PWD/backend"
-export LEARNINGOS_ENV=production
-export LEARNINGOS_PORT="${LEARNINGOS_PORT:-8000}"
+export ATLAS_ENV=production
+export ATLAS_PORT="${ATLAS_PORT:-8000}"
 
-python -m uvicorn app.main:app --host 127.0.0.1 --port "$LEARNINGOS_PORT"
+python -m uvicorn app.main:app --host 127.0.0.1 --port "$ATLAS_PORT"

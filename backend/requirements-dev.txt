@@ -1,6 +1,15 @@
+# Development dependencies: everything in requirements.txt, plus test and lint
+# tooling. Use this file when working on Atlas -- `install.bat` installs only
+# requirements.txt, so a production install has no pytest or ruff.
+#
+#   pip install -r requirements-dev.txt
+
 -r requirements.txt
+
 pytest==8.2.1
 pytest-asyncio==0.23.7
-httpx==0.27.0
 ruff==0.4.5
 
+# httpx is intentionally NOT pinned here: it is already a runtime dependency
+# (httpx>=0.27.0). Re-pinning it to an exact version in this file would silently
+# downgrade the runtime dependency whenever it resolves higher.

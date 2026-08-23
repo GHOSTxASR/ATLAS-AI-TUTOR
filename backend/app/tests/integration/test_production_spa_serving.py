@@ -6,7 +6,7 @@ from fastapi.testclient import TestClient
 
 
 def _make_app(tmp_path, monkeypatch):
-    monkeypatch.setenv("LEARNINGOS_DATA_DIR", str(tmp_path / "learningos-spa-data"))
+    monkeypatch.setenv("ATLAS_DATA_DIR", str(tmp_path / "atlas-spa-data"))
 
     from app.config import get_settings
     from app.main import create_app
@@ -59,7 +59,7 @@ def test_spa_route_rejects_path_traversal(tmp_path, monkeypatch):
         "/..%2f..%2fbackend%2fapp%2fconfig.py",
     ]
     leaked_markers = (
-        "LEARNINGOS_MODEL_PROVIDER",
+        "ATLAS_MODEL_PROVIDER",
         "GEMINI_API_KEY",
         "fastapi==",
         "def load_settings",

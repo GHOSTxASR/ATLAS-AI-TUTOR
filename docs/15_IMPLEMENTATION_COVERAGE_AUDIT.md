@@ -55,7 +55,7 @@ Profile-owned domains:
 ### Profile Create Flow
 1. Validate `name` and `profile_type`.
 2. Create SQLite `profiles` row.
-3. Create profile directory under `~/.learningos/profiles/{profile_id}/`.
+3. Create profile directory under `~/.atlas/profiles/{profile_id}/`.
 4. Ensure document subdirectories exist.
 5. Initialize profile-scoped ChromaDB collections lazily on first use.
 6. Return `ProfileResponse`.
@@ -77,7 +77,7 @@ Deletion is destructive and must require explicit user confirmation in the UI.
 1. Stop or ignore queued background jobs for the profile.
 2. Drop profile-scoped ChromaDB collections.
 3. Remove profile nodes/edges from graph storage.
-4. Delete profile files from `~/.learningos/profiles/{profile_id}/`.
+4. Delete profile files from `~/.atlas/profiles/{profile_id}/`.
 5. Delete SQLite rows through cascades or explicit repository calls.
 6. If deleted profile was active, set another profile active or return to setup.
 
@@ -192,7 +192,7 @@ Required features:
 ## 8. Security and Privacy Contract
 
 ### Local-First Guarantees
-*   All user data lives under `~/.learningos/` and the repository workspace.
+*   All user data lives under `~/.atlas/` and the repository workspace.
 *   No cloud database or telemetry.
 *   AI provider calls are outbound only and contain only the context required for the requested answer.
 *   The backend binds to `127.0.0.1`.

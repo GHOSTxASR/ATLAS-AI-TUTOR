@@ -1,7 +1,7 @@
 # 05. Frontend Architecture
 
 ## 1. Frontend Overview
-LearningOS uses a Single Page Application (SPA) architecture built with React 18, TypeScript, and Vite. It runs locally and communicates exclusively with the local FastAPI backend on `http://localhost:8000`.
+Atlas uses a Single Page Application (SPA) architecture built with React 18, TypeScript, and Vite. It runs locally and communicates exclusively with the local FastAPI backend on `http://localhost:8000`.
 
 ## 2. Technology Stack
 | Library | Version | Purpose |

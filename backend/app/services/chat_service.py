@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.models import ChatMessage, ChatSession
 from app.db.repositories.chat_repo import ChatMessageRepository, ChatSessionRepository
-from app.exceptions import LearningOSError
+from app.exceptions import AtlasError
 from app.schemas.chat import ChatMessageCreate, ChatSessionCreate, ChatSessionUpdate
 
 
@@ -24,7 +24,7 @@ class ChatService:
     async def get_session(self, profile_id: str, session_id: str) -> ChatSession:
         chat_session = await self.session_repo.get_by_id(session_id)
         if not chat_session or chat_session.profile_id != profile_id:
-            raise LearningOSError(status_code=404, code="NOT_FOUND", message="Chat session not found")
+            raise AtlasError(status_code=404, code="NOT_FOUND", message="Chat session not found")
         return chat_session
 
     async def create_session(self, profile_id: str, data: ChatSessionCreate) -> ChatSession:

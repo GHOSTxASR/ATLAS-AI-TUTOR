@@ -1,7 +1,7 @@
 # 07. RAG Architecture
 
 ## 1. RAG Overview
-Retrieval-Augmented Generation (RAG) in LearningOS goes beyond simply querying PDFs. It uses a **multi-source retrieval** strategy drawing from five distinct contextual sources:
+Retrieval-Augmented Generation (RAG) in Atlas goes beyond simply querying PDFs. It uses a **multi-source retrieval** strategy drawing from five distinct contextual sources:
 1. Document Chunks (uploaded files)
 2. Memory Records (extracted facts, strengths, weaknesses)
 3. Past Chat Summaries (context from previous sessions)
@@ -137,7 +137,7 @@ This mapping is emitted via WebSocket as a `citations` event so the frontend can
 ## 15. Prompt Templates
 **System Prompt Injection**:
 ```text
-... You are LearningOS Tutor ...
+... You are Atlas Tutor ...
 Use the following context to answer the user. Cite sources using [1], [2].
 {assembled_context_block}
 

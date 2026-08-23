@@ -21,7 +21,7 @@ from app.db.repositories.notes_repo import NotesRepository
 from app.db.repositories.profile_repo import ProfileRepository
 from app.db.repositories.quiz_repo import QuizRepository
 from app.db.repositories.roadmap_repo import RoadmapRepository
-from app.exceptions import LearningOSError
+from app.exceptions import AtlasError
 from app.schemas.analytics import (
     ActivityHeatmapItem,
     AnalyticsEventCreate,
@@ -57,7 +57,7 @@ class AnalyticsService:
     async def _require_profile(self, profile_id: str) -> None:
         profile = await self.profile_repo.get_by_id(profile_id)
         if not profile:
-            raise LearningOSError(status_code=404, code="NOT_FOUND", message="Profile not found")
+            raise AtlasError(status_code=404, code="NOT_FOUND", message="Profile not found")
 
     async def log_event(self, profile_id: str, data: AnalyticsEventCreate) -> AnalyticsEvent:
         """Record an analytics interaction event."""

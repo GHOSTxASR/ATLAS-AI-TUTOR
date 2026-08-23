@@ -14,7 +14,7 @@ from app.db.repositories.memory_repo import MemoryRepository
 from app.db.repositories.profile_repo import ProfileRepository
 from app.db.repositories.quiz_repo import QuizRepository
 from app.db.repositories.roadmap_repo import RoadmapRepository
-from app.exceptions import LearningOSError
+from app.exceptions import AtlasError
 from app.models.abstraction import ChatMessage
 from app.models.provider_factory import get_model_client
 from app.models.resilience import provider_error_from
@@ -65,12 +65,12 @@ class QuizService:
     async def _require_profile(self, profile_id: str) -> None:
         profile = await self.profile_repo.get_by_id(profile_id)
         if not profile:
-            raise LearningOSError(status_code=404, code="NOT_FOUND", message="Profile not found")
+            raise AtlasError(status_code=404, code="NOT_FOUND", message="Profile not found")
 
     async def _get_owned_node(self, profile_id: str, node_id: str):
         node = await self.roadmap_repo.get_node(node_id)
         if not node or node.profile_id != profile_id:
-            raise LearningOSError(status_code=404, code="NOT_FOUND", message="Roadmap node not found")
+            raise AtlasError(status_code=404, code="NOT_FOUND", message="Roadmap node not found")
         return node
 
     async def generate_quiz(self, profile_id: str, data: QuizGenerateRequest) -> QuizResponse:
@@ -193,11 +193,11 @@ class QuizService:
             finally:
                 await client.close()
         except ValueError as e:
-            raise LearningOSError(
+            raise AtlasError(
                 status_code=503, code="PROVIDER_NOT_CONFIGURED", message=str(e)
             ) from None
         except json.JSONDecodeError:
-            raise LearningOSError(
+            raise AtlasError(
                 status_code=502,
                 code="PROVIDER_BAD_RESPONSE",
                 message="The AI provider did not return a valid quiz. Try again.",
@@ -205,12 +205,12 @@ class QuizService:
         except Exception as e:
             error = provider_error_from(e)
             logger.warning("Quiz generation failed: %s", error.message)
-            raise LearningOSError(
+            raise AtlasError(
                 status_code=502, code="PROVIDER_ERROR", message=error.message
             ) from None
 
         if not questions:
-            raise LearningOSError(
+            raise AtlasError(
                 status_code=502,
                 code="PROVIDER_EMPTY_RESPONSE",
                 message="The AI provider returned no quiz questions. Try again.",
@@ -260,7 +260,7 @@ class QuizService:
 
         attempt = await self.repo.get_attempt(attempt_id)
         if not attempt or attempt.profile_id != profile_id:
-            raise LearningOSError(status_code=404, code="NOT_FOUND", message="Quiz attempt not found")
+            raise AtlasError(status_code=404, code="NOT_FOUND", message="Quiz attempt not found")
 
         stored_questions: list[dict[str, Any]] = json.loads(attempt.questions_json)
         answers_by_id = {a.question_id: a.user_answer.strip() for a in data.answers}
@@ -551,7 +551,7 @@ class QuizService:
         await self._require_profile(profile_id)
         attempt = await self.repo.get_attempt(attempt_id)
         if not attempt or attempt.profile_id != profile_id:
-            raise LearningOSError(status_code=404, code="NOT_FOUND", message="Quiz attempt not found")
+            raise AtlasError(status_code=404, code="NOT_FOUND", message="Quiz attempt not found")
 
         stored_questions = json.loads(attempt.questions_json)
         question_results: list[QuestionResult] = []

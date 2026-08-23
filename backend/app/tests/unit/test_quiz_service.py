@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 
 from app.db.models import Base, Roadmap, RoadmapNode
 from app.db.repositories.profile_repo import ProfileRepository
-from app.exceptions import LearningOSError
+from app.exceptions import AtlasError
 from app.models.abstraction import BaseModelClient, ChatMessage, ChatResponse, StreamChunk
 from app.schemas.quiz import QuizGenerateRequest, QuizSubmitRequest, QuizUserAnswer
 from app.services.quiz_service import QuizService
@@ -82,7 +82,7 @@ async def async_db_session():
 
 @pytest.mark.asyncio
 async def test_quiz_generate_and_scoring_flow(async_db_session: AsyncSession, tmp_path, monkeypatch):
-    monkeypatch.setenv("LEARNINGOS_DATA_DIR", str(tmp_path / "learningos-data"))
+    monkeypatch.setenv("ATLAS_DATA_DIR", str(tmp_path / "atlas-data"))
     monkeypatch.setattr("app.services.quiz_service.get_model_client", lambda s: MockQuizLLM())
 
     from app.config import get_settings
@@ -175,7 +175,7 @@ async def test_quiz_rejects_roadmap_node_from_another_profile(async_db_session: 
 
     service = QuizService(session=async_db_session)
 
-    with pytest.raises(LearningOSError) as error:
+    with pytest.raises(AtlasError) as error:
         await service.generate_quiz(
             other_profile.id,
             QuizGenerateRequest(roadmap_node_id=node.id),

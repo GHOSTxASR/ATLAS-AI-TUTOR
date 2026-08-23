@@ -1,4 +1,4 @@
-# LearningOS Documentation
+# Atlas Documentation
 
 This folder should contain the implementation documentation for coding agents.
 

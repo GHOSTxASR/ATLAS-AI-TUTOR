@@ -1,7 +1,7 @@
 # 19. Vector Database Design
 
 ## 1. Purpose
-This document defines LearningOS vector storage using ChromaDB. It covers collections, metadata schemas, IDs, embedding versioning, query behavior, deletion, backup, performance, and tests.
+This document defines Atlas vector storage using ChromaDB. It covers collections, metadata schemas, IDs, embedding versioning, query behavior, deletion, backup, performance, and tests.
 
 Related documents:
 * `03_DATABASE_DESIGN.md`: SQLite and ChromaDB relationship.
@@ -22,7 +22,7 @@ Use embedded persistent ChromaDB.
 
 Default path:
 ```text
-~/.learningos/data/chroma/
+~/.atlas/data/chroma/
 ```
 
 Initialization:

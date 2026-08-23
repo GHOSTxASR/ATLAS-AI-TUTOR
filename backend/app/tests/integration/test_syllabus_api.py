@@ -4,7 +4,7 @@ from fastapi.testclient import TestClient
 
 
 def _make_app(tmp_path, monkeypatch):
-    monkeypatch.setenv("LEARNINGOS_DATA_DIR", str(tmp_path / "learningos-data"))
+    monkeypatch.setenv("ATLAS_DATA_DIR", str(tmp_path / "atlas-data"))
 
     from app.config import get_settings
     from app.main import create_app

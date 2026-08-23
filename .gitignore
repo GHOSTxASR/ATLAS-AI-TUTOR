@@ -18,6 +18,7 @@ frontend/node_modules/
 frontend/dist/
 
 # Local runtime data
+.atlas/
 .learningos/
 data/
 logs/
@@ -44,3 +45,6 @@ Thumbs.db
 .idea/
 .vscode/
 
+# Internal AI-agent working files (kept locally, not distributed)
+.agents/
+ORIGINAL_REQUEST.md

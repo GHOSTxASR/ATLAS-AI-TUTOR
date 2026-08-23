@@ -1,7 +1,7 @@
 # 14. Development Roadmap
 
 ## 1. Project Overview
-**LearningOS** is a local-first, AI-powered personal learning operating system. It aims to replace disjointed notes, folders of PDFs, and amnesic chatbots with a single, unified local environment that remembers the user's progress, maps their knowledge, and acts as a persistent Socratic tutor.
+**Atlas** is a local-first, AI-powered personal learning operating system. It aims to replace disjointed notes, folders of PDFs, and amnesic chatbots with a single, unified local environment that remembers the user's progress, maps their knowledge, and acts as a persistent Socratic tutor.
 
 ## 2. MVP Definition
 The Minimum Viable Product (MVP) focuses on proving the core loop: Ingest Document -> RAG Chat -> Memory Extraction.

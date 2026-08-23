@@ -25,7 +25,7 @@ async def async_db_session():
 
 @pytest.mark.asyncio
 async def test_analytics_service_overview_and_mastery(async_db_session: AsyncSession, tmp_path, monkeypatch):
-    monkeypatch.setenv("LEARNINGOS_DATA_DIR", str(tmp_path / "learningos-data"))
+    monkeypatch.setenv("ATLAS_DATA_DIR", str(tmp_path / "atlas-data"))
     from app.config import get_settings
     get_settings.cache_clear()
 
@@ -98,7 +98,7 @@ async def test_analytics_service_overview_and_mastery(async_db_session: AsyncSes
 
 @pytest.mark.asyncio
 async def test_analytics_service_events_heatmap_and_weaknesses(async_db_session: AsyncSession, tmp_path, monkeypatch):
-    monkeypatch.setenv("LEARNINGOS_DATA_DIR", str(tmp_path / "learningos-data"))
+    monkeypatch.setenv("ATLAS_DATA_DIR", str(tmp_path / "atlas-data"))
     from app.config import get_settings
     get_settings.cache_clear()
 

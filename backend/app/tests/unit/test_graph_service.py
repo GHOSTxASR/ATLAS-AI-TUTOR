@@ -52,7 +52,7 @@ async def async_db_session():
 
 @pytest.mark.asyncio
 async def test_knowledge_graph_node_and_edge_crud(async_db_session: AsyncSession, tmp_path, monkeypatch):
-    monkeypatch.setenv("LEARNINGOS_DATA_DIR", str(tmp_path / "learningos-data"))
+    monkeypatch.setenv("ATLAS_DATA_DIR", str(tmp_path / "atlas-data"))
     from app.config import get_settings
     get_settings.cache_clear()
 
@@ -113,7 +113,7 @@ async def test_knowledge_graph_node_and_edge_crud(async_db_session: AsyncSession
 
 @pytest.mark.asyncio
 async def test_knowledge_graph_enrichment(async_db_session: AsyncSession, tmp_path, monkeypatch):
-    monkeypatch.setenv("LEARNINGOS_DATA_DIR", str(tmp_path / "learningos-data"))
+    monkeypatch.setenv("ATLAS_DATA_DIR", str(tmp_path / "atlas-data"))
     monkeypatch.setattr("app.services.graph_service.get_model_client", lambda s: MockGraphLLM())
 
     from app.config import get_settings

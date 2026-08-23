@@ -64,7 +64,7 @@ export function DashboardPage() {
       <div className="p-8 max-w-xl mx-auto text-center py-20">
         <EmptyState
           icon={Brain}
-          title="Welcome to LearningOS"
+          title="Welcome to Atlas"
           description="Create or select a learner profile to initialize your personalized workstation."
           actionLabel="Create Profile"
           onAction={() => navigate("/setup")}

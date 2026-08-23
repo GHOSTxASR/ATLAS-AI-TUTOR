@@ -19,7 +19,7 @@ import pytest
 
 from app.models.abstraction import BaseModelClient, ChatMessage, ChatResponse, StreamChunk
 
-os.environ.setdefault("LEARNINGOS_EMBEDDING_BACKEND", "hash")
+os.environ.setdefault("ATLAS_EMBEDDING_BACKEND", "hash")
 
 
 @pytest.fixture(autouse=True)
