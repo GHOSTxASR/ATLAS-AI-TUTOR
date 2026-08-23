@@ -96,7 +96,9 @@ class SettingsService:
         catalog = FALLBACK_MODELS.get(provider)
         return catalog[0] if catalog else self.settings.model.chat_model
 
-    async def test_connection(self, provider: str | None = None) -> dict[str, Any]:
+    async def test_connection(
+        self, provider: str | None = None, api_key: str = ""
+    ) -> dict[str, Any]:
         """Test connectivity to a specific provider by making a lightweight API call."""
         p = (provider or self.settings.model.provider).strip().lower()
         try:
@@ -111,7 +113,7 @@ class SettingsService:
                 chat_model=self._model_for_provider(p),
             )
             test_settings = replace(self.settings, model=test_model_settings)
-            client = get_model_client(test_settings)
+            client = get_model_client(test_settings, api_key_override=api_key.strip())
             try:
                 # Make a minimal chat request to verify the key works
                 from app.models.abstraction import ChatMessage as LLMMessage

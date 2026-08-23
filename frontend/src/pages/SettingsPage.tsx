@@ -144,7 +144,7 @@ export function SettingsPage() {
     setSuccess(null);
     setTestResult(null);
     try {
-      const result = await settingsApi.testConnection(selectedProvider);
+      const result = await settingsApi.testConnection(selectedProvider, apiKey);
       setTestResult(
         result.status === "ok"
           ? {

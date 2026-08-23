@@ -100,7 +100,24 @@ def _response_detail(response: httpx.Response) -> str:
             detail = payload["message"]
 
     collapsed = " ".join(str(detail).split())
-    return sanitize_provider_text(collapsed)[:_MAX_DETAIL_CHARS]
+    return _clip(sanitize_provider_text(collapsed))
+
+
+def _clip(text: str) -> str:
+    """Cut over-long provider detail at a word boundary, with an ellipsis.
+
+    A hard slice lands mid-word -- users were shown "To monitor your current
+    usa", which reads like the app mangled the message rather than shortened
+    it.
+    """
+    if len(text) <= _MAX_DETAIL_CHARS:
+        return text
+    cut = text[:_MAX_DETAIL_CHARS]
+    spaced = cut.rsplit(" ", 1)[0]
+    # Only prefer the word boundary when it does not throw away real content.
+    if len(spaced) >= _MAX_DETAIL_CHARS * 0.6:
+        cut = spaced
+    return cut.rstrip(" ,.;:") + "…"
 
 
 def provider_error_from(exc: BaseException, provider: str = "") -> ProviderError:

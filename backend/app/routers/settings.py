@@ -60,7 +60,9 @@ async def test_connection(
 ):
     """Test connection with the specified or active provider."""
     provider = (body or {}).get("provider") if body else None
-    result = await service.test_connection(provider=provider)
+    # Lets the UI verify a key that is typed but not yet saved. Not stored.
+    api_key = str((body or {}).get("api_key") or "")
+    result = await service.test_connection(provider=provider, api_key=api_key)
     return envelope(data=result)
 
 

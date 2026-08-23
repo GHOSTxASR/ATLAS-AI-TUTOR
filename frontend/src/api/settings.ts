@@ -101,10 +101,18 @@ export const settingsApi = {
     return response.data.data;
   },
 
-  testConnection: async (provider?: string): Promise<TestConnectionResponse> => {
+  /**
+   * `apiKey` lets the caller test a key that has been typed but not saved.
+   * Without it the endpoint tests the stored key, so testing a freshly pasted
+   * key reported "not configured" until you pressed Save first.
+   */
+  testConnection: async (
+    provider?: string,
+    apiKey?: string
+  ): Promise<TestConnectionResponse> => {
     const response = await apiClient.post<ApiResponse<TestConnectionResponse>>(
       "/settings/test-connection",
-      { provider }
+      { provider, api_key: apiKey || undefined }
     );
     return response.data.data;
   },

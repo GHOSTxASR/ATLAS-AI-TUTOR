@@ -138,19 +138,28 @@ def get_all_providers() -> list[dict[str, str]]:
     return providers
 
 
-def get_model_client(settings: Settings) -> BaseModelClient:
+def get_model_client(settings: Settings, api_key_override: str = "") -> BaseModelClient:
     """Create and return the appropriate model client based on settings.
 
-    API keys are read from environment variables.
-    For Ollama, no API key is needed.
+    Keys come from the environment or the encrypted keystore. Pass
+    ``api_key_override`` to build a client around a key that has not been saved
+    yet -- "Test Connection" uses this so it verifies the key the user is
+    looking at rather than the last one they stored. The override is used for
+    this client only and is never persisted.
     """
     provider = settings.model.provider.lower()
+
+    def _key(provider_id: str, env_key: str) -> str:
+        if api_key_override:
+            register_secret(api_key_override)
+            return api_key_override
+        return resolve_api_key(settings, provider_id, env_key)
 
     # --- Google Gemini (native client) ---
     if provider == "gemini":
         from app.models.gemini_client import GeminiClient
 
-        api_key = resolve_api_key(settings, "gemini", "GEMINI_API_KEY")
+        api_key = _key("gemini", "GEMINI_API_KEY")
         if not api_key:
             raise ValueError(
                 "No Gemini API key configured. Set it on the Settings page, or set the "
@@ -166,7 +175,7 @@ def get_model_client(settings: Settings) -> BaseModelClient:
     if provider == "anthropic":
         from app.models.anthropic_client import AnthropicClient
 
-        api_key = resolve_api_key(settings, "anthropic", "ANTHROPIC_API_KEY")
+        api_key = _key("anthropic", "ANTHROPIC_API_KEY")
         if not api_key:
             raise ValueError(
                 "No Anthropic API key configured. Set it on the Settings page, or set the "
@@ -193,7 +202,7 @@ def get_model_client(settings: Settings) -> BaseModelClient:
         from app.models.openai_client import OpenAIClient
 
         info = OPENAI_COMPATIBLE_PROVIDERS[provider]
-        api_key = resolve_api_key(settings, provider, info["env_key"])
+        api_key = _key(provider, info["env_key"])
         if not api_key:
             raise ValueError(
                 f"No {info['label']} API key configured. Set it on the Settings page, or set the "
