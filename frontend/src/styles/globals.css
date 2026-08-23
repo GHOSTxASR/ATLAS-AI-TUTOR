@@ -207,8 +207,11 @@ html {
 .markdown-body h2,
 .markdown-body h3,
 .markdown-body h4 {
-  font-family: var(--font-serif);
+  /* Was the serif, left over from before headings moved to the sans display
+     face; tutor replies were rendering in the old typeface. */
+  font-family: var(--font-sans);
   font-weight: 600;
+  letter-spacing: -0.02em;
   line-height: 1.25;
   margin: 1.1em 0 0.5em;
   color: var(--color-on-surface);
@@ -508,6 +511,26 @@ html {
    overriding the direction would rotate its layout. */
 .page-enter > .page-own-layout {
   flex: 1 1 auto;
+  min-height: 0;
+}
+
+/* Chat-style pages scroll internally, which only works if every ancestor has a
+   definite height. The default chain gives them `min-height` and no maximum,
+   so `flex-1; overflow-y-auto` regions never bound: the panel grew with the
+   conversation, the whole page scrolled instead of the message list, and on an
+   empty session the composer sat directly under the header with dead space
+   below it rather than pinned to the bottom. */
+main:has(.page-own-layout) {
+  overflow: hidden;
+}
+
+main:has(.page-own-layout) > * {
+  height: 100%;
+  min-height: 0;
+}
+
+.page-enter:has(> .page-own-layout) {
+  height: 100%;
   min-height: 0;
 }
 
