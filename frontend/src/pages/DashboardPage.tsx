@@ -274,7 +274,7 @@ export function DashboardPage() {
         {/* Target Focus Areas & Weaknesses */}
         <div className="glass-panel p-6 rounded-2xl border border-glass-border space-y-4">
           <div className="flex items-center gap-2">
-            <AlertTriangle className="w-4 h-4 text-amber-300" />
+            <AlertTriangle className="w-4 h-4 text-luminous-highlight" />
             <h2 className="font-editorial text-2xl text-on-surface">Focus Targets</h2>
           </div>
           <p className="text-xs text-on-surface-variant font-sans">
@@ -286,17 +286,17 @@ export function DashboardPage() {
               {weaknesses.slice(0, 4).map((w, idx) => (
                 <div
                   key={idx}
-                  className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-between"
+                  className="p-3 rounded-xl bg-primary-container/25 border border-primary/30 flex items-center justify-between"
                 >
                   <div>
                     <h3 className="text-xs font-semibold text-on-surface">{w.title}</h3>
-                    <p className="text-[10px] text-amber-300">
+                    <p className="text-[10px] text-luminous-highlight">
                       Score: {Math.round((w.mastery_score ?? 0.4) * 100)}%
                     </p>
                   </div>
                   <Link
                     to={`/quiz?topic=${encodeURIComponent(w.title)}`}
-                    className="text-[10px] font-semibold px-2 py-1 bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 rounded border border-amber-500/30 transition"
+                    className="text-[10px] font-semibold px-2 py-1 bg-primary/20 hover:bg-primary/30 text-luminous-highlight rounded border border-primary/30 transition"
                   >
                     Quiz
                   </Link>

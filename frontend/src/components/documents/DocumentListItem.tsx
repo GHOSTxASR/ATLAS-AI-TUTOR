@@ -10,10 +10,10 @@ interface DocumentListItemProps {
 }
 
 const STATUS_STYLES: Record<DocumentStatus, { label: string; className: string }> = {
-  pending: { label: "Pending", className: "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300" },
+  pending: { label: "Pending", className: "bg-surface-container-high text-on-surface-variant" },
   extracting: { label: "Extracting...", className: "bg-primary-container/30 text-primary animate-pulse" },
   extracted: { label: "Extracted", className: "bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300" },
-  pending_ocr: { label: "Awaiting OCR", className: "bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300" },
+  pending_ocr: { label: "Awaiting OCR", className: "bg-primary-container/40 text-luminous-highlight" },
   error: { label: "Error", className: "bg-rose-100 dark:bg-rose-950 text-rose-800 dark:text-rose-300" },
 };
 
@@ -35,28 +35,28 @@ export function DocumentListItem({
   isDeleting,
   isReprocessing,
 }: DocumentListItemProps) {
-  const statusInfo = STATUS_STYLES[document.status] ?? { label: document.status, className: "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300" };
+  const statusInfo = STATUS_STYLES[document.status] ?? { label: document.status, className: "bg-surface-container-high text-on-surface-variant" };
   const Icon = document.file_type === "image" ? ImageIcon : FileText;
   const canReprocess = document.status === "error" || document.status === "pending_ocr";
 
   return (
-    <div className="flex items-center gap-3 sm:gap-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-2xs hover:border-slate-300 dark:hover:border-slate-700 transition">
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+    <div className="flex items-center gap-3 sm:gap-4 glass-card border border-glass-border p-4 hover:border-primary/40 transition">
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center bg-surface-container-high text-on-surface-variant">
         <Icon className="h-5 w-5" />
       </div>
 
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
-          <p className="truncate text-xs sm:text-sm font-bold text-slate-900 dark:text-white">
+          <p className="truncate text-xs sm:text-sm font-bold text-on-surface">
             {document.filename}
           </p>
           {document.is_syllabus && (
-            <span className="shrink-0 rounded-md bg-cyan-100 dark:bg-cyan-950 px-1.5 py-0.5 text-[9px] font-extrabold text-cyan-800 dark:text-cyan-300 uppercase">
+            <span className="shrink-0 bg-primary-container/40 px-1.5 py-0.5 text-[9px] font-extrabold text-primary uppercase">
               Syllabus
             </span>
           )}
         </div>
-        <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] text-slate-400">
+        <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] text-on-surface-variant">
           <span className="uppercase font-semibold">{document.file_type}</span>
           {document.page_count != null && <span>{document.page_count} pages</span>}
           {document.word_count != null && document.word_count > 0 && (
@@ -83,7 +83,7 @@ export function DocumentListItem({
             title="Retry processing"
             onClick={() => onReprocess(document)}
             disabled={isReprocessing}
-            className="rounded-xl p-2 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white transition disabled:opacity-50"
+            className="p-2 text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition disabled:opacity-50"
           >
             {isReprocessing ? (
               <Loader2 className="h-4 w-4 animate-spin text-primary" />
@@ -98,7 +98,7 @@ export function DocumentListItem({
           title="Delete document"
           onClick={() => onDelete(document)}
           disabled={isDeleting}
-          className="rounded-xl p-2 text-slate-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 hover:text-rose-600 transition disabled:opacity-50"
+          className="p-2 text-on-surface-variant hover:bg-rose-500/15 hover:text-rose-400 transition disabled:opacity-50"
         >
           {isDeleting ? (
             <Loader2 className="h-4 w-4 animate-spin text-rose-500" />

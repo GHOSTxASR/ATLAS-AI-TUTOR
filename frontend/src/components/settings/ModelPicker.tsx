@@ -142,7 +142,7 @@ export function ModelPicker({
             {freeCount > 0 && ` · ${freeCount} free`}
           </span>
         ) : (
-          <span className="inline-flex items-center gap-1 text-amber-300">
+          <span className="inline-flex items-center gap-1 text-luminous-highlight">
             <TriangleAlert className="w-3 h-3" />
             Offline list — {error || "could not reach the provider"}
           </span>

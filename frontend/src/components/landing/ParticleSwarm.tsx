@@ -54,8 +54,19 @@ export function ParticleSwarm() {
     let pointerX = -9999;
     let pointerY = -9999;
 
-    const styles = getComputedStyle(document.documentElement);
-    const accentRgb = styles.getPropertyValue("--accent-rgb").trim() || "255, 77, 94";
+    // Read from the live theme so the field works on the light surface too;
+    // re-read when the theme class flips rather than baking colours in at mount.
+    let accentRgb = "255, 77, 94";
+    let neutralRgb = "150, 150, 155";
+
+    const readTheme = () => {
+      const styles = getComputedStyle(document.documentElement);
+      accentRgb = styles.getPropertyValue("--accent-rgb").trim() || accentRgb;
+      neutralRgb = document.documentElement.classList.contains("dark")
+        ? "150, 150, 155"
+        : "90, 92, 100";
+    };
+    readTheme();
 
     const seed = () => {
       const target = Math.round((width * height) / AREA_PER_PARTICLE);
@@ -97,7 +108,7 @@ export function ParticleSwarm() {
           const pair = a.accent || b.accent;
           ctx.strokeStyle = pair
             ? `rgba(${accentRgb}, ${strength * 0.22})`
-            : `rgba(150, 150, 155, ${strength * 0.14})`;
+            : `rgba(${neutralRgb}, ${strength * 0.14})`;
           ctx.lineWidth = 0.6;
           ctx.beginPath();
           ctx.moveTo(a.x, a.y);
@@ -109,7 +120,7 @@ export function ParticleSwarm() {
       for (const p of particles) {
         ctx.fillStyle = p.accent
           ? `rgba(${accentRgb}, 0.75)`
-          : "rgba(178, 178, 184, 0.5)";
+          : `rgba(${neutralRgb}, 0.5)`;
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
         ctx.fill();
@@ -206,6 +217,15 @@ export function ParticleSwarm() {
     document.addEventListener("visibilitychange", onVisibility);
     reduceMotion.addEventListener("change", onMotionPreferenceChange);
 
+    const themeObserver = new MutationObserver(() => {
+      readTheme();
+      draw();
+    });
+    themeObserver.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["class"],
+    });
+
     return () => {
       stop();
       window.clearTimeout(resizeTimer);
@@ -214,6 +234,7 @@ export function ParticleSwarm() {
       document.removeEventListener("pointerleave", onPointerLeave);
       document.removeEventListener("visibilitychange", onVisibility);
       reduceMotion.removeEventListener("change", onMotionPreferenceChange);
+      themeObserver.disconnect();
     };
   }, []);
 

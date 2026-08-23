@@ -82,7 +82,7 @@ export function DocumentsPage() {
       {/* Header */}
       <div>
         <div className="flex items-center gap-3 min-w-0">
-          <div className="p-2.5 rounded-lg bg-deep-slate-teal text-luminous-highlight border border-glass-border shadow-[0_0_10px_rgba(var(--accent-rgb),0.2)]">
+          <div className="p-2.5 rounded-lg bg-primary-container/40 text-luminous-highlight border border-glass-border shadow-[0_0_10px_rgba(var(--accent-rgb),0.2)]">
             <Files className="w-5 h-5" />
           </div>
           <div>

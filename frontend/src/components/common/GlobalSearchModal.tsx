@@ -89,7 +89,7 @@ export function GlobalSearchModal({ isOpen, onClose }: GlobalSearchModalProps) {
       case "chats":
         return <MessageSquare className="w-4 h-4 text-primary" />;
       case "notes":
-        return <FileText className="w-4 h-4 text-amber-300" />;
+        return <FileText className="w-4 h-4 text-luminous-highlight" />;
       case "documents":
         return <Files className="w-4 h-4 text-emerald-400" />;
       case "graph":

@@ -298,7 +298,7 @@ export function GraphPage() {
           <div className="text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider">
             Prerequisites & Links
           </div>
-          <div className="font-editorial text-2xl sm:text-3xl text-emerald-400 mt-1">
+          <div className="font-editorial text-2xl sm:text-3xl text-on-surface mt-1">
             {graphData?.stats?.total_edges ?? 0}
           </div>
         </div>
@@ -306,7 +306,7 @@ export function GraphPage() {
           <div className="text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider">
             Average Mastery
           </div>
-          <div className="font-editorial text-2xl sm:text-3xl text-amber-300 mt-1">
+          <div className="font-editorial text-2xl sm:text-3xl text-on-surface mt-1">
             {Math.round((graphData?.stats?.average_mastery ?? 0) * 100)}%
           </div>
         </div>

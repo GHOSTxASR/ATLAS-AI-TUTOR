@@ -386,7 +386,7 @@ export function SettingsPage() {
                   </label>
 
                   {embeddingCatalog.length === 0 && embeddingError ? (
-                    <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-200 text-[11px] leading-relaxed">
+                    <div className="p-3 rounded-lg bg-primary-container/25 border border-primary/30 text-luminous-highlight text-[11px] leading-relaxed">
                       {embeddingError}
                       <span className="block mt-1 opacity-80">
                         Chat still works. Document search needs a provider with an
@@ -409,7 +409,7 @@ export function SettingsPage() {
                   {indexedModels.length > 0 &&
                     embeddingModel &&
                     !indexedModels.includes(embeddingModel) && (
-                      <div className="mt-2 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-200 text-[11px] leading-relaxed">
+                      <div className="mt-2 p-3 rounded-lg bg-primary-container/25 border border-primary/30 text-luminous-highlight text-[11px] leading-relaxed">
                         Your documents are indexed with{" "}
                         <span className="font-mono">{indexedModels.join(", ")}</span>.
                         Switching to <span className="font-mono">{embeddingModel}</span>{" "}

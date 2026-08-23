@@ -110,8 +110,8 @@ export function AnalyticsPage() {
             Study time metrics, syllabus progress, retention mastery, and concept telemetry for {activeProfile.name}.
           </p>
         </div>
-        <div className="flex items-center gap-2 bg-amber-500/10 border border-amber-500/20 px-3.5 py-1.5 rounded-xl text-amber-300 text-xs font-semibold shadow-sm">
-          <Flame className="w-4 h-4 text-amber-400 animate-pulse" />
+        <div className="flex items-center gap-2 bg-primary-container/25 border border-primary/30 px-3.5 py-1.5 rounded-xl text-luminous-highlight text-xs font-semibold shadow-sm">
+          <Flame className="w-4 h-4 text-luminous-highlight animate-pulse" />
           <span>{overview?.active_streak_days ?? 1} Day Streak</span>
         </div>
       </div>
@@ -163,10 +163,10 @@ export function AnalyticsPage() {
         {/* 3. Average Mastery */}
         <div className="glass-card p-5 border border-glass-border space-y-2">
           <div className="flex justify-between items-center text-on-surface-variant">
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-amber-300">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-luminous-highlight">
               Average Mastery
             </span>
-            <Award className="w-4 h-4 text-amber-300" />
+            <Award className="w-4 h-4 text-luminous-highlight" />
           </div>
           <div className="font-editorial text-3xl sm:text-4xl text-on-surface">
             {avgMasteryPct}%
@@ -234,7 +234,7 @@ export function AnalyticsPage() {
             {[
               { id: "mastered", label: "Mastered (>85%)", count: mastery?.mastered_count ?? 0, color: "text-emerald-400" },
               { id: "proficient", label: "Proficient (60-85%)", count: mastery?.proficient_count ?? 0, color: "text-primary" },
-              { id: "needs_practice", label: "Needs Practice (<60%)", count: mastery?.needs_practice_count ?? 0, color: "text-amber-300" },
+              { id: "needs_practice", label: "Needs Practice (<60%)", count: mastery?.needs_practice_count ?? 0, color: "text-luminous-highlight" },
               { id: "unstarted", label: "Unstarted", count: mastery?.unstarted_count ?? 0, color: "text-on-surface-variant" },
             ].map((tab) => (
               <button
@@ -271,7 +271,7 @@ export function AnalyticsPage() {
         {/* Weakness Concepts */}
         <div className="glass-panel p-6 rounded-2xl border border-glass-border space-y-4">
           <div className="flex items-center gap-2">
-            <AlertTriangle className="w-5 h-5 text-amber-300" />
+            <AlertTriangle className="w-5 h-5 text-luminous-highlight" />
             <h2 className="font-editorial text-2xl text-on-surface">Review Focus</h2>
           </div>
           <p className="text-xs text-on-surface-variant font-sans">
@@ -282,11 +282,11 @@ export function AnalyticsPage() {
             {weaknesses.map((w, idx) => (
               <div
                 key={idx}
-                className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-between"
+                className="p-3 rounded-xl bg-primary-container/25 border border-primary/30 flex items-center justify-between"
               >
                 <div>
                   <h4 className="text-xs font-semibold text-on-surface">{w.title}</h4>
-                  <span className="text-[10px] text-amber-300 font-mono">
+                  <span className="text-[10px] text-luminous-highlight font-mono">
                     Score: {Math.round((w.mastery_score ?? 0.4) * 100)}%
                   </span>
                 </div>

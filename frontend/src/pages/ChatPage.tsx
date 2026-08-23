@@ -349,7 +349,7 @@ export function ChatPage() {
                       <div
                         className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center shrink-0 border border-glass-border shadow-sm ${
                           msg.role === "user"
-                            ? "bg-deep-slate-teal text-luminous-highlight"
+                            ? "bg-primary-container/40 text-luminous-highlight"
                             : "bg-surface-container-high text-primary"
                         }`}
                       >
@@ -359,7 +359,7 @@ export function ChatPage() {
                       <div
                         className={`min-w-0 rounded-xl px-4 sm:px-5 py-3 text-xs sm:text-sm leading-relaxed ${
                           msg.role === "user"
-                            ? "bg-deep-slate-teal/80 text-on-surface rounded-tr-none border border-glass-border shadow-sm"
+                            ? "bg-primary-container/40/80 text-on-surface rounded-tr-none border border-glass-border shadow-sm"
                             : "glass-card text-on-surface rounded-tl-none border border-glass-border shadow-[0_4px_20px_rgba(0,0,0,0.08)]"
                         }`}
                       >
@@ -494,7 +494,7 @@ export function ChatPage() {
 
                       {/* Pillar 3: Knowledge Graph */}
                       <div className="p-3 rounded-xl bg-surface-container/40 border border-glass-border">
-                        <div className="flex items-center gap-1.5 text-amber-300 font-semibold mb-1">
+                        <div className="flex items-center gap-1.5 text-luminous-highlight font-semibold mb-1">
                           <Share2 className="w-3.5 h-3.5" />
                           <span>3. Concept Graph</span>
                         </div>

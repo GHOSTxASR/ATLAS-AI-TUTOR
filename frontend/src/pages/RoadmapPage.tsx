@@ -253,7 +253,7 @@ export function RoadmapPage() {
                             {node.title}
                           </h3>
                           {node.ai_generated && (
-                            <Sparkles className="w-3 h-3 text-amber-300 shrink-0" />
+                            <Sparkles className="w-3 h-3 text-luminous-highlight shrink-0" />
                           )}
                         </div>
                         <p className="text-[11px] text-on-surface-variant mt-0.5 truncate font-sans capitalize">
@@ -326,7 +326,7 @@ export function RoadmapPage() {
                   </button>
                   <button
                     onClick={() => handleUpdateStatus(selectedNode.id, "flagged")}
-                    className="px-3 py-2 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-xs font-semibold text-amber-300 border border-amber-500/30 transition"
+                    className="px-3 py-2 rounded-lg bg-primary/20 hover:bg-primary/30 text-xs font-semibold text-luminous-highlight border border-primary/30 transition"
                   >
                     Needs Review
                   </button>
@@ -345,7 +345,7 @@ export function RoadmapPage() {
                   to={`/quiz?topic=${encodeURIComponent(selectedNode.title)}`}
                   className="w-full py-2.5 bg-surface-container/50 hover:bg-surface-container-high text-on-surface text-xs font-semibold rounded-lg flex items-center justify-center gap-2 border border-glass-border transition"
                 >
-                  <Award className="w-4 h-4 text-amber-300" /> Take Diagnostic Quiz
+                  <Award className="w-4 h-4 text-luminous-highlight" /> Take Diagnostic Quiz
                 </Link>
               </div>
             </>

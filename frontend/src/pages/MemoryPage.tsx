@@ -126,8 +126,8 @@ export function MemoryPage() {
     goal: {
       label: "Milestones",
       icon: Bookmark,
-      color: "text-amber-300",
-      bg: "bg-amber-500/10 border-amber-500/20",
+      color: "text-luminous-highlight",
+      bg: "bg-primary-container/25 border-primary/30",
     },
     fact: {
       label: "Facts",

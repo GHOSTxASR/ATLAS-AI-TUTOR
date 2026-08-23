@@ -19,7 +19,8 @@ import {
   HelpCircle,
 } from "lucide-react";
 import { GlobalSearchModal } from "../common/GlobalSearchModal";
-import { LiquidBackground } from "../common/LiquidBackground";
+import { ParticleSwarm } from "../landing/ParticleSwarm";
+import { PageTransition } from "./PageTransition";
 import { useThemeStore } from "../../stores/themeStore";
 import { useProfileStore } from "../../stores/profileStore";
 import { useFocusTrap } from "../../hooks/useFocusTrap";
@@ -86,8 +87,8 @@ export function AppLayout({ children }: AppLayoutProps) {
     // container, which silently disabled `position: sticky` on the sidebar --
     // the whole rail scrolled away with the page.
     <div className="h-screen overflow-hidden bg-surface dark:bg-[#131314] text-on-surface dark:text-[#e5e2e3] relative flex flex-col md:flex-row antialiased selection:bg-primary/20 selection:text-primary">
-      {/* Liquid WebGL Canvas Background */}
-      <LiquidBackground />
+      {/* Same ambient field as the landing page, so the app reads as one product. */}
+      <ParticleSwarm />
 
       {/* Mobile Top Header */}
       <header className="md:hidden shrink-0 z-30 flex items-center justify-between px-4 py-3 bg-surface/75 dark:bg-[#131314]/80 backdrop-blur-xl border-b border-glass-border">
@@ -101,7 +102,7 @@ export function AppLayout({ children }: AppLayoutProps) {
             {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
           <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-md bg-deep-slate-teal text-luminous-highlight border border-glass-border flex items-center justify-center font-bold text-xs shadow-sm">
+            <div className="w-7 h-7 rounded-md bg-primary-container/40 text-luminous-highlight border border-glass-border flex items-center justify-center font-bold text-xs shadow-sm">
               <Sparkles className="w-4 h-4" />
             </div>
             <span className="font-editorial text-xl font-normal tracking-tight text-on-surface">
@@ -146,7 +147,7 @@ export function AppLayout({ children }: AppLayoutProps) {
           {/* Brand Logo */}
           <div className="flex items-center justify-between px-2 pt-1 pb-1">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-deep-slate-teal text-luminous-highlight border border-glass-border flex items-center justify-center shadow-[0_0_12px_rgba(var(--accent-rgb),0.2)]">
+              <div className="w-8 h-8 rounded-lg bg-primary-container/40 text-luminous-highlight border border-glass-border flex items-center justify-center shadow-[0_0_12px_rgba(var(--accent-rgb),0.2)]">
                 <Sparkles className="w-4 h-4" />
               </div>
               <div>
@@ -253,7 +254,7 @@ export function AppLayout({ children }: AppLayoutProps) {
           wrapper carries the max-width so the scrollbar sits at the edge. */}
       <main className="flex-1 min-w-0 relative z-10 overflow-y-auto overflow-x-hidden">
         <div className="mx-auto w-full min-w-0 max-w-7xl min-h-full flex flex-col p-4 sm:p-6 lg:p-8">
-          {children}
+          <PageTransition>{children}</PageTransition>
         </div>
       </main>
 

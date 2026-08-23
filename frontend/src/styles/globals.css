@@ -24,6 +24,16 @@
   --color-tertiary-container: var(--color-tertiary-container);
   --color-luminous-highlight: var(--color-luminous-highlight);
   --color-glass-border: var(--color-glass-border);
+
+  /* Flat, rectangular surfaces everywhere -- matching the landing page. */
+  --radius-xs: 0px;
+  --radius-sm: 0px;
+  --radius-md: 0px;
+  --radius-lg: 0px;
+  --radius-xl: 0px;
+  --radius-2xl: 0px;
+  --radius-3xl: 0px;
+  --radius-4xl: 0px;
 }
 
 @custom-variant dark (&:where(.dark, .dark *));
@@ -68,13 +78,17 @@ html {
   }
 }
 
-/* Glass Panels & Containers */
+/* Surfaces.
+   Flat rectangles with a hairline border, matching the landing page. The
+   sidebar keeps a backdrop blur because it is structural chrome sitting over
+   a moving background and needs to separate from it; content cards do not. */
 .glass-panel {
   background-color: var(--color-glass-surface);
-  backdrop-filter: blur(20px) saturate(160%);
-  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  backdrop-filter: blur(20px) saturate(140%);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
   border: 1px solid var(--color-glass-border);
-  box-shadow: inset 1px 1px 0px rgba(255, 255, 255, 0.05);
+  border-radius: 0;
+  box-shadow: none;
 }
 
 .glass-panel-deep {
@@ -82,23 +96,38 @@ html {
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid var(--color-glass-border);
-  box-shadow: inset 1px 1px 0px rgba(255, 255, 255, 0.04);
+  border-radius: 0;
+  box-shadow: none;
 }
 
 .glass-card {
-  background-color: var(--color-glass-surface);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
+  background-color: color-mix(in srgb, var(--color-on-surface) 3%, transparent);
   border: 1px solid var(--color-glass-border);
-  box-shadow: inset 1px 1px 0px rgba(255, 255, 255, 0.05);
-  border-radius: 0.75rem;
+  border-radius: 0;
+  box-shadow: none;
 }
 
-/* Editorial Serif Headings */
+/* The landing page's signature: a 2px accent rule capping a flat card.
+   Opt-in, so it marks the primary card on a page rather than every card. */
+.card-accent {
+  border-top: 2px solid var(--color-primary);
+}
+
+/* Display headings.
+   Named "editorial" from when these were serif; they now follow the landing
+   page's wordmark treatment -- sans with tight tracking -- so the app and the
+   landing read as one product. The serif survives as a deliberate accent. */
 .font-editorial {
+  font-family: var(--font-sans);
+  font-weight: 500;
+  letter-spacing: -0.035em;
+  line-height: 1.08;
+}
+
+.font-accent {
   font-family: var(--font-serif);
+  font-style: italic;
   letter-spacing: -0.02em;
-  line-height: 1.15;
 }
 
 /* Luminous Glow Elements */
@@ -120,8 +149,15 @@ html {
   height: 1.5rem;
   width: 0.25rem;
   background-color: var(--color-luminous-highlight);
-  border-radius: 9999px;
   box-shadow: 0 0 10px rgba(var(--accent-rgb), 0.5);
+}
+
+/* Neither of these resolves from a theme variable in Tailwind v4 -- the bare
+   `rounded` is a hardcoded 0.25rem and `rounded-full` a hardcoded pill -- so
+   they are squared here to match the rest of the flattened scale. */
+@layer utilities {
+  .rounded { border-radius: 0; }
+  .rounded-full { border-radius: 0; }
 }
 
 /* Custom Scrollbars */
@@ -134,7 +170,6 @@ html {
 }
 ::-webkit-scrollbar-thumb {
   background: rgba(140, 150, 160, 0.2);
-  border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(140, 150, 160, 0.35);
@@ -270,6 +305,49 @@ html {
   overflow-x: auto;
   overflow-y: hidden;
   padding-bottom: 0.2em;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Page transitions
+   The main region replays a short enter animation on every route change, and
+   the page's own top-level sections follow in sequence -- the same reveal the
+   landing page uses, applied from one place instead of per page.
+   ───────────────────────────────────────────────────────────── */
+.page-enter {
+  animation: atlas-page-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes atlas-page-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* `> * > *` reaches the page component's own sections: the wrapper holds the
+   page root, and the page root holds the sections we want to stagger. */
+.page-enter > * > * {
+  animation: atlas-in-soft 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.page-enter > * > *:nth-child(1) { animation-delay: 0.04s; }
+.page-enter > * > *:nth-child(2) { animation-delay: 0.09s; }
+.page-enter > * > *:nth-child(3) { animation-delay: 0.14s; }
+.page-enter > * > *:nth-child(4) { animation-delay: 0.19s; }
+.page-enter > * > *:nth-child(5) { animation-delay: 0.24s; }
+.page-enter > * > *:nth-child(n+6) { animation-delay: 0.28s; }
+
+/* Pages that own their own scroll or full-height flex layout opt out: a
+   transform on an ancestor changes the containing block, which breaks
+   position: sticky and confuses nested scroll regions. */
+.page-enter > .page-no-stagger > * {
+  animation: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-enter,
+  .page-enter > * > * {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
 }
 
 /* ─────────────────────────────────────────────────────────────

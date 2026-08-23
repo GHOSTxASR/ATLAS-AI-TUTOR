@@ -262,15 +262,15 @@ export function KnowledgeGraphCanvas({
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseUp}
       onWheel={handleWheel}
-      className="relative w-full h-[550px] bg-slate-950 rounded-2xl overflow-hidden cursor-grab active:cursor-grabbing select-none border border-slate-800 shadow-inner"
+      className="relative w-full h-[550px] bg-surface-container-lowest rounded-2xl overflow-hidden cursor-grab active:cursor-grabbing select-none border border-glass-border shadow-inner"
     >
       {/* Zoom / Navigation Floating Toolbar */}
-      <div className="absolute top-4 right-4 z-20 flex flex-col gap-1.5 bg-slate-900/90 backdrop-blur p-1.5 rounded-xl border border-slate-700 shadow-lg">
+      <div className="absolute top-4 right-4 z-20 flex flex-col gap-1.5 bg-surface-container/90 backdrop-blur p-1.5 rounded-xl border border-glass-border shadow-lg">
         <button
           onClick={() => handleZoom(0.2)}
           title="Zoom In"
           aria-label="Zoom in"
-          className="w-8 h-8 flex items-center justify-center text-slate-200 hover:bg-slate-800 hover:text-white rounded-lg text-lg font-bold transition"
+          className="w-8 h-8 flex items-center justify-center text-on-surface hover:bg-surface-container-high hover:text-on-surface rounded-lg text-lg font-bold transition"
         >
           +
         </button>
@@ -278,7 +278,7 @@ export function KnowledgeGraphCanvas({
           onClick={() => handleZoom(-0.2)}
           title="Zoom Out"
           aria-label="Zoom out"
-          className="w-8 h-8 flex items-center justify-center text-slate-200 hover:bg-slate-800 hover:text-white rounded-lg text-lg font-bold transition"
+          className="w-8 h-8 flex items-center justify-center text-on-surface hover:bg-surface-container-high hover:text-on-surface rounded-lg text-lg font-bold transition"
         >
           −
         </button>
@@ -286,7 +286,7 @@ export function KnowledgeGraphCanvas({
           onClick={handleResetView}
           title="Reset View"
           aria-label="Reset graph view"
-          className="w-8 h-8 flex items-center justify-center text-slate-200 hover:bg-slate-800 hover:text-white rounded-lg text-xs font-semibold transition"
+          className="w-8 h-8 flex items-center justify-center text-on-surface hover:bg-surface-container-high hover:text-on-surface rounded-lg text-xs font-semibold transition"
         >
           ⤢
         </button>
@@ -442,7 +442,7 @@ export function KnowledgeGraphCanvas({
                 <circle
                   r={node.radius}
                   fill={nodeColor}
-                  stroke={isSelected ? "#ffffff" : "#0f172a"}
+                  stroke={isSelected ? "#ffffff" : "#111113"}
                   strokeWidth={2}
                   className="group-hover:brightness-125 transition"
                 />
@@ -498,7 +498,7 @@ export function KnowledgeGraphCanvas({
       </svg>
 
       {/* Instruction Overlay Banner */}
-      <div className="absolute bottom-3 left-4 z-10 text-[11px] text-slate-400 bg-slate-900/80 backdrop-blur px-3 py-1.5 rounded-lg border border-slate-800 pointer-events-none">
+      <div className="absolute bottom-3 left-4 z-10 text-[11px] text-on-surface-variant bg-surface-container/80 backdrop-blur px-3 py-1.5 rounded-lg border border-glass-border pointer-events-none">
         🖱️ <b>Pan:</b> Drag background · <b>Zoom:</b> Mouse wheel · <b>Move:</b> Drag node · <b>Select:</b> Click node
       </div>
     </div>
