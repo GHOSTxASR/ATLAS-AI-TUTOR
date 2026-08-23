@@ -124,7 +124,7 @@ export function SetupPage() {
             <button
               type="submit"
               disabled={isLoading || !newName.trim()}
-              className="w-full py-2.5 bg-primary hover:opacity-90 disabled:opacity-40 text-on-primary text-xs font-semibold rounded-xl shadow-[0_0_12px_rgba(160,240,237,0.25)] transition flex items-center justify-center gap-2"
+              className="w-full py-2.5 bg-primary hover:opacity-90 disabled:opacity-40 text-on-primary text-xs font-semibold rounded-xl shadow-[0_0_12px_rgba(var(--accent-rgb),0.25)] transition flex items-center justify-center gap-2"
             >
               <Sparkles className="w-4 h-4" /> Create Profile
             </button>
@@ -151,7 +151,7 @@ export function SetupPage() {
                   key={p.id}
                   className={`glass-card p-5 border transition-all duration-300 flex flex-col justify-between space-y-4 ${
                     isActive
-                      ? "bg-surface-container/70 border-primary shadow-[0_0_15px_rgba(160,240,237,0.2)] luminous-active"
+                      ? "bg-surface-container/70 border-primary shadow-[0_0_15px_rgba(var(--accent-rgb),0.2)] luminous-active"
                       : "bg-surface-container/30 border-glass-border hover:border-primary/40"
                   }`}
                 >

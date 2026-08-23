@@ -227,7 +227,7 @@ export function SettingsPage() {
                 onClick={() => setTheme(mode.id as ThemeMode)}
                 className={`p-3 sm:p-4 rounded-xl border flex flex-col items-center justify-center gap-2 text-center transition ${
                   isSelected
-                    ? "bg-surface-container/70 border-primary text-primary shadow-[0_0_10px_rgba(160,240,237,0.2)] luminous-active"
+                    ? "bg-surface-container/70 border-primary text-primary shadow-[0_0_10px_rgba(var(--accent-rgb),0.2)] luminous-active"
                     : "bg-surface-container/30 border-glass-border hover:bg-surface-container/60 text-on-surface-variant"
                 }`}
               >
@@ -268,7 +268,7 @@ export function SettingsPage() {
                     }}
                     className={`p-3.5 rounded-xl border text-left flex flex-col justify-between space-y-2 transition ${
                       isSelected
-                        ? "bg-surface-container/70 border-primary shadow-[0_0_10px_rgba(160,240,237,0.2)] luminous-active"
+                        ? "bg-surface-container/70 border-primary shadow-[0_0_10px_rgba(var(--accent-rgb),0.2)] luminous-active"
                         : "bg-surface-container/30 border-glass-border hover:bg-surface-container/60"
                     }`}
                   >
@@ -454,7 +454,7 @@ export function SettingsPage() {
               <button
                 onClick={handleSave}
                 disabled={saving}
-                className="flex-1 py-2.5 bg-primary hover:opacity-90 disabled:opacity-40 text-on-primary text-xs font-semibold rounded-xl shadow-[0_0_12px_rgba(160,240,237,0.25)] transition flex items-center justify-center gap-2"
+                className="flex-1 py-2.5 bg-primary hover:opacity-90 disabled:opacity-40 text-on-primary text-xs font-semibold rounded-xl shadow-[0_0_12px_rgba(var(--accent-rgb),0.25)] transition flex items-center justify-center gap-2"
               >
                 {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
                 <span>{saving ? "Saving Configuration..." : "Save Settings"}</span>

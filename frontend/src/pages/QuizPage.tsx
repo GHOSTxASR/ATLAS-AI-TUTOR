@@ -224,7 +224,7 @@ export function QuizPage() {
                       onClick={() => setQuizMode(m.id as QuizMode)}
                       className={`p-3 rounded-xl border text-left transition ${
                         quizMode === m.id
-                          ? "bg-surface-container/70 border-primary shadow-[0_0_8px_rgba(160,240,237,0.2)] luminous-active"
+                          ? "bg-surface-container/70 border-primary shadow-[0_0_8px_rgba(var(--accent-rgb),0.2)] luminous-active"
                           : "bg-surface-container/30 border-glass-border hover:bg-surface-container/50 text-on-surface-variant"
                       }`}
                     >
@@ -254,7 +254,7 @@ export function QuizPage() {
             <button
               onClick={handleStartQuiz}
               disabled={loading || (!selectedNodeId && !customTopic.trim())}
-              className="w-full py-3 bg-primary hover:opacity-90 disabled:opacity-40 text-on-primary text-xs font-semibold rounded-xl shadow-[0_0_15px_rgba(160,240,237,0.3)] transition flex items-center justify-center gap-2"
+              className="w-full py-3 bg-primary hover:opacity-90 disabled:opacity-40 text-on-primary text-xs font-semibold rounded-xl shadow-[0_0_15px_rgba(var(--accent-rgb),0.3)] transition flex items-center justify-center gap-2"
             >
               <Sparkles className="w-4 h-4" />
               {loading ? "Synthesizing Assessment..." : "Launch Quiz Session"}
@@ -347,7 +347,7 @@ export function QuizPage() {
                         onClick={() => handleAnswerChange(q.id, opt.id)}
                         className={`w-full p-3.5 rounded-xl border text-left text-xs sm:text-sm font-medium transition flex items-center gap-3 ${
                           userAnswers[q.id] === opt.id
-                            ? "bg-surface-container/70 border-primary text-primary shadow-[0_0_8px_rgba(160,240,237,0.2)]"
+                            ? "bg-surface-container/70 border-primary text-primary shadow-[0_0_8px_rgba(var(--accent-rgb),0.2)]"
                             : "bg-surface-container/30 border-glass-border text-on-surface hover:bg-surface-container/60"
                         }`}
                       >

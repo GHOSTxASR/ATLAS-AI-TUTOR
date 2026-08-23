@@ -144,17 +144,17 @@ export function AnalyticsPage() {
         {/* 2. Syllabus Completion */}
         <div className="glass-card p-5 border border-glass-border space-y-2">
           <div className="flex justify-between items-center text-on-surface-variant">
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-emerald-400">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
               Syllabus Completion
             </span>
-            <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+            <CheckCircle2 className="w-4 h-4 text-on-surface-variant" />
           </div>
           <div className="font-editorial text-3xl sm:text-4xl text-on-surface">
             {completionPct}%
           </div>
           <div className="w-full bg-surface-container-highest/50 rounded-full h-1.5 overflow-hidden">
             <div
-              className="bg-emerald-400 h-1.5 rounded-full"
+              className="bg-primary h-1.5 rounded-full"
               style={{ width: `${completionPct}%` }}
             />
           </div>
@@ -210,7 +210,7 @@ export function AnalyticsPage() {
                 ? "bg-primary/30"
                 : item.minutes < 45
                 ? "bg-primary/60"
-                : "bg-primary shadow-[0_0_8px_rgba(160,240,237,0.3)]";
+                : "bg-primary shadow-[0_0_8px_rgba(var(--accent-rgb),0.3)]";
             return (
               <div
                 key={idx}
@@ -242,7 +242,7 @@ export function AnalyticsPage() {
                 onClick={() => setSelectedMasteryTab(tab.id as any)}
                 className={`p-3 rounded-xl border text-left transition ${
                   selectedMasteryTab === tab.id
-                    ? "bg-surface-container/70 border-primary shadow-[0_0_8px_rgba(160,240,237,0.2)] luminous-active"
+                    ? "bg-surface-container/70 border-primary shadow-[0_0_8px_rgba(var(--accent-rgb),0.2)] luminous-active"
                     : "bg-surface-container/30 border-glass-border hover:bg-surface-container/50"
                 }`}
               >

@@ -172,7 +172,7 @@ export function GlobalSearchModal({ isOpen, onClose }: GlobalSearchModalProps) {
               aria-selected={selectedCategory === cat.id}
               className={`px-3 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition ${
                 selectedCategory === cat.id
-                  ? "bg-primary text-on-primary shadow-[0_0_8px_rgba(160,240,237,0.3)]"
+                  ? "bg-primary text-on-primary shadow-[0_0_8px_rgba(var(--accent-rgb),0.3)]"
                   : "bg-surface-container/40 text-on-surface-variant hover:text-on-surface border border-glass-border"
               }`}
             >

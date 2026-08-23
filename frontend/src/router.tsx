@@ -1,8 +1,7 @@
-import React, { Suspense, lazy, useEffect, useState } from "react";
-import { createBrowserRouter, Navigate } from "react-router-dom";
+import React, { Suspense, lazy } from "react";
+import { createBrowserRouter } from "react-router-dom";
 import { App } from "./App";
 import { Spinner } from "./components/common/LoadingStates";
-import { useProfileStore } from "./stores/profileStore";
 
 const AnalyticsPage = lazy(() => import("./pages/AnalyticsPage").then(m => ({ default: m.AnalyticsPage })));
 const ChatPage = lazy(() => import("./pages/ChatPage").then(m => ({ default: m.ChatPage })));
@@ -15,6 +14,7 @@ const QuizPage = lazy(() => import("./pages/QuizPage").then(m => ({ default: m.Q
 const RoadmapPage = lazy(() => import("./pages/RoadmapPage").then(m => ({ default: m.RoadmapPage })));
 const SettingsPage = lazy(() => import("./pages/SettingsPage").then(m => ({ default: m.SettingsPage })));
 const SetupPage = lazy(() => import("./pages/SetupPage").then(m => ({ default: m.SetupPage })));
+const LandingPage = lazy(() => import("./pages/LandingPage").then(m => ({ default: m.LandingPage })));
 
 function PageSuspense({ children }: { children: React.ReactNode }) {
   return (
@@ -30,35 +30,19 @@ function PageSuspense({ children }: { children: React.ReactNode }) {
   );
 }
 
-function StartRoute() {
-  const { profiles, isLoading, error, loadProfiles } = useProfileStore();
-  const [loaded, setLoaded] = useState(false);
-
-  useEffect(() => {
-    loadProfiles().finally(() => setLoaded(true));
-  }, [loadProfiles]);
-
-  if (!loaded || isLoading) {
-    return (
-      <div className="flex h-64 w-full items-center justify-center">
-        <Spinner size="lg" label="Loading profiles..." />
-      </div>
-    );
-  }
-
-  if (error) {
-    return <div className="p-8 text-center" role="alert">{error}</div>;
-  }
-
-  return <Navigate to={profiles.length > 0 ? "/dashboard" : "/setup"} replace />;
-}
-
 export const router = createBrowserRouter([
+  {
+    path: "/",
+    element: (
+      <PageSuspense>
+        <LandingPage />
+      </PageSuspense>
+    ),
+  },
   {
     path: "/",
     element: <App />,
     children: [
-      { index: true, element: <StartRoute /> },
       { path: "setup", element: <PageSuspense><SetupPage /></PageSuspense> },
       { path: "dashboard", element: <PageSuspense><DashboardPage /></PageSuspense> },
       { path: "chat", element: <PageSuspense><ChatPage /></PageSuspense> },

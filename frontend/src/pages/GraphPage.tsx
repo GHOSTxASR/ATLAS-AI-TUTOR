@@ -257,7 +257,7 @@ export function GraphPage() {
         <div className="flex flex-wrap gap-2.5">
           <button
             onClick={() => setShowEnrichModal(true)}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-primary hover:opacity-90 active:scale-95 text-on-primary text-xs font-semibold rounded-lg shadow-[0_0_12px_rgba(160,240,237,0.25)] transition"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-primary hover:opacity-90 active:scale-95 text-on-primary text-xs font-semibold rounded-lg shadow-[0_0_12px_rgba(var(--accent-rgb),0.25)] transition"
           >
             <Sparkles className="w-3.5 h-3.5" /> AI Extract
           </button>
@@ -363,7 +363,7 @@ export function GraphPage() {
                 onClick={() => setSelectedType(t)}
                 className={`px-3 py-1 rounded-lg text-xs font-semibold capitalize transition ${
                   selectedType === t
-                    ? "bg-primary text-on-primary shadow-[0_0_10px_rgba(160,240,237,0.3)]"
+                    ? "bg-primary text-on-primary shadow-[0_0_10px_rgba(var(--accent-rgb),0.3)]"
                     : "bg-surface-container/40 text-on-surface-variant hover:text-on-surface border border-glass-border"
                 }`}
               >
@@ -479,7 +479,7 @@ export function GraphPage() {
                   onClick={() => handleUpdateMastery(score)}
                   className={`px-2.5 py-1 rounded text-xs font-mono transition ${
                     selectedNode.mastery_score === score
-                      ? "bg-primary text-on-primary font-bold shadow-[0_0_8px_rgba(160,240,237,0.3)]"
+                      ? "bg-primary text-on-primary font-bold shadow-[0_0_8px_rgba(var(--accent-rgb),0.3)]"
                       : "bg-surface-container/50 text-on-surface-variant hover:text-on-surface border border-glass-border"
                   }`}
                 >
@@ -718,7 +718,7 @@ export function GraphPage() {
               </button>
               <button
                 type="submit"
-                className="px-4 py-2 bg-primary hover:opacity-90 text-on-primary text-xs font-semibold rounded-lg shadow-[0_0_12px_rgba(160,240,237,0.3)]"
+                className="px-4 py-2 bg-primary hover:opacity-90 text-on-primary text-xs font-semibold rounded-lg shadow-[0_0_12px_rgba(var(--accent-rgb),0.3)]"
               >
                 Extract & Map
               </button>

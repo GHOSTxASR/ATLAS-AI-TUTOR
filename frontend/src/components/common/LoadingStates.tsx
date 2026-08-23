@@ -103,7 +103,7 @@ export function EmptyState({
       {actionLabel && onAction && (
         <button
           onClick={onAction}
-          className="mt-2 px-4 py-2 bg-primary hover:opacity-90 active:scale-95 text-on-primary text-xs font-semibold rounded-xl shadow-[0_0_10px_rgba(160,240,237,0.2)] transition"
+          className="mt-2 px-4 py-2 bg-primary hover:opacity-90 active:scale-95 text-on-primary text-xs font-semibold rounded-xl shadow-[0_0_10px_rgba(var(--accent-rgb),0.2)] transition"
         >
           {actionLabel}
         </button>

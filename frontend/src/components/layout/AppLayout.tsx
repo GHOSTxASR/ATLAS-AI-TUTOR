@@ -146,7 +146,7 @@ export function AppLayout({ children }: AppLayoutProps) {
           {/* Brand Logo */}
           <div className="flex items-center justify-between px-2 pt-1 pb-1">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-deep-slate-teal text-luminous-highlight border border-glass-border flex items-center justify-center shadow-[0_0_12px_rgba(160,240,237,0.2)]">
+              <div className="w-8 h-8 rounded-lg bg-deep-slate-teal text-luminous-highlight border border-glass-border flex items-center justify-center shadow-[0_0_12px_rgba(var(--accent-rgb),0.2)]">
                 <Sparkles className="w-4 h-4" />
               </div>
               <div>
@@ -194,7 +194,7 @@ export function AppLayout({ children }: AppLayoutProps) {
                   className={({ isActive }) =>
                     `flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition-all duration-200 group ${
                       isActive
-                        ? "bg-surface-container/60 text-luminous-highlight border border-glass-border shadow-[0_0_10px_rgba(160,240,237,0.15)] luminous-active"
+                        ? "bg-surface-container/60 text-luminous-highlight border border-glass-border shadow-[0_0_10px_rgba(var(--accent-rgb),0.15)] luminous-active"
                         : "text-on-surface-variant hover:text-on-surface hover:bg-surface-container/30 border border-transparent"
                     }`
                   }

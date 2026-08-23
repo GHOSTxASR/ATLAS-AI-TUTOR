@@ -185,7 +185,7 @@ export function NotesPage() {
 
         <button
           onClick={() => setShowGenModal(true)}
-          className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-primary hover:opacity-90 active:scale-95 text-on-primary text-xs font-semibold rounded-lg shadow-[0_0_12px_rgba(160,240,237,0.25)] transition"
+          className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-primary hover:opacity-90 active:scale-95 text-on-primary text-xs font-semibold rounded-lg shadow-[0_0_12px_rgba(var(--accent-rgb),0.25)] transition"
         >
           <Sparkles className="w-4 h-4" /> Generate AI Note
         </button>
@@ -200,7 +200,7 @@ export function NotesPage() {
               onClick={() => setSelectedType(t.id)}
               className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition ${
                 selectedType === t.id
-                  ? "bg-primary text-on-primary shadow-[0_0_8px_rgba(160,240,237,0.3)]"
+                  ? "bg-primary text-on-primary shadow-[0_0_8px_rgba(var(--accent-rgb),0.3)]"
                   : "bg-surface-container/40 text-on-surface-variant hover:text-on-surface border border-glass-border"
               }`}
             >
@@ -239,7 +239,7 @@ export function NotesPage() {
                   onClick={() => loadSingleNote(note.id)}
                   className={`p-3.5 rounded-xl border transition-all cursor-pointer flex flex-col gap-1.5 ${
                     isSelected
-                      ? "bg-surface-container/70 border-primary shadow-[0_0_10px_rgba(160,240,237,0.15)] luminous-active"
+                      ? "bg-surface-container/70 border-primary shadow-[0_0_10px_rgba(var(--accent-rgb),0.15)] luminous-active"
                       : "bg-surface-container/30 hover:bg-surface-container/60 border-glass-border"
                   }`}
                 >
@@ -401,7 +401,7 @@ export function NotesPage() {
               <button
                 type="submit"
                 disabled={generating}
-                className="px-4 py-2 bg-primary hover:opacity-90 disabled:opacity-40 text-on-primary text-xs font-semibold rounded-lg shadow-[0_0_12px_rgba(160,240,237,0.3)]"
+                className="px-4 py-2 bg-primary hover:opacity-90 disabled:opacity-40 text-on-primary text-xs font-semibold rounded-lg shadow-[0_0_12px_rgba(var(--accent-rgb),0.3)]"
               >
                 {generating ? "Synthesizing..." : "Generate Note"}
               </button>

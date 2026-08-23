@@ -103,7 +103,7 @@ html {
 
 /* Luminous Glow Elements */
 .luminous-glow {
-  box-shadow: 0 0 15px rgba(160, 240, 237, 0.2);
+  box-shadow: 0 0 15px rgba(var(--accent-rgb), 0.2);
 }
 
 .luminous-active {
@@ -121,7 +121,7 @@ html {
   width: 0.25rem;
   background-color: var(--color-luminous-highlight);
   border-radius: 9999px;
-  box-shadow: 0 0 10px rgba(160, 240, 237, 0.5);
+  box-shadow: 0 0 10px rgba(var(--accent-rgb), 0.5);
 }
 
 /* Custom Scrollbars */
@@ -270,4 +270,81 @@ html {
   overflow-x: auto;
   overflow-y: hidden;
   padding-bottom: 0.2em;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Landing page
+   ───────────────────────────────────────────────────────────── */
+
+/* Entrance choreography.
+   Resting opacity is 1 on purpose: if animations never run (an old engine, a
+   blocked stylesheet, reduced motion) the page is fully readable rather than
+   invisible. `animation-fill-mode: both` applies the 0% keyframe during the
+   delay, so elements still hide-then-arrive when animations do run. */
+.appear {
+  animation-duration: 0.95s;
+  animation-fill-mode: both;
+  animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+  animation-delay: var(--d, 0.08s);
+}
+
+.appear--soft { animation-name: atlas-in-soft; }
+.appear--mask { animation-name: atlas-in-mask; }
+.appear--card { animation-name: atlas-in-card; }
+
+@keyframes atlas-in-soft {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* No clip-path/overflow here -- a mask would shear the descenders and the
+   negative tracking off large display type. */
+@keyframes atlas-in-mask {
+  from { opacity: 0; transform: translateY(34px); }
+  to   { opacity: 1; transform: none; }
+}
+
+@keyframes atlas-in-card {
+  from { opacity: 0; transform: translateY(20px) scale(0.985); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* Auto-fill means the row count grows with the profile count and the tracks
+   reflow at every width -- cards can never overlap, however many exist. */
+.atlas-profile-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 232px), 1fr));
+  gap: 12px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* Each card carries its own border. Painting the rules via the container's
+   background instead would expose that background through the empty tracks
+   auto-fill leaves behind, which reads as a phantom extra card. */
+.atlas-profile-grid > li {
+  min-height: 168px;
+  display: flex;
+}
+
+.atlas-profile-grid > li > * { flex: 1; }
+
+/* Film grain: a static SVG noise tile at very low opacity. Static because a
+   re-rendering grain is a full-viewport animation nobody asked for. */
+.atlas-grain {
+  opacity: 0.035;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* The landing page is its own dark surface and never follows the app theme. */
+.atlas-landing { color-scheme: dark; }
+
+@media (prefers-reduced-motion: reduce) {
+  .appear {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  .atlas-profile-grid > li > button { transition: none !important; }
 }

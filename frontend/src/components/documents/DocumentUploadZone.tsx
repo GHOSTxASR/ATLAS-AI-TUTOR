@@ -38,7 +38,7 @@ export function DocumentUploadZone({ onFilesSelected, isUploading }: DocumentUpl
       }}
       className={`flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed p-8 sm:p-10 text-center cursor-pointer transition-all focus-visible:ring-2 focus-visible:ring-primary ${
         isDragActive
-          ? "border-primary bg-primary-container/20 shadow-[0_0_15px_rgba(160,240,237,0.15)]"
+          ? "border-primary bg-primary-container/20 shadow-[0_0_15px_rgba(var(--accent-rgb),0.15)]"
           : "border-glass-border bg-surface-container/30 hover:border-primary/60 hover:bg-surface-container/50"
       }`}
     >

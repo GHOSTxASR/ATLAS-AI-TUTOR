@@ -169,7 +169,7 @@ export function MemoryPage() {
 
         <button
           onClick={() => setShowModal(true)}
-          className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-primary hover:opacity-90 active:scale-95 text-on-primary text-xs font-semibold rounded-lg shadow-[0_0_12px_rgba(160,240,237,0.25)] transition"
+          className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-primary hover:opacity-90 active:scale-95 text-on-primary text-xs font-semibold rounded-lg shadow-[0_0_12px_rgba(var(--accent-rgb),0.25)] transition"
         >
           <Plus className="w-4 h-4" /> Add Memory Record
         </button>
@@ -191,7 +191,7 @@ export function MemoryPage() {
               onClick={() => setSelectedCategory(cat.id)}
               className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition ${
                 selectedCategory === cat.id
-                  ? "bg-primary text-on-primary shadow-[0_0_8px_rgba(160,240,237,0.3)]"
+                  ? "bg-primary text-on-primary shadow-[0_0_8px_rgba(var(--accent-rgb),0.3)]"
                   : "bg-surface-container/40 text-on-surface-variant hover:text-on-surface border border-glass-border"
               }`}
             >

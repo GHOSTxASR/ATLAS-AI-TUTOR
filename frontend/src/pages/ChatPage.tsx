@@ -194,7 +194,7 @@ export function ChatPage() {
             <h3 className="font-editorial text-xl text-on-surface">Dialogues</h3>
             <button
               onClick={handleCreateChat}
-              className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-primary hover:opacity-90 active:scale-95 text-on-primary text-xs font-semibold shadow-[0_0_10px_rgba(160,240,237,0.2)] transition"
+              className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-primary hover:opacity-90 active:scale-95 text-on-primary text-xs font-semibold shadow-[0_0_10px_rgba(var(--accent-rgb),0.2)] transition"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>New</span>
@@ -222,7 +222,7 @@ export function ChatPage() {
               onClick={() => handleSelectChat(session.id)}
               className={`group flex items-center justify-between p-2.5 rounded-lg text-xs cursor-pointer transition duration-150 border ${
                 activeSession?.id === session.id
-                  ? "bg-surface-container/60 text-luminous-highlight border-glass-border shadow-[0_0_10px_rgba(160,240,237,0.1)] luminous-active"
+                  ? "bg-surface-container/60 text-luminous-highlight border-glass-border shadow-[0_0_10px_rgba(var(--accent-rgb),0.1)] luminous-active"
                   : "text-on-surface-variant hover:text-on-surface hover:bg-surface-container/30 border-transparent"
               }`}
             >
@@ -308,7 +308,7 @@ export function ChatPage() {
                         onClick={() => setSelectedMode(m.id as LearningMode)}
                         className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-semibold transition ${
                           isSelected
-                            ? "bg-primary text-on-primary shadow-[0_0_8px_rgba(160,240,237,0.3)]"
+                            ? "bg-primary text-on-primary shadow-[0_0_8px_rgba(var(--accent-rgb),0.3)]"
                             : "text-on-surface-variant hover:text-on-surface"
                         }`}
                       >
@@ -324,7 +324,7 @@ export function ChatPage() {
                   onClick={() => setShowContextPanel(!showContextPanel)}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-semibold transition ${
                     showContextPanel
-                      ? "bg-primary-container/40 border-primary text-primary shadow-[0_0_10px_rgba(160,240,237,0.2)]"
+                      ? "bg-primary-container/40 border-primary text-primary shadow-[0_0_10px_rgba(var(--accent-rgb),0.2)]"
                       : "bg-surface-container/40 border-glass-border text-on-surface-variant hover:text-on-surface"
                   }`}
                   title="Inspect Unified Learning Context"
@@ -421,13 +421,13 @@ export function ChatPage() {
                     placeholder={`Ask AI Tutor in ${selectedMode} mode...`}
                     disabled={isStreaming}
                     rows={1}
-                    className="flex-1 bg-surface-container/50 border border-glass-border rounded-xl px-4 py-2.5 text-xs sm:text-sm text-on-surface placeholder:text-on-surface-variant/60 focus:outline-hidden focus:border-primary focus:shadow-[0_0_12px_rgba(160,240,237,0.2)] transition resize-none overflow-y-auto"
+                    className="flex-1 bg-surface-container/50 border border-glass-border rounded-xl px-4 py-2.5 text-xs sm:text-sm text-on-surface placeholder:text-on-surface-variant/60 focus:outline-hidden focus:border-primary focus:shadow-[0_0_12px_rgba(var(--accent-rgb),0.2)] transition resize-none overflow-y-auto"
                     style={{ maxHeight: "160px" }}
                   />
                   <button
                     type="submit"
                     disabled={!messageInput.trim() || isStreaming}
-                    className="px-4 py-2.5 bg-primary hover:opacity-90 disabled:opacity-40 text-on-primary text-xs font-semibold rounded-xl flex items-center gap-1.5 shadow-[0_0_12px_rgba(160,240,237,0.25)] transition active:scale-95 shrink-0"
+                    className="px-4 py-2.5 bg-primary hover:opacity-90 disabled:opacity-40 text-on-primary text-xs font-semibold rounded-xl flex items-center gap-1.5 shadow-[0_0_12px_rgba(var(--accent-rgb),0.25)] transition active:scale-95 shrink-0"
                   >
                     {isStreaming ? (
                       <Loader2 className="w-4 h-4 animate-spin" />
