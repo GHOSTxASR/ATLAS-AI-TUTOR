@@ -38,6 +38,7 @@ export function KnowledgeGraphCanvas({
   const [isPanning, setIsPanning] = useState(false);
   const [startPan, setStartPan] = useState<Point>({ x: 0, y: 0 });
   const [draggedNodeId, setDraggedNodeId] = useState<string | null>(null);
+  const [hasSettled, setHasSettled] = useState(false);
 
   // Simulated node positions
   const [simNodes, setSimNodes] = useState<SimulatedNode[]>([]);
@@ -49,7 +50,9 @@ export function KnowledgeGraphCanvas({
       return;
     }
 
-    const radiusBase = Math.min(300, Math.max(120, nodes.length * 20));
+    // Seed on a ring big enough to hold the nodes without overlap, so the
+    // simulation refines a layout instead of untangling a knot.
+    const radiusBase = Math.max(160, (nodes.length * 46) / (2 * Math.PI));
     const initialized: SimulatedNode[] = nodes.map((node, i) => {
       // Check if existing position exists
       const existing = simNodes.find((sn) => sn.id === node.id);
@@ -80,14 +83,28 @@ export function KnowledgeGraphCanvas({
 
     let animId: number;
     let iteration = 0;
-    const maxIterations = 80;
+    // 80 ticks stopped the layout mid-spread on anything but a tiny graph.
+    // Settling is detected below, so a simple graph still stops early.
+    const maxIterations = 400;
+    let settled = false;
+    setHasSettled(false);
 
     const tick = () => {
       setSimNodes((currentNodes) => {
         if (currentNodes.length === 0) return currentNodes;
         const next = currentNodes.map((n) => ({ ...n }));
-        const kRepulse = 1800;
-        const kAttract = 0.04;
+        // Repulsion falls off with distance squared while the old centre
+        // gravity grew linearly with it, so gravity won everywhere that
+        // mattered: at 300px out it pulled 3.0 against 0.09 of push, and the
+        // graph collapsed into a ball. Repulsion is now strong enough to hold
+        // a gap open, and gravity is weak and only there to stop disconnected
+        // nodes drifting off screen.
+        //
+        // Repulsion also scales with node count: the same constant that spaces
+        // 9 nodes leaves 200 overlapping.
+        const kRepulse = 9000 * Math.max(1, Math.sqrt(next.length / 12));
+        const kAttract = 0.05;
+        const kGravity = 0.004;
         const damping = 0.85;
 
         // 1. Repulsion between all node pairs
@@ -96,7 +113,7 @@ export function KnowledgeGraphCanvas({
             const dx = next[i].x - next[j].x;
             const dy = next[i].y - next[j].y;
             const dist = Math.sqrt(dx * dx + dy * dy) || 1;
-            if (dist < 400) {
+            if (dist < 700) {
               const force = kRepulse / (dist * dist);
               const fx = (dx / dist) * force;
               const fy = (dy / dist) * force;
@@ -121,7 +138,7 @@ export function KnowledgeGraphCanvas({
             const dx = v.x - u.x;
             const dy = v.y - u.y;
             const dist = Math.sqrt(dx * dx + dy * dy) || 1;
-            const targetDist = 120;
+            const targetDist = 150;
             const force = (dist - targetDist) * kAttract;
             const fx = (dx / dist) * force;
             const fy = (dy / dist) * force;
@@ -140,26 +157,77 @@ export function KnowledgeGraphCanvas({
         // 3. Center gravity force
         for (const n of next) {
           if (n.id === draggedNodeId) continue;
-          n.vx -= n.x * 0.01;
-          n.vy -= n.y * 0.01;
+          n.vx -= n.x * kGravity;
+          n.vy -= n.y * kGravity;
           n.x += n.vx;
           n.y += n.vy;
           n.vx *= damping;
           n.vy *= damping;
         }
 
+        // 4. Separate overlaps directly.
+        //    Repulsion alone never resolved these: an edge pulling two nodes
+        //    together balances against it at a distance smaller than the two
+        //    radii, so linked pairs settled on top of each other. Moving the
+        //    positions apart is unconditional and cannot be out-pulled.
+        const PADDING = 14;
+        for (let pass = 0; pass < 3; pass++) {
+          for (let i = 0; i < next.length; i++) {
+            for (let j = i + 1; j < next.length; j++) {
+              const a = next[i];
+              const b = next[j];
+              const minDist = a.radius + b.radius + PADDING;
+              let dx = b.x - a.x;
+              let dy = b.y - a.y;
+              let dist = Math.sqrt(dx * dx + dy * dy);
+              if (dist >= minDist) continue;
+              if (dist < 0.01) {
+                // Exactly coincident: pick an arbitrary axis to break the tie.
+                dx = Math.random() - 0.5;
+                dy = Math.random() - 0.5;
+                dist = Math.sqrt(dx * dx + dy * dy) || 1;
+              }
+              const shift = (minDist - dist) / 2;
+              const ux = (dx / dist) * shift;
+              const uy = (dy / dist) * shift;
+              if (a.id !== draggedNodeId) {
+                a.x -= ux;
+                a.y -= uy;
+              }
+              if (b.id !== draggedNodeId) {
+                b.x += ux;
+                b.y += uy;
+              }
+            }
+          }
+        }
+
+        // Stop once nothing is really moving rather than burning the full
+        // iteration budget every time.
+        const energy = next.reduce((sum, n) => sum + Math.abs(n.vx) + Math.abs(n.vy), 0);
+        settled = energy / Math.max(1, next.length) < 0.04;
+
         return next;
       });
 
       iteration++;
-      if (iteration < maxIterations || draggedNodeId !== null) {
+      if ((iteration < maxIterations && !settled) || draggedNodeId !== null) {
         animId = requestAnimationFrame(tick);
+      } else {
+        setHasSettled(true);
       }
     };
 
     animId = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(animId);
-  }, [edges, draggedNodeId]);
+    // simNodes.length, not simNodes: the effect bails when there are no nodes
+    // yet, so it has to re-run once they are seeded -- otherwise whether the
+    // layout ever ran came down to a race between the seed effect and the
+    // edges arriving, and a graph that lost that race rendered the raw seed
+    // ring with nodes still overlapping. The length rather than the array
+    // because the array identity changes on every tick, which would restart
+    // the simulation forever.
+  }, [edges, draggedNodeId, simNodes.length]);
 
   // Center on selected node if camera is off
   const centerOnNode = useCallback((nodeId: string) => {
@@ -207,39 +275,89 @@ export function KnowledgeGraphCanvas({
     setDraggedNodeId(null);
   };
 
-  // Zoom handlers
-  const handleWheel = (e: React.WheelEvent) => {
-    e.preventDefault();
-    const zoomFactor = e.deltaY < 0 ? 1.1 : 0.9;
-    const newK = Math.max(0.2, Math.min(4.0, transform.k * zoomFactor));
+  // Zoom is bound natively rather than through React's onWheel, because React
+  // registers wheel listeners as passive: preventDefault() inside one is a
+  // silent no-op. A trackpad pinch arrives as a wheel event with ctrlKey set,
+  // so the browser's own page zoom ran instead of the graph's -- the whole page
+  // scaled while the graph sat still.
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
 
-    const rect = containerRef.current?.getBoundingClientRect();
-    if (!rect) return;
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault();
 
-    const mouseX = e.clientX - rect.left;
-    const mouseY = e.clientY - rect.top;
+      const rect = el.getBoundingClientRect();
+      const pointerX = e.clientX - rect.left;
+      const pointerY = e.clientY - rect.top;
 
-    // Zoom towards mouse cursor
-    const newX = mouseX - (mouseX - transform.x) * (newK / transform.k);
-    const newY = mouseY - (mouseY - transform.y) * (newK / transform.k);
+      setTransform((prev) => {
+        // Scale with the gesture rather than a fixed step, so a pinch tracks the
+        // fingers and a notched wheel moves a sensible amount. A pinch arrives
+        // as many small ctrlKey deltas, so its per-event multiplier has to stay
+        // low or a single gesture slams into the zoom clamp; a mouse notch
+        // arrives once at deltaY 100-120 and wants roughly 1.2x.
+        const intensity = e.ctrlKey ? 0.01 : 0.0016;
+        const factor = Math.exp(-e.deltaY * intensity);
+        const nextK = Math.max(0.2, Math.min(4.0, prev.k * factor));
+        if (nextK === prev.k) return prev;
 
-    setTransform({ x: newX, y: newY, k: newK });
-  };
+        // Keep the point under the pointer fixed while scaling.
+        const ratio = nextK / prev.k;
+        return {
+          k: nextK,
+          x: pointerX - (pointerX - prev.x) * ratio,
+          y: pointerY - (pointerY - prev.y) * ratio,
+        };
+      });
+    };
+
+    el.addEventListener("wheel", onWheel, { passive: false });
+    return () => el.removeEventListener("wheel", onWheel);
+  }, []);
 
   const handleZoom = (delta: number) => {
     const newK = Math.max(0.2, Math.min(4.0, transform.k + delta));
     setTransform((prev) => ({ ...prev, k: newK }));
   };
 
-  const handleResetView = () => {
-    if (!containerRef.current) return;
-    const rect = containerRef.current.getBoundingClientRect();
+  // Frames the whole graph rather than just recentring at 1:1. The old version
+  // set k to 1 and the origin to the middle, which on any graph wider than the
+  // panel left nodes cut off at the edges with no hint they were there.
+  const handleResetView = useCallback(() => {
+    const el = containerRef.current;
+    if (!el || simNodes.length === 0) return;
+    const rect = el.getBoundingClientRect();
+
+    const pad = 70;
+    const xs = simNodes.map((n) => n.x);
+    const ys = simNodes.map((n) => n.y);
+    const minX = Math.min(...xs) - pad;
+    const maxX = Math.max(...xs) + pad;
+    const minY = Math.min(...ys) - pad;
+    const maxY = Math.max(...ys) + pad;
+
+    const k = Math.max(
+      0.2,
+      Math.min(1.4, Math.min(rect.width / (maxX - minX), rect.height / (maxY - minY))),
+    );
     setTransform({
-      x: rect.width / 2,
-      y: rect.height / 2,
-      k: 1.0,
+      k,
+      x: rect.width / 2 - ((minX + maxX) / 2) * k,
+      y: rect.height / 2 - ((minY + maxY) / 2) * k,
     });
-  };
+  }, [simNodes]);
+
+  // Frame the graph once, the first time a given node set finishes settling.
+  // Guarded by a ref so it never yanks the view back after the user has panned
+  // or zoomed themselves.
+  const autoFittedFor = useRef<number>(-1);
+  useEffect(() => {
+    if (!hasSettled || simNodes.length === 0) return;
+    if (autoFittedFor.current === simNodes.length) return;
+    autoFittedFor.current = simNodes.length;
+    handleResetView();
+  }, [hasSettled, simNodes.length, handleResetView]);
 
   // Neighborhood connected node IDs
   const connectedNodeIds = useMemo(() => {
@@ -261,7 +379,7 @@ export function KnowledgeGraphCanvas({
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseUp}
-      onWheel={handleWheel}
+      style={{ touchAction: "none", overscrollBehavior: "contain" }}
       className="relative w-full h-[550px] bg-surface-container-lowest overflow-hidden cursor-grab active:cursor-grabbing select-none border border-glass-border shadow-inner"
     >
       {/* Zoom / Navigation Floating Toolbar */}
