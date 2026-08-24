@@ -1,0 +1,131 @@
+- generic [ref=e3]:
+  - complementary "Main Navigation" [ref=e4]:
+    - generic [ref=e5]:
+      - generic [ref=e6]: Atlas
+      - button "Search" [ref=e12]:
+        - generic [ref=e18]: ⌘K
+      - navigation [ref=e19]:
+        - link "Dashboard" [ref=e20]:
+          - /url: /dashboard
+        - link "AI Tutor" [ref=e27]:
+          - /url: /chat
+        - link "Roadmap" [ref=e31]:
+          - /url: /roadmap
+        - link "Notes" [ref=e37]:
+          - /url: /notes
+        - link "Library" [ref=e41]:
+          - /url: /documents
+        - link "Graph" [ref=e47]:
+          - /url: /graph
+        - link "Quizzes" [ref=e54]:
+          - /url: /quiz
+        - link "Analytics" [ref=e59]:
+          - /url: /analytics
+        - link "Memory" [ref=e64]:
+          - /url: /memory
+        - link "Settings" [ref=e76]:
+          - /url: /settings
+    - generic [ref=e81]:
+      - 'button "Current profile: ashmit. Switch profile" [ref=e108]':
+        - generic [ref=e89]:
+          - generic [ref=e90]: ashmit
+          - generic [ref=e91]: Custom Learning
+      - button "Collapse sidebar" [ref=e95]:
+        - generic [ref=e99]: Collapse
+  - main [ref=e100]:
+    - generic [ref=e109]:
+      - generic [ref=e110]:
+        - generic [ref=e111]: "[ Preferences & Telemetry ]"
+        - heading "System Settings" [level=1] [ref=e113]
+        - paragraph [ref=e114]: Choose your AI provider, manage encrypted API keys, and set the workspace appearance.
+      - generic [ref=e115]:
+        - heading "Workspace Appearance" [level=2] [ref=e123]
+        - paragraph [ref=e124]: "Choose how Atlas looks:"
+        - generic [ref=e125]:
+          - button "Light Frost Off-White" [ref=e126]:
+            - generic [ref=e133]: Light
+            - generic [ref=e134]: Frost Off-White
+          - button "Dark Ebony Slate" [ref=e135]:
+            - generic [ref=e138]: Dark
+            - generic [ref=e139]: Ebony Slate
+          - button "System Auto OS Sync" [ref=e140]:
+            - generic [ref=e143]: System
+            - generic [ref=e144]: Auto OS Sync
+      - generic [ref=e145]:
+        - heading "AI Model Provider" [level=2] [ref=e149]
+        - paragraph [ref=e150]: Select your inference provider. API keys are encrypted at rest with Fernet (AES-128-CBC + HMAC-SHA256).
+        - generic [ref=e151]:
+          - generic [ref=e152]:
+            - 'button "Google Gemini (free tier available) Key saved Default: gemini-3.7-flash" [ref=e153]':
+              - generic [ref=e154]:
+                - generic [ref=e155]: Google Gemini (free tier available)
+                - generic [ref=e156]: Key saved
+              - generic [ref=e158]: "Default: gemini-3.7-flash"
+            - 'button "OpenAI Default: gpt-4o" [ref=e159]':
+              - generic [ref=e160]: OpenAI
+              - generic [ref=e162]: "Default: gpt-4o"
+            - 'button "Groq (free tier available) Default: llama-3.3-70b-versatile" [ref=e163]':
+              - generic [ref=e164]: Groq (free tier available)
+              - generic [ref=e166]: "Default: llama-3.3-70b-versatile"
+            - 'button "DeepSeek Default: deepseek-chat" [ref=e167]':
+              - generic [ref=e168]: DeepSeek
+              - generic [ref=e170]: "Default: deepseek-chat"
+            - 'button "Mistral AI Default: mistral-large-latest" [ref=e171]':
+              - generic [ref=e172]: Mistral AI
+              - generic [ref=e174]: "Default: mistral-large-latest"
+            - 'button "OpenRouter (many free models) In use Key saved Default: openrouter/auto" [ref=e175]':
+              - generic [ref=e176]:
+                - generic [ref=e177]: OpenRouter (many free models)
+                - generic [ref=e178]:
+                  - generic [ref=e179]: In use
+                  - generic [ref=e180]: Key saved
+              - generic [ref=e181]: "Default: openrouter/auto"
+            - 'button "Together AI Default: meta-llama/Llama-3.3-70B-Instruct-Turbo" [ref=e182]':
+              - generic [ref=e183]: Together AI
+              - generic [ref=e185]: "Default: meta-llama/Llama-3.3-70B-Instruct-Turbo"
+            - 'button "Anthropic (Claude) Default: claude-sonnet-4-20250514" [ref=e186]':
+              - generic [ref=e187]: Anthropic (Claude)
+              - generic [ref=e189]: "Default: claude-sonnet-4-20250514"
+            - 'button "Ollama (local, free) No key needed Default: llama3.1" [ref=e190]':
+              - generic [ref=e191]:
+                - generic [ref=e192]: Ollama (local, free)
+                - generic [ref=e193]: No key needed
+              - generic [ref=e195]: "Default: llama3.1"
+          - generic [ref=e196]:
+            - generic [ref=e197]:
+              - generic [ref=e198]:
+                - generic [ref=e199]: API Key (OPENROUTER_API_KEY)
+                - generic [ref=e200]:
+                  - link "Get a key" [ref=e201]:
+                    - /url: https://openrouter.ai/keys
+                  - button "Remove key" [ref=e206]
+              - generic [ref=e210]:
+                - textbox "•••••••••••••••• (Encrypted in Keystore)" [ref=e211]
+                - button [ref=e212]
+            - generic [ref=e216]:
+              - generic [ref=e217]: Model Name
+              - generic [ref=e218]:
+                - generic [ref=e219]:
+                  - combobox "Model name" [ref=e221]: openrouter/auto
+                  - button "Re-query the provider for its current models" [ref=e222]
+                - generic [ref=e228]:
+                  - generic [ref=e229]: 403 models live · 19 free
+                  - button "Free only" [ref=e232]
+                  - generic [ref=e233]: Any model id can be typed directly.
+            - generic [ref=e234]:
+              - generic [ref=e235]: Embedding Provider— can differ from your chat provider
+              - combobox "Embedding Provider— can differ from your chat provider" [ref=e236]:
+                - option "Same as chat provider"
+                - option "Google Gemini (free tier available)" [selected]
+                - option "OpenAI"
+                - option "Mistral AI"
+                - option "Together AI"
+                - option "Ollama (local, free)"
+            - generic [ref=e238]:
+              - generic [ref=e239]: Embedding Model— used to index documents for search
+              - generic [ref=e261]:
+                - text: "'openrouter' has no embeddings API. Documents cannot be indexed with it."
+                - generic [ref=e262]: Chat still works. Document search needs a provider with an embeddings API — OpenAI, Gemini, Mistral, Together, or a local Ollama model.
+          - generic [ref=e252]:
+            - button "Save Settings" [ref=e253]
+            - button "Test Connection" [ref=e257]

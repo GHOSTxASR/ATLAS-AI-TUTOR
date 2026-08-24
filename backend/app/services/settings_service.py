@@ -5,7 +5,7 @@ from typing import Any
 
 from app.config import Settings, project_root, get_settings
 from app.exceptions import AtlasError
-from app.models.model_catalog import FALLBACK_MODELS, get_models, indexed_embedding_models
+from app.models.model_catalog import PROVIDERS_WITHOUT_EMBEDDINGS, FALLBACK_MODELS, get_models, indexed_embedding_models
 from app.models.provider_factory import get_all_providers, get_model_client
 from app.models.resilience import provider_error_from
 from app.security.keystore import KeyStore
@@ -43,6 +43,11 @@ class SettingsService:
             "providers": enriched,
             "active_provider": self.settings.model.provider.lower(),
             "active_model": self.settings.model.chat_model,
+            # Empty when embeddings follow chat; the UI needs to tell the two
+            # states apart to show "same as chat" rather than a stale pick.
+            "embedding_provider": self.settings.model.embedding_provider.lower(),
+            "active_embedding_provider": self.settings.model.effective_embedding_provider,
+            "providers_without_embeddings": sorted(PROVIDERS_WITHOUT_EMBEDDINGS),
         }
 
     async def list_models(
@@ -62,7 +67,9 @@ class SettingsService:
         response reports which models the existing index was built with; the UI
         uses that to warn before documents silently stop being searchable.
         """
-        p = (provider or self.settings.model.provider).strip().lower()
+        # Defaults to the embedding provider, not the chat one, so opening
+        # Settings shows the models that would actually be used.
+        p = (provider or self.settings.model.effective_embedding_provider).strip().lower()
         catalog = await get_models(self.settings, p, purpose="embedding", refresh=refresh)
 
         from dataclasses import replace
@@ -71,7 +78,10 @@ class SettingsService:
 
         # Resolve for the provider being *previewed*, not the saved one, or
         # selecting Gemini would suggest OpenAI's default embedding model.
-        preview = replace(self.settings, model=replace(self.settings.model, provider=p))
+        preview = replace(
+            self.settings,
+            model=replace(self.settings.model, provider=p, embedding_provider=p),
+        )
         active = DocumentEmbedder(settings=preview).embedding_model
         indexed = indexed_embedding_models(self.settings)
 
@@ -131,7 +141,12 @@ class SettingsService:
             return {"status": "error", "provider": p, "error": provider_error_from(e, p).message}
 
     def set_provider(
-        self, provider: str, api_key: str, model: str, embedding_model: str = ""
+        self,
+        provider: str,
+        api_key: str,
+        model: str,
+        embedding_model: str = "",
+        embedding_provider: str = "",
     ) -> dict[str, object]:
         # Invalidate the cached settings so all services pick up the new config
         get_settings.cache_clear()
@@ -164,6 +179,24 @@ class SettingsService:
         self._persist_env_choice("ATLAS_CHAT_MODEL", model)
         os.environ["ATLAS_CHAT_MODEL"] = model
 
+        # Embeddings may run on a different provider from chat. An empty value
+        # means "follow the chat provider", so it is written through as empty
+        # rather than skipped -- otherwise clearing the split would be
+        # impossible once it had been set once.
+        embedding_provider = (embedding_provider or "").strip().lower()
+        if embedding_provider and embedding_provider not in {p["id"] for p in all_providers}:
+            raise AtlasError(
+                status_code=422,
+                code="INVALID_PROVIDER",
+                message=f"Unknown embedding provider: {embedding_provider}",
+                details={"embedding_provider": embedding_provider},
+            )
+        self._persist_env_choice("ATLAS_EMBEDDING_PROVIDER", embedding_provider)
+        if embedding_provider:
+            os.environ["ATLAS_EMBEDDING_PROVIDER"] = embedding_provider
+        else:
+            os.environ.pop("ATLAS_EMBEDDING_PROVIDER", None)
+
         # Previously read from config but never writable from the UI.
         embedding_model = (embedding_model or "").strip()
         if embedding_model:
@@ -178,6 +211,7 @@ class SettingsService:
             "provider": provider,
             "model": model,
             "embedding_model": embedding_model,
+            "embedding_provider": embedding_provider,
             "key_persisted": bool(api_key and env_key),
             "message": f"Switched to {provider_info['label']}.",
         }

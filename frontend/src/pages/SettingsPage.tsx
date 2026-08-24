@@ -49,6 +49,10 @@ export function SettingsPage() {
   // Embedding model: a separate catalogue, and changing it invalidates the
   // vector index, so the indexed model is tracked alongside.
   const [embeddingModel, setEmbeddingModel] = useState("");
+  // "" means embeddings follow the chat provider. Kept distinct from the
+  // resolved value so the UI can show "Same as chat" rather than a fixed pick
+  // that would silently stop tracking the chat provider.
+  const [embeddingProvider, setEmbeddingProvider] = useState("");
   const [embeddingCatalog, setEmbeddingCatalog] = useState<ModelInfo[]>([]);
   const [embeddingSource, setEmbeddingSource] = useState<"live" | "fallback">("fallback");
   const [embeddingError, setEmbeddingError] = useState<string | null>(null);
@@ -96,11 +100,18 @@ export function SettingsPage() {
   };
 
   // Re-query whenever the provider changes; lists go stale on their own.
+  const effectiveEmbeddingProvider = embeddingProvider || selectedProvider;
+
   useEffect(() => {
     loadModels(selectedProvider);
-    setEmbeddingModel("");
-    loadEmbeddingModels(selectedProvider);
   }, [selectedProvider]);
+
+  // Keyed off the embedding provider: with the two split, changing the chat
+  // provider must not reset an embedding choice that still works.
+  useEffect(() => {
+    setEmbeddingModel("");
+    loadEmbeddingModels(effectiveEmbeddingProvider);
+  }, [effectiveEmbeddingProvider]);
 
   const loadProviders = async () => {
     setLoading(true);
@@ -108,6 +119,7 @@ export function SettingsPage() {
       const data = await settingsApi.getProviders();
       setProvidersData(data);
       setSelectedProvider(data.active_provider);
+      setEmbeddingProvider(data.embedding_provider ?? "");
       setModelName(data.active_model);
     } catch (err: any) {
       setError("Failed to load providers");
@@ -126,11 +138,12 @@ export function SettingsPage() {
         api_key: apiKey,
         model: modelName,
         embedding_model: embeddingModel,
+        embedding_provider: embeddingProvider,
       });
       setSuccess(data.message);
       setApiKey("");
       await loadProviders();
-      await loadEmbeddingModels(selectedProvider, true);
+      await loadEmbeddingModels(effectiveEmbeddingProvider, true);
     } catch (err: any) {
       setError(err.response?.data?.error?.message || "Failed to save settings");
     } finally {
@@ -370,6 +383,53 @@ export function SettingsPage() {
                   />
                 </div>
 
+                {/* Embedding provider. Independent of chat on purpose: the
+                    model that writes prose need not be the one making vectors,
+                    and binding them meant choosing a chat provider without an
+                    embeddings API silently took document search down too. */}
+                <div>
+                  <label
+                    htmlFor="embedding-provider"
+                    className="block text-on-surface-variant mb-1 font-semibold"
+                  >
+                    Embedding Provider
+                    <span className="ml-1.5 font-normal text-on-surface-variant/70">
+                      — can differ from your chat provider
+                    </span>
+                  </label>
+                  <select
+                    id="embedding-provider"
+                    value={embeddingProvider}
+                    onChange={(e) => setEmbeddingProvider(e.target.value)}
+                    className="w-full min-h-[44px] px-3 bg-surface-container/50 border border-glass-border text-on-surface focus:outline-hidden focus:border-primary"
+                  >
+                    <option value="">Same as chat provider</option>
+                    {(providersData?.providers ?? [])
+                      .filter(
+                        (p) =>
+                          !(providersData?.providers_without_embeddings ?? []).includes(p.id)
+                      )
+                      .map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.label}
+                        </option>
+                      ))}
+                  </select>
+
+                  {!embeddingProvider &&
+                    (providersData?.providers_without_embeddings ?? []).includes(
+                      selectedProvider
+                    ) && (
+                      <div className="mt-2 p-3 bg-primary-container/25 border border-primary/30 text-luminous-highlight text-[11px] leading-relaxed">
+                        {providersData?.providers.find((p) => p.id === selectedProvider)?.label ??
+                          selectedProvider}{" "}
+                        has no embeddings API, so document search is off while embeddings
+                        follow it. Pick a separate embedding provider above to keep search
+                        working — your chat provider stays as it is.
+                      </div>
+                    )}
+                </div>
+
                 {/* Embedding model. Separate catalogue, and separate stakes:
                     switching it starts a new vector index rather than
                     reinterpreting the old one. */}
@@ -398,7 +458,7 @@ export function SettingsPage() {
                       source={embeddingSource}
                       error={embeddingError}
                       loading={loadingEmbeddings}
-                      onRefresh={() => loadEmbeddingModels(selectedProvider, true)}
+                      onRefresh={() => loadEmbeddingModels(effectiveEmbeddingProvider, true)}
                     />
                   )}
 

@@ -15,6 +15,11 @@ from app.pipelines.embedder import (
 
 def _embedder(monkeypatch, tmp_path, **env) -> DocumentEmbedder:
     monkeypatch.setenv("ATLAS_DATA_DIR", str(tmp_path / "embedder-data"))
+    # Embeddings follow the chat provider unless a test says otherwise. Pinned
+    # rather than left alone because the developer's own .env is loaded into the
+    # environment, and a real local setting would otherwise choose the provider
+    # under test.
+    monkeypatch.setenv("ATLAS_EMBEDDING_PROVIDER", "")
     for key, value in env.items():
         monkeypatch.setenv(key, value)
 

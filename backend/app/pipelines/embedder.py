@@ -126,7 +126,10 @@ class DocumentEmbedder:
         self.settings = settings or get_settings()
         self.repo = repo
         self.chroma_dir = self.settings.paths.chroma_dir
-        self.provider = (self.settings.model.provider or "").lower()
+        # Deliberately the embedding provider, not the chat one: everything
+        # downstream in this class keys off self.provider, so splitting the
+        # two is a matter of resolving it here.
+        self.provider = self.settings.model.effective_embedding_provider
         self.use_hash_backend = (
             getattr(self.settings.model, "embedding_backend", "auto") == HASH_BACKEND_NAME
         )

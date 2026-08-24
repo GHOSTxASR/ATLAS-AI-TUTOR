@@ -45,6 +45,12 @@ class ServerSettings:
 class ModelSettings:
     provider: str = "openai"
     chat_model: str = "gpt-4o"
+    # Embeddings can run on a different provider from chat. There is no reason
+    # the model writing prose must be the one making vectors, and tying them
+    # together meant picking a chat provider with no embeddings API (OpenRouter,
+    # Groq, Anthropic, DeepSeek) silently took document search down with it.
+    # Empty means "follow the chat provider", which is how older configs read.
+    embedding_provider: str = ""
     embedding_model: str = "text-embedding-3-small"
     temperature: float = 0.7
     max_tokens: int = 4096
@@ -54,6 +60,15 @@ class ModelSettings:
     # be requested explicitly because those vectors carry no meaning and make
     # semantic search return arbitrary results.
     embedding_backend: str = "auto"
+
+    @property
+    def effective_embedding_provider(self) -> str:
+        """The provider that actually serves embeddings.
+
+        Falls back to the chat provider so a config written before embeddings
+        could be split keeps behaving exactly as it did.
+        """
+        return (self.embedding_provider or self.provider or "").lower()
 
 
 @dataclass(frozen=True)
@@ -199,6 +214,9 @@ def load_settings(config_path: Path | None = None) -> Settings:
     model = ModelSettings(
         provider=str(_env("ATLAS_MODEL_PROVIDER", _setting(raw, "model", "provider", "openai"))),
         chat_model=str(_env("ATLAS_CHAT_MODEL", _setting(raw, "model", "chat_model", "gpt-4o"))),
+        embedding_provider=str(
+            _env("ATLAS_EMBEDDING_PROVIDER", _setting(raw, "model", "embedding_provider", ""))
+        ),
         embedding_model=str(
             _env("ATLAS_EMBEDDING_MODEL", _setting(raw, "model", "embedding_model", "text-embedding-3-small"))
         ),
@@ -246,6 +264,7 @@ log_level = "{settings.server.log_level}"
 [model]
 provider = "{settings.model.provider}"
 chat_model = "{settings.model.chat_model}"
+embedding_provider = "{settings.model.embedding_provider}"
 embedding_model = "{settings.model.embedding_model}"
 temperature = {settings.model.temperature}
 max_tokens = {settings.model.max_tokens}

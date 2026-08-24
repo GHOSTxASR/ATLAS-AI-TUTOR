@@ -78,6 +78,7 @@ async def set_provider(body: dict[str, str], service: SettingsService = Depends(
         api_key=body.get("api_key", ""),
         model=body.get("model", ""),
         embedding_model=body.get("embedding_model", ""),
+        embedding_provider=body.get("embedding_provider", ""),
     )
     return envelope(data=data)
 

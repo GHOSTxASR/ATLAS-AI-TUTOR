@@ -20,6 +20,12 @@ export interface ProvidersData {
   providers: ProviderItem[];
   active_provider: string;
   active_model: string;
+  /** Empty when embeddings follow the chat provider. */
+  embedding_provider?: string;
+  /** What actually serves embeddings once the fallback is applied. */
+  active_embedding_provider?: string;
+  /** Providers that cannot embed at all, so the UI can mark them. */
+  providers_without_embeddings?: string[];
 }
 
 export interface ModelInfo {
@@ -60,11 +66,14 @@ export interface SetProviderRequest {
   model?: string;
   api_key?: string;
   embedding_model?: string;
+  /** Empty string means "use the chat provider for embeddings too". */
+  embedding_provider?: string;
 }
 
 export interface SetProviderResponse {
   provider: string;
   model: string;
+  embedding_provider?: string;
   key_persisted: boolean;
   message: string;
 }
