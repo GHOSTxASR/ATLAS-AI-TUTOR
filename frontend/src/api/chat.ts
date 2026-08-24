@@ -109,6 +109,18 @@ export const chatApi = {
     return response.data.data;
   },
 
+  /**
+   * Ask the backend to name a session after its opening message. A session the
+   * user has renamed comes back untouched, so this is safe to call more than
+   * once.
+   */
+  autotitleSession: async (profileId: string, sessionId: string): Promise<ChatSession> => {
+    const response = await apiClient.post<ApiResponse<ChatSession>>(
+      `/profiles/${profileId}/sessions/${sessionId}/autotitle`
+    );
+    return response.data.data;
+  },
+
   deleteSession: async (profileId: string, sessionId: string): Promise<void> => {
     await apiClient.delete(`/profiles/${profileId}/sessions/${sessionId}`);
   },

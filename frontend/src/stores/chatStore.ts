@@ -30,6 +30,7 @@ interface ChatState {
     profileId: string,
     data: ChatSessionCreate
   ) => Promise<void>;
+  autotitleSession: (profileId: string, sessionId: string) => Promise<void>;
   updateSession: (
     profileId: string,
     sessionId: string,
@@ -210,6 +211,24 @@ export const useChatStore = create<ChatState>((set, get) => ({
         error: err.message || "Failed to create chat session",
         isLoading: false,
       });
+    }
+  },
+
+  autotitleSession: async (profileId: string, sessionId: string) => {
+    try {
+      const updated = await chatApi.autotitleSession(profileId, sessionId);
+      const { sessions, activeSession } = get();
+      set({
+        sessions: sessions.map((s) =>
+          s.id === sessionId ? { ...s, title: updated.title } : s
+        ),
+        activeSession:
+          activeSession?.id === sessionId
+            ? { ...activeSession, title: updated.title }
+            : activeSession,
+      });
+    } catch {
+      // A title is cosmetic; a failure here must not disturb the conversation.
     }
   },
 

@@ -25,6 +25,15 @@ class ChatResponse:
     content: str
     model: str = ""
     usage: dict[str, int] = field(default_factory=dict)
+    #: Why generation stopped, normalised across providers. "length" means the
+    #: token limit cut the reply off. Without this a caller asking for JSON
+    #: cannot tell a truncated object from a malformed one, and silently
+    #: treats "the model ran out of room" as "the model failed".
+    finish_reason: str = ""
+
+    @property
+    def truncated(self) -> bool:
+        return self.finish_reason == "length"
 
 
 class BaseModelClient(ABC):

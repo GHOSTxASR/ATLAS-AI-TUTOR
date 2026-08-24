@@ -113,6 +113,12 @@ class GeminiClient(BaseModelClient):
             content=content,
             model=model_name,
             usage=data.get("usageMetadata", {}),
+            # Gemini calls it finishReason and says "MAX_TOKENS".
+            finish_reason=(
+                "length"
+                if (data.get("candidates") or [{}])[0].get("finishReason") == "MAX_TOKENS"
+                else str((data.get("candidates") or [{}])[0].get("finishReason") or "").lower()
+            ),
         )
 
     async def chat_stream(

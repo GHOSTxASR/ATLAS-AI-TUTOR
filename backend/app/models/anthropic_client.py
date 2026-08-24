@@ -99,6 +99,8 @@ class AnthropicClient(BaseModelClient):
             content=content,
             model=data.get("model", ""),
             usage=data.get("usage", {}),
+            # Anthropic calls it stop_reason and says "max_tokens".
+            finish_reason="length" if data.get("stop_reason") == "max_tokens" else str(data.get("stop_reason") or ""),
         )
 
     async def chat_stream(

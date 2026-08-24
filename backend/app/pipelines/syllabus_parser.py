@@ -18,6 +18,10 @@ from app.utils.text_utils import extract_json_payload
 logger = logging.getLogger(__name__)
 
 
+class _TruncatedSyllabusResponse(Exception):
+    """The model hit its output ceiling before finishing the JSON tree."""
+
+
 class SyllabusParser:
     """Extracts structured Subjects, Chapters, Topics, and Subtopics from syllabus documents."""
 
@@ -37,17 +41,53 @@ class SyllabusParser:
             )
 
         # 1. Attempt AI-powered structured extraction
-        try:
-            parsed = await self._parse_with_ai(clean_text, default_title)
-            if parsed and parsed.subjects:
-                return parsed
-        except Exception as e:
-            logger.warning(f"AI syllabus parsing failed, falling back to heuristic parser: {e}")
+        # A long syllabus asks for a large JSON tree, and the reply gets cut off
+        # at the token ceiling mid-object. That surfaced as a JSON error and
+        # dropped straight to the heuristic parser, which turns page headers and
+        # stray glyphs into "topics" -- 376 nodes of noise for a 43-page
+        # syllabus. Shrink the slice and try again before giving up: less input
+        # means a smaller tree, which fits.
+        for slice_chars in self.AI_INPUT_SLICES:
+            try:
+                parsed = await self._parse_with_ai(
+                    clean_text, default_title, max_chars=slice_chars
+                )
+                if parsed and parsed.subjects:
+                    return parsed
+                logger.warning(
+                    "AI syllabus parsing returned no subjects at %d characters.", slice_chars
+                )
+            except _TruncatedSyllabusResponse:
+                logger.warning(
+                    "AI syllabus response hit the token limit at %d characters of input; "
+                    "retrying with a smaller slice.",
+                    slice_chars,
+                )
+                continue
+            except Exception as e:
+                logger.warning(
+                    "AI syllabus parsing failed, falling back to heuristic parser: %s", e
+                )
+                break
 
         # 2. Fallback to deterministic regex-based parser
         return self._parse_heuristically(clean_text, default_title)
 
-    async def _parse_with_ai(self, text: str, default_title: str) -> ParsedSyllabus | None:
+    #: Input sizes to try, largest first. Each retry asks the model to describe
+    #: less text, so the JSON it must return shrinks with it.
+    AI_INPUT_SLICES = (12000, 6000, 3000)
+
+    #: Room for the JSON tree. 3500 could not hold the structure a
+    #: 12,000-character syllabus produces, so every large syllabus truncated.
+    #: The ceiling has to clear reasoning overhead as well as the JSON: routers
+    #: like openrouter/auto happily pick a reasoning model, and its thinking
+    #: tokens are charged against this same budget -- one observed reply spent
+    #: 1,623 reasoning tokens to emit 195 characters of visible output.
+    AI_MAX_OUTPUT_TOKENS = 16000
+
+    async def _parse_with_ai(
+        self, text: str, default_title: str, max_chars: int = 12000
+    ) -> ParsedSyllabus | None:
         """Use LLM model client to extract nested syllabus hierarchy."""
         client = get_model_client(self.settings)
 
@@ -92,8 +132,13 @@ class SyllabusParser:
                     ChatMessage(role="user", content=user_content),
                 ],
                 temperature=0.1,
-                max_tokens=3500,
+                max_tokens=self.AI_MAX_OUTPUT_TOKENS,
             )
+
+            if response.truncated:
+                # Parsing this would fail anyway, and the failure would look
+                # like a malformed reply rather than one that ran out of room.
+                raise _TruncatedSyllabusResponse()
 
             raw_json = extract_json_payload(response.content)
 

@@ -45,6 +45,7 @@ export function ChatPage() {
     loadSession,
     createSession,
     updateSession,
+    autotitleSession,
     deleteSession,
     sendStreamingMessage,
     clearActiveSession,
@@ -107,6 +108,26 @@ export function ChatPage() {
       return () => clearTimeout(timeout);
     }
   }, [searchQuery, activeProfileId]);
+
+  // Name a session once its first exchange is on screen.
+  // Fires on the streaming->idle edge rather than inside the send path: the
+  // reply is what the user is waiting for, and titling should not sit in front
+  // of it. Guarded on the default title so a name the user typed is never
+  // overwritten, and on having a reply so the title reflects a real exchange.
+  const wasStreamingRef = useRef(false);
+  useEffect(() => {
+    const justFinished = wasStreamingRef.current && !isStreaming;
+    wasStreamingRef.current = isStreaming;
+    if (!justFinished || !activeProfileId || !activeSession) return;
+
+    const isDefaultTitle = /^(chat|new session)\s*(\(.*\))?$/i.test(
+      (activeSession.title || "").trim()
+    );
+    const hasReply = (activeSession.messages ?? []).some((m) => m.role === "assistant");
+    if (isDefaultTitle && hasReply) {
+      autotitleSession(activeProfileId, activeSession.id);
+    }
+  }, [isStreaming, activeProfileId, activeSession, autotitleSession]);
 
   // Auto-scroll to bottom when messages change or streaming content updates
   useEffect(() => {

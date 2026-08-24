@@ -73,6 +73,7 @@ class OllamaClient(BaseModelClient):
         return ChatResponse(
             content=data.get("message", {}).get("content", ""),
             model=data.get("model", ""),
+            finish_reason=str(data.get("done_reason") or ""),
         )
 
     async def chat_stream(

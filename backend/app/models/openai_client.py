@@ -82,6 +82,7 @@ class OpenAIClient(BaseModelClient):
             content=data["choices"][0]["message"]["content"],
             model=data.get("model", ""),
             usage=data.get("usage", {}),
+            finish_reason=str(data["choices"][0].get("finish_reason") or ""),
         )
 
     async def chat_stream(

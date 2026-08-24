@@ -90,6 +90,23 @@ async def update_session(
     return envelope(data=ChatSessionResponse.model_validate(session).model_dump())
 
 
+@router.post("/sessions/{session_id}/autotitle", response_model=dict)
+async def autotitle_session(
+    profile_id: str,
+    session_id: str,
+    service: ChatService = Depends(get_chat_service),
+):
+    """Name a session after its opening message.
+
+    Separate from the chat turn on purpose: the reply is what the user is
+    waiting for, and a title is not worth adding a round trip to it. The client
+    calls this once the first exchange is on screen. A session the user has
+    already renamed is returned untouched.
+    """
+    session = await service.autotitle_session(profile_id, session_id)
+    return envelope(data=ChatSessionResponse.model_validate(session).model_dump())
+
+
 @router.delete("/sessions/{session_id}", response_model=dict)
 async def delete_session(
     profile_id: str,
