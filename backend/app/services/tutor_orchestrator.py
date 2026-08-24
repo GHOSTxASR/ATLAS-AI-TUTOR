@@ -11,6 +11,8 @@ from app.db.repositories.analytics_repo import AnalyticsRepository
 from app.db.repositories.chat_repo import ChatMessageRepository, ChatSessionRepository
 from app.db.repositories.profile_repo import ProfileRepository
 from app.exceptions import AtlasError
+from app.tasks.background import spawn
+from app.tasks.memory_extraction_task import extract_session_memory_and_summary
 from app.models.abstraction import ChatMessage as LLMMessage
 from app.models.provider_factory import get_model_client
 from app.models.resilience import provider_error_from
@@ -214,6 +216,18 @@ class TutorOrchestrator:
             )
         except Exception as e:
             logger.warning("Could not record chat_turn analytics event: %s", e)
+
+        # 9. Extract learner memories from the exchange.
+        #    Only the WebSocket path did this, so a turn taken over REST left no
+        #    trace in memory at all -- the same split that once left chat turns
+        #    out of analytics. Detached and tracked, so it neither delays the
+        #    reply nor gets collected mid-run.
+        spawn(
+            extract_session_memory_and_summary(
+                profile_id=profile_id, session_id=session_id
+            ),
+            name=f"memory-extraction:{session_id}",
+        )
 
         return TutorChatResponse(
             session_id=session_id,

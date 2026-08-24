@@ -79,7 +79,7 @@ class OpenAIClient(BaseModelClient):
 
         data = await retry_async(_request, provider=self.get_provider_name())
         return ChatResponse(
-            content=data["choices"][0]["message"]["content"],
+            content=data["choices"][0]["message"].get("content") or "",
             model=data.get("model", ""),
             usage=data.get("usage", {}),
             finish_reason=str(data["choices"][0].get("finish_reason") or ""),

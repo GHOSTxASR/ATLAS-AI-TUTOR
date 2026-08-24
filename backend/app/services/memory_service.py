@@ -222,7 +222,7 @@ class MemoryService:
                         ChatMessage(role="user", content=extraction_prompt),
                     ],
                     temperature=0.2,
-                    max_tokens=1000,
+                    max_tokens=4000,
                 )
                 text = extract_json_payload(response.content)
 
@@ -301,7 +301,7 @@ class MemoryService:
                         ChatMessage(role="user", content=prompt),
                     ],
                     temperature=0.3,
-                    max_tokens=300,
+                    max_tokens=2000,
                 )
                 summary_text = response.content.strip()
                 if summary_text:
