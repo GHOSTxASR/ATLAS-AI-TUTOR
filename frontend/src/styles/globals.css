@@ -633,3 +633,103 @@ main:has(.page-own-layout) > * {
   }
   .atlas-profile-grid > li > button { transition: none !important; }
 }
+
+/* ─────────────────────────────────────────────────────────────
+   Pointer overlay
+   A dot that tracks exactly plus a ring that trails it. The native cursor is
+   only hidden once the overlay has actually mounted (the class is added by the
+   component), so a browser that never runs the script keeps its own cursor
+   rather than being left with nothing to point with.
+   ───────────────────────────────────────────────────────────── */
+@media (pointer: fine) {
+  .atlas-cursor-active,
+  .atlas-cursor-active *,
+  .atlas-cursor-active *::before,
+  .atlas-cursor-active *::after {
+    cursor: none;
+  }
+
+  /* Text entry keeps the I-beam: a dot cannot show which two characters the
+     caret would land between, and losing that makes editing guesswork. */
+  .atlas-cursor-active input,
+  .atlas-cursor-active textarea,
+  .atlas-cursor-active [contenteditable="true"],
+  .atlas-cursor-active [contenteditable=""] {
+    cursor: text;
+  }
+}
+
+.atlas-cursor-dot,
+.atlas-cursor-ring {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 2147483647;
+  pointer-events: none;
+  opacity: 0;
+  /* Only opacity transitions here. Position is written straight to transform
+     every frame, so transitioning it would fight the animation loop. */
+  transition: opacity 160ms ease;
+}
+
+.atlas-cursor-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: #ffffff;
+  /* A dark halo keeps the dot visible over white surfaces in light mode. */
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35);
+}
+
+.atlas-cursor-ring {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.25);
+  transition:
+    opacity 160ms ease,
+    width 180ms cubic-bezier(0.16, 1, 0.3, 1),
+    height 180ms cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 180ms ease,
+    background-color 180ms ease;
+}
+
+/* Theme colours first, then the interaction states.
+   Order and specificity both matter here: the light-mode selector below is
+   (0,3,0), so a plain `.atlas-cursor-ring.is-interactive` at (0,2,0) lost to
+   it and the ring never picked up the accent in light mode. The state rules
+   are therefore written at (0,3,0) too and placed afterwards, so they win the
+   tie on order. */
+
+/* Light mode needs a dark cursor; white on white is invisible. */
+:root:not(.dark) .atlas-cursor-dot {
+  background-color: #111113;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.6);
+}
+
+:root:not(.dark) .atlas-cursor-ring {
+  border-color: rgba(17, 17, 19, 0.5);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.4);
+}
+
+/* Over anything clickable: grow and pick up the accent. */
+:root .atlas-cursor-ring.is-interactive {
+  width: 44px;
+  height: 44px;
+  border-color: var(--color-primary);
+  background-color: rgba(var(--accent-rgb), 0.12);
+}
+
+/* Press contracts it, so the click has a physical read. */
+:root .atlas-cursor-ring.is-pressed {
+  width: 22px;
+  height: 22px;
+  background-color: rgba(var(--accent-rgb), 0.28);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .atlas-cursor-ring {
+    transition: opacity 160ms ease;
+  }
+}

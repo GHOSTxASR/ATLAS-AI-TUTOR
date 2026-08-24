@@ -13,6 +13,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.config import APP_TAGLINE, get_settings
 from app.exceptions import AtlasError
+from app.pipelines.embedder import EmbeddingUnavailableError
 from app.lifespan import lifespan
 from app.security.redaction import redact_secrets
 from app.utils.file_utils import ensure_within_directory
@@ -76,6 +77,29 @@ def create_app() -> FastAPI:
                     "code": exc.code,
                     "message": redact_secrets(exc.message),
                     "details": exc.details,
+                }
+            ),
+        )
+
+    @app.exception_handler(EmbeddingUnavailableError)
+    async def embedding_unavailable_handler(
+        _: Request, exc: EmbeddingUnavailableError
+    ) -> JSONResponse:
+        """Surface why indexing and search are unavailable.
+
+        The embedder already explains this precisely -- which provider lacks an
+        embeddings API and which ones to switch to -- but the exception was
+        mapped nowhere, so it fell through to the generic 500 handler and the
+        user saw "Something went wrong. Check the server logs for details."
+        while a perfectly actionable message sat one frame down the stack.
+        """
+        return JSONResponse(
+            status_code=409,
+            content=envelope(
+                error={
+                    "code": "EMBEDDINGS_UNAVAILABLE",
+                    "message": redact_secrets(str(exc)),
+                    "details": {},
                 }
             ),
         )

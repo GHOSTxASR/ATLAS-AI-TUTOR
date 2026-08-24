@@ -39,7 +39,7 @@ set "PYTHONPATH=%CD%\backend"
 set "ATLAS_ENV=production"
 
 echo [Atlas] Launching production server on http://%ATLAS_HOST%:%ATLAS_PORT%...
-start "Atlas Backend" /MIN cmd /c "cd /d %CD%\backend && call .venv\Scripts\activate.bat && set PYTHONPATH=%CD%\backend && set ATLAS_ENV=production && set ATLAS_PORT=%ATLAS_PORT% && set ATLAS_HOST=%ATLAS_HOST% && python -m uvicorn app.main:app --host %ATLAS_HOST% --port %ATLAS_PORT%"
+start "Atlas Backend" /MIN cmd /c "cd /d %CD%\backend && call .venv\Scripts\activate.bat && set "PYTHONPATH=%CD%\backend" && set "ATLAS_ENV=production" && set "ATLAS_PORT=%ATLAS_PORT%" && set "ATLAS_HOST=%ATLAS_HOST%" && python -m uvicorn app.main:app --host %ATLAS_HOST% --port %ATLAS_PORT%"
 
 set "HEALTH_URL=http://%ATLAS_HOST%:%ATLAS_PORT%/api/v1/health"
 set "MAX_TRIES=60"

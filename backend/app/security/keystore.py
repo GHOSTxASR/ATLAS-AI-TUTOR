@@ -57,6 +57,9 @@ class KeyStore:
     included in exports.
     """
 
+    #: icacls is a subprocess; assert the key's ACL once per process.
+    _key_acl_checked: bool = False
+
     def __init__(self, settings: Settings):
         self._secrets_path: Path = settings.paths.secrets_file
         self._key_path: Path = settings.paths.config_dir / "keystore.key"
@@ -64,9 +67,19 @@ class KeyStore:
     def _load_or_create_fernet_key(self) -> bytes:
         self._key_path.parent.mkdir(parents=True, exist_ok=True)
         if self._key_path.exists():
+            # Re-assert the ACL on an existing key, not just a new one.
+            # Restricting only at creation meant any install made before this
+            # hardening kept a key file with inherited permissions forever --
+            # the encrypted blob was locked down while the key that opens it
+            # was readable by every administrator on the machine. Guarded so
+            # this costs one icacls call per process, not one per key read.
+            if not KeyStore._key_acl_checked:
+                KeyStore._key_acl_checked = True
+                restrict_to_current_user(self._key_path)
             return self._key_path.read_bytes().strip()
         key = Fernet.generate_key()
         self._key_path.write_bytes(key)
+        KeyStore._key_acl_checked = True
         restrict_to_current_user(self._key_path)
         return key
 

@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { RouterProvider } from "react-router-dom";
 
 import { router } from "./router";
+import { CustomCursor } from "./components/common/CustomCursor";
 // KaTeX ships its own stylesheet; without it rendered formulas are unreadable.
 import "katex/dist/katex.min.css";
 import "./styles/tokens.css";
@@ -23,6 +24,7 @@ const queryClient = new QueryClient({
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
+      <CustomCursor />
       <RouterProvider router={router} />
     </QueryClientProvider>
   </React.StrictMode>
