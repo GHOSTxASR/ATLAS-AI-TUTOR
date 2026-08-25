@@ -206,7 +206,8 @@ export function RoadmapPage() {
       {/* Main Grid: Sequential Node List & Detail Panel */}
       <div className="atlas-grid grid-cols-1 lg:grid-cols-3">
         {/* Nodes List */}
-        <div className="lg:col-span-2 glass-panel p-6 border border-glass-border space-y-4">
+        <div className="lg:col-span-2 glass-panel flex min-h-0 flex-col border border-glass-border">
+          <div className="shrink-0 space-y-4 p-6 pb-4">
           <div className="flex justify-between items-center">
             <h2 className="font-editorial text-2xl text-on-surface">
               {roadmap?.title || "Sequenced Curriculum Topics"}
@@ -215,7 +216,12 @@ export function RoadmapPage() {
               Version {roadmap?.version || 1}
             </div>
           </div>
+          </div>
 
+          {/* The scroll box. max-h keeps it bounded even where the flex chain
+              cannot give it a definite height, e.g. the single-column layout
+              below lg where the panel is sized by its own content. */}
+          <div className="min-h-0 flex-1 overflow-y-auto px-6 pb-6 min-h-[16rem] max-h-[calc(100vh-25.5rem)]">
           {roadmap && roadmap.nodes && roadmap.nodes.length > 0 ? (
             <div className="space-y-3">
               {roadmap.nodes.map((node, index) => {
@@ -277,10 +283,11 @@ export function RoadmapPage() {
               No topics found in active roadmap. Upload a syllabus or generate a curriculum.
             </div>
           )}
+          </div>
         </div>
 
         {/* Selected Node Details & Status Management */}
-        <div className="glass-panel p-6 border border-glass-border space-y-5">
+        <div className="glass-panel h-full min-h-0 overflow-y-auto p-6 border border-glass-border space-y-5">
           {selectedNode ? (
             <>
               <div>
