@@ -35,9 +35,11 @@ Model lists are fetched **live** from whichever provider you configure, so new
 and free models show up as soon as the provider publishes them — nothing is
 hardcoded. Any model id can also be typed in by hand.
 
-> **Note:** embeddings need a provider that offers an embeddings API. Anthropic,
-> Groq, DeepSeek and OpenRouter do not, so document indexing requires OpenAI,
-> Gemini, Mistral, Together or Ollama.
+**Chat and embeddings are configured separately.** Not every chat provider
+offers an embeddings API — Anthropic, Groq, DeepSeek and OpenRouter do not — but
+that no longer constrains your chat model. Pick any provider for chat, and one
+of OpenAI, Gemini, Mistral, Together or a local Ollama model for embeddings.
+Settings warns you if the embedding provider you choose cannot index documents.
 
 ---
 
@@ -117,7 +119,7 @@ python -m venv .venv
 .venv/Scripts/activate          # Windows;  source .venv/bin/activate on macOS/Linux
 pip install -r requirements-dev.txt   # includes runtime deps + test tooling
 
-pytest                          # 184 tests
+pytest                          # 193 tests
 ruff check app/ alembic/
 
 # Frontend
