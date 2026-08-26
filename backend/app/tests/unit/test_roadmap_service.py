@@ -103,7 +103,7 @@ async def test_roadmap_strict_mode(async_db_session: AsyncSession, tmp_path, mon
 @pytest.mark.asyncio
 async def test_roadmap_adaptive_mode(async_db_session: AsyncSession, tmp_path, monkeypatch):
     monkeypatch.setenv("ATLAS_DATA_DIR", str(tmp_path / "atlas-data"))
-    monkeypatch.setattr("app.services.roadmap_service.get_model_client", lambda s: MockRoadmapLLM())
+    monkeypatch.setattr("app.services.roadmap_builders.get_model_client", lambda s: MockRoadmapLLM())
 
     from app.config import get_settings
     get_settings.cache_clear()
@@ -126,7 +126,7 @@ async def test_roadmap_adaptive_mode(async_db_session: AsyncSession, tmp_path, m
 @pytest.mark.asyncio
 async def test_roadmap_hybrid_mode(async_db_session: AsyncSession, tmp_path, monkeypatch):
     monkeypatch.setenv("ATLAS_DATA_DIR", str(tmp_path / "atlas-data"))
-    monkeypatch.setattr("app.services.roadmap_service.get_model_client", lambda s: MockRoadmapLLM())
+    monkeypatch.setattr("app.services.roadmap_builders.get_model_client", lambda s: MockRoadmapLLM())
 
     from app.config import get_settings
     get_settings.cache_clear()
