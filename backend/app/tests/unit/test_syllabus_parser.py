@@ -4,6 +4,7 @@ from typing import AsyncIterator
 import pytest
 
 from app.models.abstraction import BaseModelClient, ChatMessage, ChatResponse, StreamChunk
+from app.pipelines.syllabus_heuristics import parse_heuristically
 from app.pipelines.syllabus_parser import SyllabusParser
 
 
@@ -59,8 +60,8 @@ class MockSyllabusLLM(BaseModelClient):
 async def test_syllabus_parser_ai_extraction(monkeypatch):
     monkeypatch.setattr("app.pipelines.syllabus_parser.get_model_client", lambda s: MockSyllabusLLM())
 
-    parser = SyllabusParser()
     text = "Syllabus Content for Computer Science"
+    parser = SyllabusParser()
     parsed = await parser.parse_text(text, default_title="GATE Syllabus")
 
     assert parsed.title == "Computer Science GATE Syllabus"
@@ -81,7 +82,6 @@ async def test_syllabus_parser_ai_extraction(monkeypatch):
 
 @pytest.mark.asyncio
 async def test_syllabus_parser_heuristic_fallback_markdown():
-    parser = SyllabusParser()
 
     markdown_syllabus = (
         "# Physics: Mechanics\n"
@@ -99,7 +99,7 @@ async def test_syllabus_parser_heuristic_fallback_markdown():
         "- Action-Reaction pairs\n"
     )
 
-    parsed = parser._parse_heuristically(markdown_syllabus, default_title="Physics")
+    parsed = parse_heuristically(markdown_syllabus, default_title="Physics")
 
     assert len(parsed.subjects) == 1
     subj = parsed.subjects[0]
@@ -118,7 +118,6 @@ async def test_syllabus_parser_heuristic_fallback_markdown():
 
 @pytest.mark.asyncio
 async def test_syllabus_parser_heuristic_numbered_modules():
-    parser = SyllabusParser()
 
     numbered_syllabus = (
         "Module 1: Operating Systems\n"
@@ -136,7 +135,7 @@ async def test_syllabus_parser_heuristic_numbered_modules():
         "- Joins and aggregations\n"
     )
 
-    parsed = parser._parse_heuristically(numbered_syllabus, default_title="CS Curriculum")
+    parsed = parse_heuristically(numbered_syllabus, default_title="CS Curriculum")
 
     assert len(parsed.subjects) == 2
     assert "Operating Systems" in parsed.subjects[0].title

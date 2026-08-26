@@ -84,6 +84,7 @@ async def async_db_session():
 async def test_quiz_generate_and_scoring_flow(async_db_session: AsyncSession, tmp_path, monkeypatch):
     monkeypatch.setenv("ATLAS_DATA_DIR", str(tmp_path / "atlas-data"))
     monkeypatch.setattr("app.services.quiz_service.get_model_client", lambda s: MockQuizLLM())
+    monkeypatch.setattr("app.services.quiz_grading.get_model_client", lambda s: MockQuizLLM())
 
     from app.config import get_settings
     get_settings.cache_clear()

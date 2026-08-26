@@ -90,6 +90,7 @@ async def async_db_session():
 async def test_assessment_generation_evaluation_and_mastery(async_db_session: AsyncSession, tmp_path, monkeypatch):
     monkeypatch.setenv("ATLAS_DATA_DIR", str(tmp_path / "atlas-data"))
     monkeypatch.setattr("app.services.quiz_service.get_model_client", lambda s: MockAssessmentLLM())
+    monkeypatch.setattr("app.services.quiz_grading.get_model_client", lambda s: MockAssessmentLLM())
 
     from app.config import get_settings
     get_settings.cache_clear()

@@ -89,6 +89,7 @@ def test_quiz_generation_reports_provider_failure(tmp_path, monkeypatch):
         raise ValueError("No Gemini API key configured. Set it on the Settings page.")
 
     monkeypatch.setattr("app.services.quiz_service.get_model_client", _no_provider)
+    monkeypatch.setattr("app.services.quiz_grading.get_model_client", _no_provider)
 
     with TestClient(app) as client:
         profile_id = _create_profile(client)

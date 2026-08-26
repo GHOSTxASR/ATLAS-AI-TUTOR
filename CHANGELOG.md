@@ -76,6 +76,10 @@ grouped by what changed rather than by version.
   budget thinking and return a null content field; that null reached
   `json.loads` as an empty string, and the budgets were too small besides.
   Extraction also only ran on the WebSocket path.
+- **Short answers were graded on keyword overlap, not meaning.** The evaluator
+  was given a 350-token budget, which a reasoning model spends before writing
+  any JSON, so every short answer quietly fell through to the terminology
+  fallback and scored on vocabulary rather than understanding.
 - **Syllabus parsing silently fell back to a heuristic** that turned page
   headers into topics, because the JSON reply was truncated and nothing could
   tell truncation from malformed output. `finish_reason` is now exposed.

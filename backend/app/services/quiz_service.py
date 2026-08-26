@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import json
 import logging
-import re
 from datetime import datetime, timezone
 from typing import Any
 
@@ -18,9 +17,14 @@ from app.exceptions import AtlasError
 from app.models.abstraction import ChatMessage
 from app.models.provider_factory import get_model_client
 from app.models.resilience import provider_error_from
+from app.services.quiz_grading import (
+    GradedAnswer,
+    compute_letter_grade,
+    grade_answer,
+    overall_feedback,
+)
 from app.schemas.quiz import (
     AssessmentGenerateRequest,
-    ErrorClassification,
     MasteryNodeUpdate,
     QuestionResult,
     QuizAttemptSummary,
@@ -36,18 +40,109 @@ from app.utils.text_utils import extract_json_payload
 
 logger = logging.getLogger(__name__)
 
+#: A score at or above this is worth remembering as a strength; below
+#: WEAKNESS_THRESHOLD, as a gap to revisit. The band between is ordinary
+#: partial credit and says nothing worth storing.
+STRENGTH_THRESHOLD = 0.85
+WEAKNESS_THRESHOLD = 0.60
 
-def _compute_letter_grade(score: float) -> str:
-    if score >= 0.90:
-        return "A+"
-    elif score >= 0.80:
-        return "A"
-    elif score >= 0.70:
-        return "B"
-    elif score >= 0.60:
-        return "C"
-    else:
-        return "F"
+#: How much of the previous mastery survives a new quiz (an EMA).
+MASTERY_WEIGHT = 0.5
+
+#: Score at which a topic counts as done and stops blocking its successors.
+COMPLETION_THRESHOLD = 0.8
+
+
+def _build_question_prompt(topics: list[str], difficulty: str, question_count: int) -> str:
+    """Ask for a mixed paper, showing the exact JSON shape expected back."""
+    topics_str = ", ".join(topics)
+    return (
+        f"You are a rigorous academic assessment engine. Generate an assessment "
+        f"covering topics: [{topics_str}].\n"
+        f"Difficulty level: '{difficulty}'. Total questions needed: {question_count}.\n"
+        "Include a balanced mix of:\n"
+        "1. 'mcq': Multiple-choice with 4 distinct options ('A', 'B', 'C', 'D') "
+        "and 1 correct answer.\n"
+        "2. 'numerical': Calculation problem with 'target_value' (number) and "
+        "'tolerance' (e.g. 0.05).\n"
+        "3. 'short_answer': Analytical/conceptual question with an explicit "
+        "grading rubric.\n\n"
+        "Return ONLY a valid JSON array matching this format:\n"
+        "[\n"
+        "  {\n"
+        '    "id": "q1",\n'
+        '    "question_type": "mcq",\n'
+        f'    "topic_title": "{topics[0]}",\n'
+        f'    "difficulty": "{difficulty}",\n'
+        '    "prompt": "Question prompt?",\n'
+        '    "options": [\n'
+        '      {"id": "A", "text": "Option A"},\n'
+        '      {"id": "B", "text": "Option B"},\n'
+        '      {"id": "C", "text": "Option C"},\n'
+        '      {"id": "D", "text": "Option D"}\n'
+        "    ],\n"
+        '    "correct_answer": "A",\n'
+        '    "explanation": "Explanation..."\n'
+        "  }\n"
+        "]"
+    )
+
+
+async def _request_questions(settings: Settings, prompt: str) -> list[dict[str, Any]]:
+    """Ask the provider for a paper, or fail loudly.
+
+    A quiz is only useful if a model actually wrote it. Substituting templated
+    placeholder questions produced an assessment that tested nothing and
+    reported a meaningless score, so every failure mode surfaces to the caller
+    with the reason attached rather than degrading quietly.
+    """
+    questions: list[dict[str, Any]] = []
+    try:
+        client = get_model_client(settings)
+        try:
+            response = await client.chat_complete(
+                messages=[
+                    ChatMessage(
+                        role="system",
+                        content=(
+                            "You create balanced academic assessment tests. "
+                            "Return ONLY JSON."
+                        ),
+                    ),
+                    ChatMessage(role="user", content=prompt),
+                ],
+                temperature=0.2,
+                max_tokens=3500,
+            )
+            parsed = json.loads(extract_json_payload(response.content))
+            if isinstance(parsed, list) and len(parsed) > 0:
+                questions = parsed
+        finally:
+            await client.close()
+    except ValueError as e:
+        raise AtlasError(
+            status_code=503, code="PROVIDER_NOT_CONFIGURED", message=str(e)
+        ) from None
+    except json.JSONDecodeError:
+        raise AtlasError(
+            status_code=502,
+            code="PROVIDER_BAD_RESPONSE",
+            message="The AI provider did not return a valid quiz. Try again.",
+        ) from None
+    except Exception as e:
+        error = provider_error_from(e)
+        logger.warning("Quiz generation failed: %s", error.message)
+        raise AtlasError(
+            status_code=502, code="PROVIDER_ERROR", message=error.message
+        ) from None
+
+    if not questions:
+        raise AtlasError(
+            status_code=502,
+            code="PROVIDER_EMPTY_RESPONSE",
+            message="The AI provider returned no quiz questions. Try again.",
+        )
+    return questions
 
 
 class QuizService:
@@ -143,80 +238,10 @@ class QuizService:
         time_limit_seconds: int | None,
         difficulty: str,
     ) -> QuizResponse:
-        """Core AI question generator for quizzes and multi-topic assessments."""
-        topics_str = ", ".join(topics)
-        prompt = (
-            f"You are a rigorous academic assessment engine. Generate an assessment covering topics: [{topics_str}].\n"
-            f"Difficulty level: '{difficulty}'. Total questions needed: {question_count}.\n"
-            "Include a balanced mix of:\n"
-            "1. 'mcq': Multiple-choice with 4 distinct options ('A', 'B', 'C', 'D') and 1 correct answer.\n"
-            "2. 'numerical': Calculation problem with 'target_value' (number) and 'tolerance' (e.g. 0.05).\n"
-            "3. 'short_answer': Analytical/conceptual question with an explicit grading rubric.\n\n"
-            "Return ONLY a valid JSON array matching this format:\n"
-            "[\n"
-            "  {\n"
-            '    "id": "q1",\n'
-            '    "question_type": "mcq",\n'
-            f'    "topic_title": "{topics[0]}",\n'
-            f'    "difficulty": "{difficulty}",\n'
-            '    "prompt": "Question prompt?",\n'
-            '    "options": [\n'
-            '      {"id": "A", "text": "Option A"},\n'
-            '      {"id": "B", "text": "Option B"},\n'
-            '      {"id": "C", "text": "Option C"},\n'
-            '      {"id": "D", "text": "Option D"}\n'
-            "    ],\n"
-            '    "correct_answer": "A",\n'
-            '    "explanation": "Explanation..."\n'
-            "  }\n"
-            "]"
-        )
+        """Generate a paper, record the attempt, and return it without answers."""
+        prompt = _build_question_prompt(topics, difficulty, question_count)
+        questions = await _request_questions(self.settings, prompt)
 
-        # A quiz is only useful if a model actually wrote it. Substituting
-        # templated placeholder questions produced an assessment that tested
-        # nothing and reported a meaningless score, so failures are surfaced.
-        questions: list[dict[str, Any]] = []
-        try:
-            client = get_model_client(self.settings)
-            try:
-                response = await client.chat_complete(
-                    messages=[
-                        ChatMessage(role="system", content="You create balanced academic assessment tests. Return ONLY JSON."),
-                        ChatMessage(role="user", content=prompt),
-                    ],
-                    temperature=0.2,
-                    max_tokens=3500,
-                )
-                parsed = json.loads(extract_json_payload(response.content))
-                if isinstance(parsed, list) and len(parsed) > 0:
-                    questions = parsed
-            finally:
-                await client.close()
-        except ValueError as e:
-            raise AtlasError(
-                status_code=503, code="PROVIDER_NOT_CONFIGURED", message=str(e)
-            ) from None
-        except json.JSONDecodeError:
-            raise AtlasError(
-                status_code=502,
-                code="PROVIDER_BAD_RESPONSE",
-                message="The AI provider did not return a valid quiz. Try again.",
-            ) from None
-        except Exception as e:
-            error = provider_error_from(e)
-            logger.warning("Quiz generation failed: %s", error.message)
-            raise AtlasError(
-                status_code=502, code="PROVIDER_ERROR", message=error.message
-            ) from None
-
-        if not questions:
-            raise AtlasError(
-                status_code=502,
-                code="PROVIDER_EMPTY_RESPONSE",
-                message="The AI provider returned no quiz questions. Try again.",
-            )
-
-        # Persist attempt
         attempt = await self.repo.create_attempt(
             profile_id=profile_id,
             roadmap_node_id=roadmap_node_id,
@@ -226,7 +251,9 @@ class QuizService:
             time_limit_seconds=time_limit_seconds,
         )
 
-        # Format public response
+        # The public shape deliberately omits correct_answer, target_value and
+        # rubric: the stored copy keeps them, the copy sent to the browser
+        # does not.
         public_questions: list[QuizQuestionPublic] = []
         for q in questions:
             opts = [QuizOption(**o) for o in q.get("options", [])] if q.get("options") else None
@@ -252,10 +279,156 @@ class QuizService:
             questions=public_questions,
         )
 
+    async def _grade_and_record(
+        self,
+        profile_id: str,
+        attempt: Any,
+        stored_questions: list[dict[str, Any]],
+        answers_by_id: dict[str, str],
+    ) -> tuple[list[QuestionResult], float, list[str], list[str]]:
+        """Grade every answer, writing what it reveals to long-term memory.
+
+        Mutates `stored_questions` in place with the score and feedback, which
+        is what gets persisted back onto the attempt so a result page can be
+        rebuilt later without re-grading.
+
+        Returns the per-question results, the raw score total, and the
+        strengths and weaknesses recorded.
+        """
+        question_results: list[QuestionResult] = []
+        total_score_sum = 0.0
+        strengths_recorded: list[str] = []
+        weaknesses_recorded: list[str] = []
+
+        for q in stored_questions:
+            q_id = str(q.get("id"))
+            q_topic = str(q.get("topic_title", "Concept"))
+            prompt_text = q.get("prompt", "")
+            user_ans = answers_by_id.get(q_id, "")
+
+            graded = await grade_answer(self.settings, q, user_ans)
+            total_score_sum += graded.score
+
+            q["user_answer"] = user_ans
+            q["score"] = graded.score
+            q["feedback"] = graded.feedback
+            q["error_category"] = graded.error_category
+
+            await self._record_memory(profile_id, attempt.id, q_topic, prompt_text,
+                                      user_ans, graded, strengths_recorded,
+                                      weaknesses_recorded)
+
+            question_results.append(
+                QuestionResult(
+                    question_id=q_id,
+                    question_type=q.get("question_type", "mcq"),
+                    prompt=prompt_text,
+                    user_answer=user_ans,
+                    correct_answer=str(q.get("correct_answer", "")).strip(),
+                    is_correct=graded.is_correct,
+                    score=round(graded.score, 2),
+                    error_category=graded.error_category,
+                    feedback=graded.feedback,
+                    explanation=str(q.get("explanation", "")),
+                    remediation_advice=graded.remediation,
+                )
+            )
+
+        return question_results, total_score_sum, strengths_recorded, weaknesses_recorded
+
+    async def _record_memory(
+        self,
+        profile_id: str,
+        attempt_id: str,
+        topic: str,
+        prompt_text: str,
+        user_answer: str,
+        graded: GradedAnswer,
+        strengths: list[str],
+        weaknesses: list[str],
+    ) -> None:
+        """Note a clear strength or a clear weakness; say nothing about the middle.
+
+        A weakness is only recorded when something was actually answered --
+        a blank is evidence of running out of time, not of a misconception.
+        """
+        if graded.score >= STRENGTH_THRESHOLD:
+            await self.memory_repo.create(
+                profile_id=profile_id,
+                category="strength",
+                subject=topic,
+                content=(
+                    f"Demonstrated high mastery ({int(graded.score * 100)}%) "
+                    f"in {topic}: {prompt_text[:80]}..."
+                ),
+                confidence=graded.score,
+                source="quiz_assessment",
+                source_id=attempt_id,
+            )
+            strengths.append(f"{topic}: Strong grasp")
+        elif graded.score < WEAKNESS_THRESHOLD and user_answer:
+            category = graded.error_category.replace("_", " ")
+            await self.memory_repo.create(
+                profile_id=profile_id,
+                category="weakness",
+                subject=topic,
+                content=f"Struggled with {topic} ({category}): {graded.remediation}",
+                confidence=0.85,
+                source="quiz_assessment",
+                source_id=attempt_id,
+            )
+            weaknesses.append(f"{topic}: {category}")
+
+    async def _apply_mastery(
+        self, profile_id: str, node_id: str, overall_score: float
+    ) -> tuple[list[MasteryNodeUpdate], list[str], float]:
+        """Move the topic's mastery toward this score and report what it unlocks.
+
+        Mastery is an even blend of the old value and the new one, so a single
+        bad quiz cannot erase a history of good ones and a single good quiz
+        cannot certify a topic outright.
+        """
+        node = await self._get_owned_node(profile_id, node_id)
+        old_mastery = node.mastery_score
+        new_mastery = round(MASTERY_WEIGHT * old_mastery + (1 - MASTERY_WEIGHT) * overall_score, 2)
+
+        node_fields: dict[str, Any] = {"mastery_score": new_mastery}
+        if overall_score >= COMPLETION_THRESHOLD and node.status in ("not_started", "in_progress"):
+            node_fields["status"] = "completed"
+            node_fields["completed_at"] = datetime.now(timezone.utc)
+
+        updated_node = await self.roadmap_repo.update_node(node, **node_fields)
+        mastery_updates = [
+            MasteryNodeUpdate(
+                node_id=updated_node.id,
+                node_title=updated_node.title,
+                previous_mastery=old_mastery,
+                new_mastery=new_mastery,
+                status=updated_node.status,
+                unlocked=True,
+            )
+        ]
+
+        # A topic becomes reachable once every prerequisite is done or skipped.
+        unlocked_nodes: list[str] = []
+        active_roadmap = await self.roadmap_repo.get_active_roadmap(profile_id)
+        if active_roadmap and active_roadmap.nodes:
+            cleared = {
+                n.id for n in active_roadmap.nodes if n.status in ("completed", "skipped")
+            }
+            for n in active_roadmap.nodes:
+                if n.status == "completed":
+                    continue
+                incoming = [e.from_node_id for e in active_roadmap.edges if e.to_node_id == n.id]
+                if incoming and all(dep in cleared for dep in incoming):
+                    unlocked_nodes.append(n.title)
+
+        return mastery_updates, unlocked_nodes, round(new_mastery - old_mastery, 2)
+
     async def submit_quiz(
         self, profile_id: str, attempt_id: str, data: QuizSubmitRequest
     ) -> QuizResultResponse:
-        """Comprehensive evaluation of answers, mastery synchronization, and memory reinforcement."""
+        """Grade a submission, then fold what it says into the learner's state."""
         await self._require_profile(profile_id)
 
         attempt = await self.repo.get_attempt(attempt_id)
@@ -265,172 +438,30 @@ class QuizService:
         stored_questions: list[dict[str, Any]] = json.loads(attempt.questions_json)
         answers_by_id = {a.question_id: a.user_answer.strip() for a in data.answers}
 
-        question_results: list[QuestionResult] = []
-        total_score_sum = 0.0
-        strengths_recorded: list[str] = []
-        weaknesses_recorded: list[str] = []
-
-        for q in stored_questions:
-            q_id = str(q.get("id"))
-            q_type = q.get("question_type", "mcq")
-            q_topic = str(q.get("topic_title", "Concept"))
-            prompt_text = q.get("prompt", "")
-            user_ans = answers_by_id.get(q_id, "")
-            correct_ans = str(q.get("correct_answer", "")).strip()
-            explanation = str(q.get("explanation", ""))
-
-            q_score = 0.0
-            feedback = ""
-            remediation = ""
-            error_cat: ErrorClassification = "correct"
-            is_correct = False
-
-            if q_type == "mcq":
-                is_correct = user_ans.upper() == correct_ans.upper()
-                if is_correct:
-                    q_score = 1.0
-                    error_cat = "correct"
-                    feedback = f"Correct! Option {correct_ans} is right."
-                    remediation = "Solid understanding demonstrated."
-                else:
-                    q_score = 0.0
-                    error_cat = "conceptual_misunderstanding"
-                    feedback = f"Incorrect. Correct answer is {correct_ans}."
-                    remediation = f"Review foundational rules of {q_topic}."
-
-            elif q_type == "numerical":
-                target_val = float(q.get("target_value") or correct_ans or 0.0)
-                tolerance = float(q.get("tolerance") or 0.05)
-
-                try:
-                    num_match = re.search(r"[-+]?\d*\.?\d+", user_ans)
-                    if num_match:
-                        user_val = float(num_match.group())
-                        diff = abs(user_val - target_val)
-                        if diff <= tolerance or (target_val != 0 and diff / abs(target_val) <= tolerance):
-                            is_correct = True
-                            q_score = 1.0
-                            error_cat = "correct"
-                            feedback = f"Accurate calculation ({user_val} ≈ {target_val})."
-                            remediation = "Calculation verified."
-                        else:
-                            is_correct = False
-                            q_score = 0.0
-                            error_cat = "calculation_error"
-                            feedback = f"Incorrect value {user_val}. Target was {target_val}."
-                            remediation = f"Double check formulas and arithmetic constants in {q_topic}."
-                    else:
-                        error_cat = "incomplete_answer"
-                        feedback = f"No valid numerical answer found. Target was {target_val}."
-                        remediation = "Enter a valid numeric value."
-                except Exception:
-                    error_cat = "calculation_error"
-                    feedback = f"Failed to parse numerical value. Target was {target_val}."
-                    remediation = "Verify numerical syntax."
-
-            elif q_type == "short_answer":
-                rubric = str(q.get("rubric", ""))
-                q_score, feedback, error_cat, remediation = await self._evaluate_short_answer_detailed(
-                    prompt_text, user_ans, correct_ans, rubric, q_topic
-                )
-                is_correct = q_score >= 0.7
-
-            total_score_sum += q_score
-            q["user_answer"] = user_ans
-            q["score"] = q_score
-            q["feedback"] = feedback
-            q["error_category"] = error_cat
-
-            # Record Long-Term Memory
-            if q_score >= 0.85:
-                strength_msg = f"Demonstrated high mastery ({int(q_score*100)}%) in {q_topic}: {prompt_text[:80]}..."
-                await self.memory_repo.create(
-                    profile_id=profile_id,
-                    category="strength",
-                    subject=q_topic,
-                    content=strength_msg,
-                    confidence=q_score,
-                    source="quiz_assessment",
-                    source_id=attempt.id,
-                )
-                strengths_recorded.append(f"{q_topic}: Strong grasp")
-            elif q_score < 0.60 and user_ans:
-                weakness_msg = f"Struggled with {q_topic} ({error_cat.replace('_', ' ')}): {remediation}"
-                await self.memory_repo.create(
-                    profile_id=profile_id,
-                    category="weakness",
-                    subject=q_topic,
-                    content=weakness_msg,
-                    confidence=0.85,
-                    source="quiz_assessment",
-                    source_id=attempt.id,
-                )
-                weaknesses_recorded.append(f"{q_topic}: {error_cat.replace('_', ' ')}")
-
-            question_results.append(
-                QuestionResult(
-                    question_id=q_id,
-                    question_type=q_type,
-                    prompt=prompt_text,
-                    user_answer=user_ans,
-                    correct_answer=correct_ans,
-                    is_correct=is_correct,
-                    score=round(q_score, 2),
-                    error_category=error_cat,
-                    feedback=feedback,
-                    explanation=explanation,
-                    remediation_advice=remediation,
-                )
-            )
+        (
+            question_results,
+            total_score_sum,
+            strengths_recorded,
+            weaknesses_recorded,
+        ) = await self._grade_and_record(profile_id, attempt, stored_questions, answers_by_id)
 
         total_questions = len(stored_questions)
         overall_score = round(total_score_sum / total_questions, 2) if total_questions > 0 else 0.0
         correct_count = sum(1 for r in question_results if r.is_correct)
-        letter_grade = _compute_letter_grade(overall_score)
 
-        # 1. Update Roadmap Node mastery & unlocks
         mastery_updates: list[MasteryNodeUpdate] = []
         unlocked_nodes: list[str] = []
         mastery_delta = 0.0
-
         if attempt.roadmap_node_id:
-            node = await self._get_owned_node(profile_id, attempt.roadmap_node_id)
-            old_mastery = node.mastery_score
-            new_mastery = round(0.5 * old_mastery + 0.5 * overall_score, 2)
-            mastery_delta = round(new_mastery - old_mastery, 2)
-
-            node_fields: dict[str, Any] = {"mastery_score": new_mastery}
-            if overall_score >= 0.8 and node.status in ("not_started", "in_progress"):
-                node_fields["status"] = "completed"
-                node_fields["completed_at"] = datetime.now(timezone.utc)
-
-            updated_node = await self.roadmap_repo.update_node(node, **node_fields)
-            mastery_updates.append(
-                MasteryNodeUpdate(
-                    node_id=updated_node.id,
-                    node_title=updated_node.title,
-                    previous_mastery=old_mastery,
-                    new_mastery=new_mastery,
-                    status=updated_node.status,
-                    unlocked=True,
-                )
+            mastery_updates, unlocked_nodes, mastery_delta = await self._apply_mastery(
+                profile_id, attempt.roadmap_node_id, overall_score
             )
 
-            # Check if this completed topic unlocks downstream nodes
-            active_roadmap = await self.roadmap_repo.get_active_roadmap(profile_id)
-            if active_roadmap and active_roadmap.nodes:
-                for n in active_roadmap.nodes:
-                    if n.status != "completed":
-                        # Check incoming prerequisites
-                        incoming = [e.from_node_id for e in active_roadmap.edges if e.to_node_id == n.id]
-                        completed_nodes = {cn.id for cn in active_roadmap.nodes if cn.status in ("completed", "skipped")}
-                        if incoming and all(dep in completed_nodes for dep in incoming):
-                            unlocked_nodes.append(n.title)
+        letter_grade = compute_letter_grade(overall_score)
 
-        # 2. Log Analytics Event.
-        #    `value` is study *minutes* everywhere analytics reads it; storing
-        #    the 0-1 score here meant every quiz contributed int(0.85) = 0
-        #    minutes to the study-time breakdown. The score lives in metadata.
+        # `value` is study *minutes* everywhere analytics reads it; storing the
+        # 0-1 score here meant every quiz contributed int(0.85) = 0 minutes to
+        # the study-time breakdown. The score lives in metadata.
         await self.analytics_repo.log_event(
             profile_id=profile_id,
             event_type="quiz_taken",
@@ -446,17 +477,6 @@ class QuizService:
             }),
         )
 
-        # 3. Overall qualitative feedback
-        if overall_score >= 0.9:
-            overall_fb = "Exceptional mastery demonstrated! Excellent depth across all examined concepts."
-        elif overall_score >= 0.8:
-            overall_fb = "High proficiency demonstrated. Ready to proceed to downstream dependent topics."
-        elif overall_score >= 0.6:
-            overall_fb = "Satisfactory conceptual grounding with minor calculation or definition gaps."
-        else:
-            overall_fb = "Needs targeted review. Remediation items have been saved to your learner profile."
-
-        # 4. Save attempt results
         attempt = await self.repo.save_results(
             attempt=attempt,
             score=overall_score,
@@ -481,70 +501,9 @@ class QuizService:
             strengths_recorded=strengths_recorded,
             weaknesses_recorded=weaknesses_recorded,
             unlocked_nodes=unlocked_nodes,
-            overall_feedback=overall_fb,
+            overall_feedback=overall_feedback(overall_score),
             mastery_delta=mastery_delta,
         )
-
-    async def _evaluate_short_answer_detailed(
-        self, prompt: str, user_answer: str, reference_answer: str, rubric: str, topic: str
-    ) -> tuple[float, str, ErrorClassification, str]:
-        """Grade conceptual short answers with detailed diagnostic categorization."""
-        if not user_answer.strip():
-            return 0.0, "No answer provided.", "incomplete_answer", f"Provide a complete explanation for {topic}."
-
-        eval_prompt = (
-            f"Question: {prompt}\n"
-            f"Topic: {topic}\n"
-            f"Grading Rubric / Criteria: {rubric}\n"
-            f"Reference Model Answer: {reference_answer}\n"
-            f"Learner's Answer: {user_answer}\n\n"
-            "Evaluate the learner's answer on accuracy, completeness, and reasoning.\n"
-            "Return ONLY a JSON object with this format:\n"
-            "{\n"
-            '  "score": 0.85,\n'
-            '  "feedback": "Concise 1-sentence evaluation.",\n'
-            '  "error_category": "correct" | "conceptual_misunderstanding" | "incomplete_answer" | "misread_question",\n'
-            '  "remediation": "Actionable advice on what to review."\n'
-            "}"
-        )
-
-        try:
-            client = get_model_client(self.settings)
-            try:
-                response = await client.chat_complete(
-                    messages=[
-                        ChatMessage(role="system", content="You are an expert academic evaluator. Return ONLY JSON."),
-                        ChatMessage(role="user", content=eval_prompt),
-                    ],
-                    temperature=0.0,
-                    max_tokens=350,
-                )
-                raw = extract_json_payload(response.content)
-
-                grade = json.loads(raw)
-                score = float(grade.get("score", 0.75))
-                error_cat = grade.get("error_category", "correct" if score >= 0.7 else "conceptual_misunderstanding")
-                return (
-                    score,
-                    str(grade.get("feedback", "Good conceptual explanation.")),
-                    error_cat,  # type: ignore
-                    str(grade.get("remediation", f"Review core principles of {topic}.")),
-                )
-            finally:
-                await client.close()
-        except Exception:
-            # Fallback heuristic: keyword matching
-            ref_words = set(re.findall(r"\w+", (reference_answer + " " + rubric).lower()))
-            user_words = set(re.findall(r"\w+", user_answer.lower()))
-            overlap = len(ref_words & user_words)
-            score = min(1.0, round(overlap / max(1, len(ref_words) * 0.4), 2))
-            error_cat: ErrorClassification = "correct" if score >= 0.7 else "incomplete_answer"
-            return (
-                score,
-                "Evaluated based on key concept terminology.",
-                error_cat,
-                f"Review essential definitions in {topic}.",
-            )
 
     async def get_quiz_result(self, profile_id: str, attempt_id: str) -> QuizResultResponse:
         """Fetch results of a past completed quiz attempt."""
@@ -582,7 +541,7 @@ class QuizService:
             started_at=attempt.started_at,
             completed_at=attempt.completed_at,
             score=score_val,
-            letter_grade=_compute_letter_grade(score_val),
+            letter_grade=compute_letter_grade(score_val),
             total_questions=attempt.total_questions,
             correct_count=attempt.correct_count or 0,
             time_limit_seconds=attempt.time_limit_seconds,

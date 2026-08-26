@@ -100,10 +100,13 @@ STUB_QUIZ_QUESTIONS = [
 @pytest.fixture
 def stub_quiz_llm(monkeypatch):
     """Give quiz_service a deterministic model response."""
-    monkeypatch.setattr(
+    # Question generation and short-answer grading each resolve their own
+    # client, so both modules need the stub.
+    for target in (
         "app.services.quiz_service.get_model_client",
-        lambda s: StubLLM(json.dumps(STUB_QUIZ_QUESTIONS)),
-    )
+        "app.services.quiz_grading.get_model_client",
+    ):
+        monkeypatch.setattr(target, lambda s: StubLLM(json.dumps(STUB_QUIZ_QUESTIONS)))
     return STUB_QUIZ_QUESTIONS
 
 

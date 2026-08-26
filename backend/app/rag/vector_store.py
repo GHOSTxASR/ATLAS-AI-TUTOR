@@ -316,6 +316,42 @@ class VectorStore:
             return [query_vector]
         return await self.embedder.generate_embeddings([query])
 
+    async def _search(
+        self,
+        *,
+        collection_name: str,
+        query: str,
+        query_vector: list[float] | None,
+        top_k: int,
+        conditions: list[dict[str, Any]],
+        source_type: str,
+        source_id_key: str,
+        default_profile_id: str = "",
+    ) -> list[VectorSearchResult]:
+        """Embed the query, filter, search one collection, normalise the hits.
+
+        Every ``query_*`` method below was this same body with a different
+        collection and a different set of filters, so how filters combine had
+        to be changed in five places at once -- and one of the five had already
+        drifted.
+
+        ``where`` is left off entirely when there is nothing to filter on,
+        rather than passed as None.
+        """
+        query_vectors = await self._query_vectors(query, query_vector)
+
+        kwargs: dict[str, Any] = {"query_embeddings": query_vectors, "n_results": top_k}
+        if len(conditions) == 1:
+            kwargs["where"] = conditions[0]
+        elif conditions:
+            kwargs["where"] = {"$and": conditions}
+
+        col = self.get_collection(collection_name)
+        raw = await asyncio.to_thread(col.query, **kwargs)
+        return self._normalize_chroma_results(
+            raw, source_type, source_id_key, default_profile_id
+        )
+
     async def query_documents(
         self,
         profile_id: str,
@@ -329,15 +365,13 @@ class VectorStore:
         query_vector: list[float] | None = None,
     ) -> list[VectorSearchResult]:
         """Query document chunks with optional metadata filtering."""
-        query_vectors = await self._query_vectors(query, query_vector)
-
-        # Build compound filter
         conditions: list[dict[str, Any]] = [{"profile_id": {"$eq": profile_id}}]
         if doc_ids:
-            if len(doc_ids) == 1:
-                conditions.append({"doc_id": {"$eq": doc_ids[0]}})
-            else:
-                conditions.append({"doc_id": {"$in": doc_ids}})
+            conditions.append(
+                {"doc_id": {"$eq": doc_ids[0]}}
+                if len(doc_ids) == 1
+                else {"doc_id": {"$in": doc_ids}}
+            )
         if file_type:
             conditions.append({"file_type": {"$eq": file_type}})
         if is_syllabus is not None:
@@ -347,16 +381,16 @@ class VectorStore:
         if where:
             conditions.append(where)
 
-        combined_where = {"$and": conditions} if len(conditions) > 1 else conditions[0]
-
-        col = self.get_collection(self.doc_col_name(profile_id))
-        raw = await asyncio.to_thread(
-            col.query,
-            query_embeddings=query_vectors,
-            n_results=top_k,
-            where=combined_where,
+        return await self._search(
+            collection_name=self.doc_col_name(profile_id),
+            query=query,
+            query_vector=query_vector,
+            top_k=top_k,
+            conditions=conditions,
+            source_type="document",
+            source_id_key="doc_id",
+            default_profile_id=profile_id,
         )
-        return self._normalize_chroma_results(raw, "document", "doc_id", profile_id)
 
     async def query_memory(
         self,
@@ -368,7 +402,6 @@ class VectorStore:
         query_vector: list[float] | None = None,
     ) -> list[VectorSearchResult]:
         """Query memory records with category and active filters."""
-        query_vectors = await self._query_vectors(query, query_vector)
         conditions: list[dict[str, Any]] = [
             {"profile_id": {"$eq": profile_id}},
             {"is_active": {"$eq": is_active}},
@@ -376,15 +409,16 @@ class VectorStore:
         if category:
             conditions.append({"category": {"$eq": category}})
 
-        combined_where = {"$and": conditions} if len(conditions) > 1 else conditions[0]
-        col = self.get_collection(self.memory_col_name(profile_id))
-        raw = await asyncio.to_thread(
-            col.query,
-            query_embeddings=query_vectors,
-            n_results=top_k,
-            where=combined_where,
+        return await self._search(
+            collection_name=self.memory_col_name(profile_id),
+            query=query,
+            query_vector=query_vector,
+            top_k=top_k,
+            conditions=conditions,
+            source_type="memory",
+            source_id_key="memory_id",
+            default_profile_id=profile_id,
         )
-        return self._normalize_chroma_results(raw, "memory", "memory_id", profile_id)
 
     async def query_notes(
         self,
@@ -395,20 +429,20 @@ class VectorStore:
         query_vector: list[float] | None = None,
     ) -> list[VectorSearchResult]:
         """Query user notes."""
-        query_vectors = await self._query_vectors(query, query_vector)
         conditions: list[dict[str, Any]] = [{"profile_id": {"$eq": profile_id}}]
         if roadmap_node_id:
             conditions.append({"roadmap_node_id": {"$eq": roadmap_node_id}})
 
-        combined_where = {"$and": conditions} if len(conditions) > 1 else conditions[0]
-        col = self.get_collection(self.notes_col_name(profile_id))
-        raw = await asyncio.to_thread(
-            col.query,
-            query_embeddings=query_vectors,
-            n_results=top_k,
-            where=combined_where,
+        return await self._search(
+            collection_name=self.notes_col_name(profile_id),
+            query=query,
+            query_vector=query_vector,
+            top_k=top_k,
+            conditions=conditions,
+            source_type="note",
+            source_id_key="note_id",
+            default_profile_id=profile_id,
         )
-        return self._normalize_chroma_results(raw, "note", "note_id", profile_id)
 
     async def query_chat_summaries(
         self,
@@ -418,15 +452,16 @@ class VectorStore:
         query_vector: list[float] | None = None,
     ) -> list[VectorSearchResult]:
         """Query past conversation summaries."""
-        query_vectors = await self._query_vectors(query, query_vector)
-        col = self.get_collection(self.chat_col_name(profile_id))
-        raw = await asyncio.to_thread(
-            col.query,
-            query_embeddings=query_vectors,
-            n_results=top_k,
-            where={"profile_id": {"$eq": profile_id}},
+        return await self._search(
+            collection_name=self.chat_col_name(profile_id),
+            query=query,
+            query_vector=query_vector,
+            top_k=top_k,
+            conditions=[{"profile_id": {"$eq": profile_id}}],
+            source_type="chat_summary",
+            source_id_key="summary_id",
+            default_profile_id=profile_id,
         )
-        return self._normalize_chroma_results(raw, "chat_summary", "summary_id", profile_id)
 
     async def query_graph_nodes(
         self,
@@ -436,30 +471,27 @@ class VectorStore:
         node_type: str | None = None,
         query_vector: list[float] | None = None,
     ) -> list[VectorSearchResult]:
-        """Query global or profile-associated graph concepts."""
-        query_vectors = await self._query_vectors(query, query_vector)
+        """Query global or profile-associated graph concepts.
+
+        The graph collection is shared, so an unfiltered query here is
+        legitimate: it searches every concept rather than one learner's.
+        """
         conditions: list[dict[str, Any]] = []
         if profile_id:
             conditions.append({"profile_id": {"$eq": profile_id}})
         if node_type:
             conditions.append({"type": {"$eq": node_type}})
 
-        combined_where = None
-        if len(conditions) == 1:
-            combined_where = conditions[0]
-        elif len(conditions) > 1:
-            combined_where = {"$and": conditions}
-
-        col = self.get_collection(self.graph_col_name())
-        kwargs: dict[str, Any] = {
-            "query_embeddings": query_vectors,
-            "n_results": top_k,
-        }
-        if combined_where:
-            kwargs["where"] = combined_where
-
-        raw = await asyncio.to_thread(col.query, **kwargs)
-        return self._normalize_chroma_results(raw, "graph_node", "node_id", profile_id or "")
+        return await self._search(
+            collection_name=self.graph_col_name(),
+            query=query,
+            query_vector=query_vector,
+            top_k=top_k,
+            conditions=conditions,
+            source_type="graph_node",
+            source_id_key="node_id",
+            default_profile_id=profile_id or "",
+        )
 
     async def query_all(
         self,
@@ -552,29 +584,39 @@ class VectorStore:
 
     # ── Deletion & Lifecycle Methods ──────────────────────────────────
 
+    async def _delete_where(
+        self, collection_name: str, field: str, value: str, label: str
+    ) -> None:
+        """Delete every vector whose `field` equals `value`.
+
+        Logs rather than raises: vector cleanup runs after a delete that has
+        already committed in SQLite, so failing here would report an error for
+        a delete that did happen. The cost is an orphaned vector, which the
+        next reindex clears.
+        """
+        try:
+            col = self.get_collection(collection_name)
+            await asyncio.to_thread(col.delete, where={field: {"$eq": str(value)}})
+        except Exception as e:
+            logger.warning("Error deleting %s vectors for %s: %s", label, value, e)
+
     async def delete_by_doc_id(self, profile_id: str, doc_id: str) -> None:
         """Delete document vectors from {profile_id}_documents."""
-        try:
-            col = self.get_collection(self.doc_col_name(profile_id))
-            await asyncio.to_thread(col.delete, where={"doc_id": {"$eq": str(doc_id)}})
-        except Exception as e:
-            logger.warning(f"Error deleting doc vectors {doc_id}: {e}")
+        await self._delete_where(
+            self.doc_col_name(profile_id), "doc_id", doc_id, "document"
+        )
 
     async def delete_by_memory_id(self, profile_id: str, memory_id: str) -> None:
         """Delete memory vector from {profile_id}_memory."""
-        try:
-            col = self.get_collection(self.memory_col_name(profile_id))
-            await asyncio.to_thread(col.delete, where={"memory_id": {"$eq": str(memory_id)}})
-        except Exception as e:
-            logger.warning(f"Error deleting memory vector {memory_id}: {e}")
+        await self._delete_where(
+            self.memory_col_name(profile_id), "memory_id", memory_id, "memory"
+        )
 
     async def delete_by_note_id(self, profile_id: str, note_id: str) -> None:
         """Delete note vectors from {profile_id}_notes."""
-        try:
-            col = self.get_collection(self.notes_col_name(profile_id))
-            await asyncio.to_thread(col.delete, where={"note_id": {"$eq": str(note_id)}})
-        except Exception as e:
-            logger.warning(f"Error deleting note vectors {note_id}: {e}")
+        await self._delete_where(
+            self.notes_col_name(profile_id), "note_id", note_id, "note"
+        )
 
     async def delete_all_profile_data(self, profile_id: str) -> None:
         """Drop all vector collections belonging to a profile."""
