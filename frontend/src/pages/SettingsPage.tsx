@@ -4,9 +4,7 @@ import {
   ExternalLink,
   Eye,
   EyeOff,
-  Key,
   Loader2,
-  Settings,
   Sparkles,
   Zap,
   Moon,
@@ -15,16 +13,14 @@ import {
   Palette,
   ShieldCheck,
   Trash2,
-  ChevronDown,
-} from "lucide-react";
-import { apiClient } from "../api/client";
+  } from "lucide-react";
 import { settingsApi, ProvidersData, ModelInfo } from "../api/settings";
 import { ModelPicker } from "../components/settings/ModelPicker";
 import { useThemeStore, ThemeMode } from "../stores/themeStore";
-import { Skeleton, CardSkeleton } from "../components/common/LoadingStates";
+import { CardSkeleton } from "../components/common/LoadingStates";
 
 export function SettingsPage() {
-  const { theme, resolvedTheme, setTheme } = useThemeStore();
+  const { theme, setTheme } = useThemeStore();
 
   const [providersData, setProvidersData] = useState<ProvidersData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -121,7 +117,7 @@ export function SettingsPage() {
       setSelectedProvider(data.active_provider);
       setEmbeddingProvider(data.embedding_provider ?? "");
       setModelName(data.active_model);
-    } catch (err: any) {
+    } catch {
       setError("Failed to load providers");
     } finally {
       setLoading(false);

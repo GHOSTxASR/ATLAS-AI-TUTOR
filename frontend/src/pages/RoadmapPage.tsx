@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { chatApi } from "../api/chat";
 import { useProfileStore } from "../stores/profileStore";
@@ -6,24 +6,17 @@ import {
   roadmapApi,
   RoadmapDetail,
   RoadmapNode,
-  RoadmapProgress,
-} from "../api/roadmap";
+  } from "../api/roadmap";
 import {
   Route,
   CheckCircle2,
-  Clock,
   Sparkles,
   Layers,
-  ArrowRight,
-  Brain,
   MessageSquare,
   Award,
-  Lock,
-  Unlock,
   ChevronRight,
-  AlertCircle,
-} from "lucide-react";
-import { CardSkeleton, Skeleton, EmptyState, ErrorState } from "../components/common/LoadingStates";
+  } from "lucide-react";
+import { EmptyState, ErrorState } from "../components/common/LoadingStates";
 
 export function RoadmapPage() {
   const { activeProfileId, profiles } = useProfileStore();
@@ -35,9 +28,8 @@ export function RoadmapPage() {
   const [selectedNode, setSelectedNode] = useState<RoadmapNode | null>(null);
   const [openingTutor, setOpeningTutor] = useState(false);
   const navigate = useNavigate();
-  const [loading, setLoading] = useState<boolean>(true);
-  const [modeFilter, setModeFilter] = useState<string>("all");
-  const [actionError, setActionError] = useState<string | null>(null);
+  const [, setLoading] = useState<boolean>(true);
+    const [actionError, setActionError] = useState<string | null>(null);
 
   // The topic actually being studied: whatever is in progress, else the first
   // unfinished one. Used to give the header action a real destination.
@@ -46,7 +38,7 @@ export function RoadmapPage() {
     roadmap?.nodes?.find((n) => n.status !== "completed" && n.status !== "skipped") ??
     null;
 
-  const loadRoadmap = () => {
+  const loadRoadmap = useCallback(() => {
     if (!activeProfileId) return;
     setLoading(true);
     roadmapApi
@@ -61,9 +53,9 @@ export function RoadmapPage() {
               return;
             }
           }
-          if (!selectedNode) {
-            setSelectedNode(data.nodes[0]);
-          }
+          // Functional form: only "is anything selected" matters, and
+          // depending on the selection would refetch on every click.
+          setSelectedNode((current) => current ?? data.nodes[0]);
         }
       })
       .catch((err) => {
@@ -75,11 +67,11 @@ export function RoadmapPage() {
         console.error("Failed to load active roadmap:", err);
       })
       .finally(() => setLoading(false));
-  };
+  }, [activeProfileId, urlNodeId]);
 
   useEffect(() => {
     loadRoadmap();
-  }, [activeProfileId, urlNodeId]);
+  }, [loadRoadmap]);
 
   // Resolve the topic to its existing thread before navigating, rather than
   // linking to /chat?topic=... which attached no session and so started a new

@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import {
-  Bot,
   Loader2,
   MessageSquare,
   PenLine,
@@ -26,7 +25,7 @@ import {
 import { useChatStore } from "../stores/chatStore";
 import { useProfileStore } from "../stores/profileStore";
 import { chatApi, LearningMode, UnifiedLearningContext } from "../api/chat";
-import { EmptyState, CardSkeleton, Skeleton } from "../components/common/LoadingStates";
+import { EmptyState, Skeleton } from "../components/common/LoadingStates";
 import { MarkdownContent } from "../components/common/MarkdownContent";
 import { CitationList } from "../components/chat/CitationList";
 
@@ -82,7 +81,7 @@ export function ChatPage() {
         clearActiveSession();
       }
     }
-  }, [activeProfileId, targetSessionId]);
+  }, [activeProfileId, targetSessionId, loadSession, clearActiveSession, loadSessions]);
 
   // Fetch Unified Context when opening Context Panel
   useEffect(() => {
@@ -97,6 +96,9 @@ export function ChatPage() {
         .catch((err) => console.error("Failed loading unified context:", err))
         .finally(() => setLoadingContext(false));
     }
+    // messageInput is read as a snapshot of whatever is typed when the panel
+    // opens; depending on it would refetch the whole context on every keystroke.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeProfileId, showContextPanel, selectedMode]);
 
   // Reload sessions when search changes (debounced)
@@ -107,7 +109,7 @@ export function ChatPage() {
       }, 250);
       return () => clearTimeout(timeout);
     }
-  }, [searchQuery, activeProfileId]);
+  }, [searchQuery, activeProfileId, loadSessions]);
 
   // Name a session once its first exchange is on screen.
   // Fires on the streaming->idle edge rather than inside the send path: the

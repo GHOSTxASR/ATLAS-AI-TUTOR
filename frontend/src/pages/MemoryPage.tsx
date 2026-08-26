@@ -1,16 +1,13 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import { useProfileStore } from "../stores/profileStore";
 import { memoryApi, MemoryRecord, MemoryCategory } from "../api/memory";
 import {
   Brain,
   Plus,
-  Search,
   Trash2,
-  Sparkles,
   AlertTriangle,
   Award,
   Target,
-  HelpCircle,
   Bookmark,
   CheckCircle2,
   X,
@@ -34,11 +31,11 @@ export function MemoryPage() {
   const [subject, setSubject] = useState<string>("");
   const [content, setContent] = useState<string>("");
   const [category, setCategory] = useState<MemoryCategory>("weakness");
-  const [confidence, setConfidence] = useState<number>(0.8);
+  const [confidence] = useState<number>(0.8);
   const [creating, setCreating] = useState<boolean>(false);
   const [actionError, setActionError] = useState<string | null>(null);
 
-  const loadMemories = () => {
+  const loadMemories = useCallback(() => {
     if (!activeProfileId) return;
     setLoading(true);
     memoryApi
@@ -48,11 +45,13 @@ export function MemoryPage() {
       .then((data) => setMemories(data))
       .catch((err) => console.error("Failed loading memories:", err))
       .finally(() => setLoading(false));
-  };
+    // selectedCategory belongs here: the query is built from it, so leaving it
+    // out meant changing the filter never refetched.
+  }, [activeProfileId, selectedCategory]);
 
   useEffect(() => {
     loadMemories();
-  }, [activeProfileId, selectedCategory]);
+  }, [loadMemories]);
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();

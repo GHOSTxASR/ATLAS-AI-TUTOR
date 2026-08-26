@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import { useProfileStore } from "../stores/profileStore";
 import {
   quizApi,
@@ -11,18 +11,11 @@ import {
 import { roadmapApi, RoadmapDetail } from "../api/roadmap";
 import {
   Award,
-  CheckCircle2,
   Clock,
-  HelpCircle,
   Sparkles,
-  ArrowRight,
-  ArrowLeft,
   RotateCcw,
-  Check,
-  X,
-  Layers,
-} from "lucide-react";
-import { CardSkeleton, Skeleton, EmptyState, ErrorState } from "../components/common/LoadingStates";
+  } from "lucide-react";
+import { EmptyState, ErrorState } from "../components/common/LoadingStates";
 
 export function QuizPage() {
   const { activeProfileId, profiles } = useProfileStore();
@@ -51,7 +44,7 @@ export function QuizPage() {
   const submissionStarted = useRef(false);
 
   // Load roadmap topics and past history
-  const loadQuizData = () => {
+  const loadQuizData = useCallback(() => {
     if (!activeProfileId) return;
     setHistoryError(null);
     roadmapApi.getActiveRoadmap(activeProfileId)
@@ -63,9 +56,11 @@ export function QuizPage() {
     quizApi.getHistory(activeProfileId)
       .then(setHistory)
       .catch(() => setHistoryError("Failed to load quiz history."));
-  };
+  }, [activeProfileId]);
 
-  useEffect(() => { loadQuizData(); }, [activeProfileId]);
+  useEffect(() => {
+    loadQuizData();
+  }, [loadQuizData]);
 
   // Timer countdown for timed assessment
   useEffect(() => {
@@ -78,6 +73,9 @@ export function QuizPage() {
       setTimeRemaining((prev) => (prev !== null && prev > 0 ? prev - 1 : 0));
     }, 1000);
     return () => clearInterval(timer);
+    // handleSubmitQuiz is declared below and closes over the current answers;
+    // this effect only needs it as it stands when the clock reaches zero.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [viewState, timeRemaining]);
 
   const handleStartQuiz = async () => {

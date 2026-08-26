@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { FileWarning, Files, Loader2, Sparkles } from "lucide-react";
+import { Files } from "lucide-react";
 import { DocumentListItem } from "../components/documents/DocumentListItem";
 import { DocumentUploadZone } from "../components/documents/DocumentUploadZone";
 import {

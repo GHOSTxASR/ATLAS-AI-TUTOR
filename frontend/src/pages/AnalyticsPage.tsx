@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useProfileStore } from "../stores/profileStore";
 import {
   analyticsApi,
@@ -14,16 +14,11 @@ import {
   CheckCircle2,
   Clock,
   Flame,
-  Layers,
   Sparkles,
-  TrendingUp,
   AlertTriangle,
-  FileText,
-  MessageSquare,
   Award,
-  BookOpen,
-} from "lucide-react";
-import { CardSkeleton, Skeleton, EmptyState, ErrorState } from "../components/common/LoadingStates";
+  } from "lucide-react";
+import { EmptyState, ErrorState } from "../components/common/LoadingStates";
 
 export function AnalyticsPage() {
   const { activeProfileId, profiles } = useProfileStore();
@@ -32,13 +27,13 @@ export function AnalyticsPage() {
   const [overview, setOverview] = useState<AnalyticsOverview | null>(null);
   const [heatmap, setHeatmap] = useState<ActivityHeatmapItem[]>([]);
   const [mastery, setMastery] = useState<MasteryDistribution | null>(null);
-  const [velocity, setVelocity] = useState<LearningVelocityPoint[]>([]);
+  const [, setVelocity] = useState<LearningVelocityPoint[]>([]);
   const [weaknesses, setWeaknesses] = useState<WeaknessConcept[]>([]);
   const [selectedMasteryTab, setSelectedMasteryTab] = useState<"mastered" | "proficient" | "needs_practice" | "unstarted">("needs_practice");
-  const [loading, setLoading] = useState<boolean>(true);
+  const [, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  const loadAnalytics = () => {
+  const loadAnalytics = useCallback(() => {
     if (!activeProfileId) {
       setLoading(false);
       return;
@@ -62,9 +57,11 @@ export function AnalyticsPage() {
       if (failures.length > 0) setError("Some analytics data could not be loaded.");
       setLoading(false);
     });
-  };
+  }, [activeProfileId]);
 
-  useEffect(() => { loadAnalytics(); }, [activeProfileId]);
+  useEffect(() => {
+    loadAnalytics();
+  }, [loadAnalytics]);
 
   if (!activeProfile) {
     return (

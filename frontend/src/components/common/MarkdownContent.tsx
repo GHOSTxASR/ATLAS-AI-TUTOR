@@ -28,12 +28,12 @@ export function MarkdownContent({ content, markdown = true }: MarkdownContentPro
         rehypePlugins={[rehypeKatex]}
         components={{
           // Open any model-supplied link safely in a new tab.
-          a: ({ node, ...props }) => (
+          a: ({ node: _node, ...props }) => (
             <a {...props} target="_blank" rel="noopener noreferrer nofollow" />
           ),
           // Tables can be wider than the bubble; give them their own scroller
           // instead of forcing the page to scroll sideways.
-          table: ({ node, ...props }) => (
+          table: ({ node: _node, ...props }) => (
             <div className="overflow-x-auto">
               <table {...props} />
             </div>

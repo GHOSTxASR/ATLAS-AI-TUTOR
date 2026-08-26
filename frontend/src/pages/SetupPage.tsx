@@ -2,18 +2,14 @@ import React, { useEffect, useState } from "react";
 import { useProfileStore } from "../stores/profileStore";
 import { ProfileType } from "../types";
 import {
-  User,
   Plus,
   CheckCircle2,
   Trash2,
   Edit3,
   Sparkles,
-  Layers,
-  GraduationCap,
-  ShieldCheck,
   Check,
 } from "lucide-react";
-import { CardSkeleton, Skeleton, EmptyState } from "../components/common/LoadingStates";
+import { CardSkeleton } from "../components/common/LoadingStates";
 
 const PROFILE_TYPES: ProfileType[] = ["JEE", "GATE", "Semester Study", "Custom Learning"];
 

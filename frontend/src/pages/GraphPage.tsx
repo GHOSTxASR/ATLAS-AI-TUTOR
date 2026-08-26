@@ -1,10 +1,9 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import { useProfileStore } from "../stores/profileStore";
 import {
   graphApi,
   GraphDataResponse,
   GraphNode,
-  GraphEdge,
   GraphNodeType,
   GraphEdgeType,
 } from "../api/graph";
@@ -15,14 +14,12 @@ import {
   Plus,
   Link as LinkIcon,
   Sparkles,
-  Search,
   Compass,
   MessageSquare,
-  Award,
   Trash2,
   X,
 } from "lucide-react";
-import { CardSkeleton, EmptyState, ErrorState } from "../components/common/LoadingStates";
+import { EmptyState, ErrorState } from "../components/common/LoadingStates";
 import { useFocusTrap } from "../hooks/useFocusTrap";
 
 export function GraphPage() {
@@ -68,7 +65,7 @@ export function GraphPage() {
   const [enrichText, setEnrichText] = useState<string>("");
   const [enrichSourceLabel, setEnrichSourceLabel] = useState<string>("");
 
-  const loadGraph = () => {
+  const loadGraph = useCallback(() => {
     if (!activeProfileId) return;
     setLoading(true);
     setError(null);
@@ -84,18 +81,19 @@ export function GraphPage() {
               return;
             }
           }
-          if (!selectedNode) {
-            setSelectedNode(data.nodes[0]);
-          }
+          // Functional form: this only needs "is anything selected", and
+          // reading that from state would tie the whole fetch to the
+          // selection and refetch the graph on every click.
+          setSelectedNode((current) => current ?? data.nodes[0]);
         }
       })
       .catch((err) => setError(err?.response?.data?.error?.message || "Failed to load knowledge graph."))
       .finally(() => setLoading(false));
-  };
+  }, [activeProfileId, urlNodeId]);
 
   useEffect(() => {
     loadGraph();
-  }, [activeProfileId, urlNodeId]);
+  }, [loadGraph]);
 
   const handleCreateNode = async (e: React.FormEvent) => {
     e.preventDefault();

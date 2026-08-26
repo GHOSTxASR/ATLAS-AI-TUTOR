@@ -53,28 +53,29 @@ export function KnowledgeGraphCanvas({
     // Seed on a ring big enough to hold the nodes without overlap, so the
     // simulation refines a layout instead of untangling a knot.
     const radiusBase = Math.max(160, (nodes.length * 46) / (2 * Math.PI));
-    const initialized: SimulatedNode[] = nodes.map((node, i) => {
-      // Check if existing position exists
-      const existing = simNodes.find((sn) => sn.id === node.id);
-      if (existing) {
-        return {
-          ...existing,
-          ...node,
-          radius: Math.min(36, Math.max(18, 16 + (node.mention_count || 1) * 2)),
-        };
-      }
-      const angle = (i / nodes.length) * 2 * Math.PI;
-      return {
-        ...node,
-        x: Math.cos(angle) * radiusBase + (Math.random() - 0.5) * 40,
-        y: Math.sin(angle) * radiusBase + (Math.random() - 0.5) * 40,
-        vx: 0,
-        vy: 0,
-        radius: Math.min(36, Math.max(18, 16 + (node.mention_count || 1) * 2)),
-      };
-    });
 
-    setSimNodes(initialized);
+    // Previous positions come from the updater rather than the closure: a node
+    // that is still present should stay where the simulation put it, and
+    // reading that from state would either go stale or, if depended on, restart
+    // seeding every time seeding wrote.
+    setSimNodes((previous) =>
+      nodes.map((node, i) => {
+        const radius = Math.min(36, Math.max(18, 16 + (node.mention_count || 1) * 2));
+        const existing = previous.find((sn) => sn.id === node.id);
+        if (existing) {
+          return { ...existing, ...node, radius };
+        }
+        const angle = (i / nodes.length) * 2 * Math.PI;
+        return {
+          ...node,
+          x: Math.cos(angle) * radiusBase + (Math.random() - 0.5) * 40,
+          y: Math.sin(angle) * radiusBase + (Math.random() - 0.5) * 40,
+          vx: 0,
+          vy: 0,
+          radius,
+        };
+      }),
+    );
   }, [nodes]);
 
   // Run force-directed physics iteration
@@ -227,6 +228,10 @@ export function KnowledgeGraphCanvas({
     // ring with nodes still overlapping. The length rather than the array
     // because the array identity changes on every tick, which would restart
     // the simulation forever.
+    // simNodes.length rather than simNodes: the simulation rewrites the array
+    // every tick, so depending on its identity would restart the loop each
+    // frame. The count is what this effect reacts to -- it bails when there are
+    // no nodes, so it must re-run once they are seeded.
   }, [edges, draggedNodeId, simNodes.length]);
 
   // Center on selected node if camera is off

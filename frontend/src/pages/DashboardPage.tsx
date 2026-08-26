@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useProfileStore } from "../stores/profileStore";
 import { analyticsApi, AnalyticsOverview, MasteryDistribution, WeaknessConcept } from "../api/analytics";
 import { roadmapApi, RoadmapDetail } from "../api/roadmap";
@@ -8,11 +8,8 @@ import {
   CheckCircle2,
   Clock,
   Flame,
-  Layers,
-  Sparkles,
   ArrowRight,
   AlertTriangle,
-  BookOpen,
   Route,
   MessageSquare,
   Award,
@@ -26,12 +23,12 @@ export function DashboardPage() {
 
   const [overview, setOverview] = useState<AnalyticsOverview | null>(null);
   const [activeRoadmap, setActiveRoadmap] = useState<RoadmapDetail | null>(null);
-  const [mastery, setMastery] = useState<MasteryDistribution | null>(null);
+  const [, setMastery] = useState<MasteryDistribution | null>(null);
   const [weaknesses, setWeaknesses] = useState<WeaknessConcept[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  const loadDashboard = () => {
+  const loadDashboard = useCallback(() => {
     if (!activeProfileId) {
       setLoading(false);
       return;
@@ -55,9 +52,11 @@ export function DashboardPage() {
     }).catch((err) => {
       setError(err?.response?.data?.error?.message || "Failed to load dashboard data.");
     }).finally(() => setLoading(false));
-  };
+  }, [activeProfileId]);
 
-  useEffect(() => { loadDashboard(); }, [activeProfileId]);
+  useEffect(() => {
+    loadDashboard();
+  }, [loadDashboard]);
 
   if (!activeProfile) {
     return (

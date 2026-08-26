@@ -1,25 +1,18 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useProfileStore } from "../stores/profileStore";
 import { notesApi, NoteResponse, NoteSummary, NoteType } from "../api/notes";
 import { roadmapApi, RoadmapNode } from "../api/roadmap";
 import {
   BookOpen,
-  Plus,
-  Search,
-  Zap,
-  FileText,
-  Table,
   Trash2,
-  Edit3,
   Copy,
   Check,
   Sparkles,
-  Layers,
   X,
 } from "lucide-react";
 import { MarkdownContent } from "../components/common/MarkdownContent";
-import { CardSkeleton, Skeleton, EmptyState, ErrorState } from "../components/common/LoadingStates";
+import { CardSkeleton, EmptyState, ErrorState } from "../components/common/LoadingStates";
 import { useFocusTrap } from "../hooks/useFocusTrap";
 
 export function NotesPage() {
@@ -49,7 +42,7 @@ export function NotesPage() {
   const [roadmapNodes, setRoadmapNodes] = useState<RoadmapNode[]>([]);
   const [selectedRoadmapNodeId, setSelectedRoadmapNodeId] = useState<string>("");
 
-  const loadNotes = () => {
+  const loadNotes = useCallback(() => {
     if (!activeProfileId) return;
     setLoading(true);
     notesApi
@@ -76,7 +69,10 @@ export function NotesPage() {
       })
       .catch((err) => console.error(err))
       .finally(() => setLoading(false));
-  };
+    // selectedNote is only a "nothing chosen yet" guard, and loadSingleNote is
+    // declared below; depending on either would refetch the list on selection.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeProfileId, selectedType, searchQuery, urlNoteId]);
 
   const loadSingleNote = (noteId: string) => {
     if (!activeProfileId) return;
@@ -89,7 +85,7 @@ export function NotesPage() {
   useEffect(() => {
     const timeout = window.setTimeout(loadNotes, 250);
     return () => window.clearTimeout(timeout);
-  }, [activeProfileId, selectedType, searchQuery, urlNoteId]);
+  }, [loadNotes]);
 
   useEffect(() => {
     if (activeProfileId) {

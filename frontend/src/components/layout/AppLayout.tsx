@@ -55,10 +55,9 @@ export function AppLayout({ children }: AppLayoutProps) {
   );
 
   const { initializeTheme } = useThemeStore();
-  const { activeProfileId, profiles, setActiveProfile, loadProfiles } = useProfileStore();
+  const { loadProfiles } = useProfileStore();
   const mobileMenuRef = useRef<HTMLElement>(null);
   useFocusTrap(mobileMenuOpen, mobileMenuRef, () => setMobileMenuOpen(false));
-  const activeProfile = profiles.find((p) => p.id === activeProfileId);
 
   useEffect(() => {
     initializeTheme();

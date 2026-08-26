@@ -4,7 +4,6 @@ import { render, screen } from "@testing-library/react";
 import {
   Skeleton,
   CardSkeleton,
-  TableSkeleton,
   Spinner,
   EmptyState,
   ErrorState,
