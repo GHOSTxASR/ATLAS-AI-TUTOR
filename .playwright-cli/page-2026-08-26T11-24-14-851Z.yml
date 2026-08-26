@@ -1,0 +1,36 @@
+- generic [ref=f6e3]:
+  - complementary "Main Navigation" [ref=f6e4]:
+    - generic [ref=f6e5]:
+      - generic [ref=f6e6]: Atlas
+      - button "Search" [ref=f6e12]:
+        - generic [ref=f6e18]: ⌘K
+      - navigation [ref=f6e19]:
+        - link "Dashboard" [ref=f6e20]:
+          - /url: /dashboard
+        - link "AI Tutor" [ref=f6e27]:
+          - /url: /chat
+        - link "Roadmap" [ref=f6e31]:
+          - /url: /roadmap
+        - link "Notes" [ref=f6e37]:
+          - /url: /notes
+        - link "Library" [ref=f6e41]:
+          - /url: /documents
+        - link "Graph" [ref=f6e47]:
+          - /url: /graph
+        - link "Quizzes" [ref=f6e54]:
+          - /url: /quiz
+        - link "Analytics" [ref=f6e59]:
+          - /url: /analytics
+        - link "Memory" [ref=f6e64]:
+          - /url: /memory
+        - link "Settings" [ref=f6e76]:
+          - /url: /settings
+    - generic [ref=f6e81]:
+      - 'button "Current profile: ashmit. Switch profile" [ref=f6e83]':
+        - generic [ref=f6e89]:
+          - generic [ref=f6e90]: ashmit
+          - generic [ref=f6e91]: Custom Learning
+      - button "Collapse sidebar" [ref=f6e95]:
+        - generic [ref=f6e99]: Collapse
+  - main [ref=f6e100]:
+    - status "Loading page..." [ref=f6e104]

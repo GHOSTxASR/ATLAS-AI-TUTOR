@@ -1,0 +1,65 @@
+- generic [ref=f1e3]:
+  - complementary "Main Navigation" [ref=f1e4]:
+    - generic [ref=f1e5]:
+      - generic [ref=f1e6]: Atlas
+      - button "Search" [ref=f1e12]:
+        - generic [ref=f1e18]: ⌘K
+      - navigation [ref=f1e19]:
+        - link "Dashboard" [ref=f1e20]:
+          - /url: /dashboard
+        - link "AI Tutor" [ref=f1e27]:
+          - /url: /chat
+        - link "Roadmap" [ref=f1e31]:
+          - /url: /roadmap
+        - link "Notes" [ref=f1e37]:
+          - /url: /notes
+        - link "Library" [ref=f1e41]:
+          - /url: /documents
+        - link "Graph" [ref=f1e47]:
+          - /url: /graph
+        - link "Quizzes" [ref=f1e54]:
+          - /url: /quiz
+        - link "Analytics" [ref=f1e59]:
+          - /url: /analytics
+        - link "Memory" [ref=f1e64]:
+          - /url: /memory
+        - link "Settings" [ref=f1e76]:
+          - /url: /settings
+    - generic [ref=f1e81]:
+      - 'button "Current profile: ashmit. Switch profile" [ref=f1e83]':
+        - generic [ref=f1e89]:
+          - generic [ref=f1e90]: ashmit
+          - generic [ref=f1e91]: Custom Learning
+      - button "Collapse sidebar" [ref=f1e95]:
+        - generic [ref=f1e99]: Collapse
+  - main [ref=f1e100]:
+    - generic [ref=f1e103]:
+      - status "Loading content" [ref=f1e104]
+      - status "Loading cards" [ref=f1e105]:
+        - generic [ref=f1e106]:
+          - generic [ref=f1e107]:
+            - status "Loading content" [ref=f1e108]
+            - status "Loading content" [ref=f1e109]
+          - status "Loading content" [ref=f1e110]
+          - status "Loading content" [ref=f1e111]
+        - generic [ref=f1e112]:
+          - generic [ref=f1e113]:
+            - status "Loading content" [ref=f1e114]
+            - status "Loading content" [ref=f1e115]
+          - status "Loading content" [ref=f1e116]
+          - status "Loading content" [ref=f1e117]
+        - generic [ref=f1e118]:
+          - generic [ref=f1e119]:
+            - status "Loading content" [ref=f1e120]
+            - status "Loading content" [ref=f1e121]
+          - status "Loading content" [ref=f1e122]
+          - status "Loading content" [ref=f1e123]
+        - generic [ref=f1e124]:
+          - generic [ref=f1e125]:
+            - status "Loading content" [ref=f1e126]
+            - status "Loading content" [ref=f1e127]
+          - status "Loading content" [ref=f1e128]
+          - status "Loading content" [ref=f1e129]
+      - generic [ref=f1e130]:
+        - status "Loading content" [ref=f1e131]
+        - status "Loading content" [ref=f1e132]

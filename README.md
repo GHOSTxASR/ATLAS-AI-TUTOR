@@ -11,6 +11,16 @@ locally. Your documents, notes, progress and API keys never leave your machine.
 
 ---
 
+## Screenshots
+
+|  |  |
+| --- | --- |
+| ![Landing page — choose a profile](docs/screenshots/landing.png)<br>**Landing** — pick a profile or create one | ![Dashboard](docs/screenshots/dashboard.png)<br>**Dashboard** — progress, streaks and weak spots |
+| ![AI tutor with citations](docs/screenshots/tutor.png)<br>**AI Tutor** — answers grounded in your own material | ![Curriculum roadmap](docs/screenshots/roadmap.png)<br>**Roadmap** — a topic DAG built from your syllabus |
+| ![Knowledge graph](docs/screenshots/graph.png)<br>**Knowledge graph** — concepts and how they connect | ![Settings](docs/screenshots/settings.png)<br>**Settings** — providers, keys, and appearance |
+
+---
+
 ## Features
 
 | Area | What it does |

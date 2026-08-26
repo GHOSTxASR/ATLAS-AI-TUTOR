@@ -3,6 +3,7 @@ import { useProfileStore } from "../stores/profileStore";
 import { analyticsApi, AnalyticsOverview, MasteryDistribution, WeaknessConcept } from "../api/analytics";
 import { roadmapApi, RoadmapDetail } from "../api/roadmap";
 import { Link, useNavigate } from "react-router-dom";
+import { chatApi } from "../api/chat";
 import {
   Brain,
   CheckCircle2,
@@ -18,6 +19,7 @@ import { CardSkeleton, Skeleton, EmptyState, ErrorState } from "../components/co
 
 export function DashboardPage() {
   const navigate = useNavigate();
+  const [openingTutor, setOpeningTutor] = useState(false);
   const { activeProfileId, profiles } = useProfileStore();
   const activeProfile = profiles.find((p) => p.id === activeProfileId);
 
@@ -27,6 +29,22 @@ export function DashboardPage() {
   const [weaknesses, setWeaknesses] = useState<WeaknessConcept[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Resolve the topic to its thread before navigating. The old link went to
+  // /chat?topic=... with no session attached, which started a new conversation
+  // on every click.
+  const openTutorForNode = async (node: { id: string; title: string }) => {
+    if (!activeProfileId || openingTutor) return;
+    setOpeningTutor(true);
+    try {
+      const session = await chatApi.sessionForTopic(activeProfileId, node.title, node.id);
+      navigate(`/chat/${session.id}`);
+    } catch {
+      navigate("/chat");
+    } finally {
+      setOpeningTutor(false);
+    }
+  };
 
   const loadDashboard = useCallback(() => {
     if (!activeProfileId) {
@@ -250,15 +268,27 @@ export function DashboardPage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
-                    <span className="text-xs font-mono text-primary">
-                      {Math.round(node.mastery_score * 100)}%
-                    </span>
-                    <Link
-                      to={`/chat?topic=${encodeURIComponent(node.title)}`}
-                      className="px-2.5 py-1 rounded bg-primary-container/40 hover:bg-primary-container/70 text-primary text-[11px] font-semibold border border-glass-border transition"
+                    {node.mastery_score > 0 ? (
+                      <span
+                        className="text-xs font-mono text-primary"
+                        title="Mastery, from quiz results"
+                      >
+                        {Math.round(node.mastery_score * 100)}%
+                      </span>
+                    ) : node.status === "completed" ? (
+                      <CheckCircle2
+                        className="w-4 h-4 text-primary"
+                        aria-label="Marked complete"
+                      />
+                    ) : null}
+                    <button
+                      type="button"
+                      onClick={() => openTutorForNode(node)}
+                      disabled={openingTutor}
+                      className="px-2.5 py-1 bg-primary-container/40 hover:bg-primary-container/70 text-primary text-[11px] font-semibold border border-glass-border transition disabled:opacity-50"
                     >
                       Study
-                    </Link>
+                    </button>
                   </div>
                 </div>
               ))}

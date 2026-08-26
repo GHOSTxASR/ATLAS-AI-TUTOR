@@ -1,0 +1,16 @@
+- generic [ref=f1e4]:
+  - banner [ref=f1e5]:
+    - generic [ref=f1e6]: "[ Local-first ]"
+  - main [ref=f1e7]:
+    - generic [ref=f1e8]:
+      - heading "Atlas" [level=1] [ref=f1e9]
+      - paragraph [ref=f1e10]: Your personal AI learning platform — private, local, and built around what you actually study.
+    - region [ref=f1e11]:
+      - heading "Create your first profile" [level=2] [ref=f1e13]
+      - list [ref=f1e14]:
+        - listitem [ref=f1e15]
+        - listitem [ref=f1e16]
+        - listitem [ref=f1e17]
+  - contentinfo [ref=f1e18]:
+    - generic [ref=f1e19]: "[ Runs entirely on your machine ]"
+    - generic [ref=f1e20]: "[ Documents, notes & keys never leave it ]"

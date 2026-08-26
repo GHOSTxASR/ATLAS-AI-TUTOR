@@ -1,0 +1,36 @@
+- generic [ref=e3]:
+  - complementary "Main Navigation" [ref=e4]:
+    - generic [ref=e5]:
+      - generic [ref=e6]: Atlas
+      - button "Search" [ref=e12]:
+        - generic [ref=e18]: ⌘K
+      - navigation [ref=e19]:
+        - link "Dashboard" [ref=e20]:
+          - /url: /dashboard
+        - link "AI Tutor" [ref=e27]:
+          - /url: /chat
+        - link "Roadmap" [ref=e31]:
+          - /url: /roadmap
+        - link "Notes" [ref=e37]:
+          - /url: /notes
+        - link "Library" [ref=e41]:
+          - /url: /documents
+        - link "Graph" [ref=e47]:
+          - /url: /graph
+        - link "Quizzes" [ref=e54]:
+          - /url: /quiz
+        - link "Analytics" [ref=e59]:
+          - /url: /analytics
+        - link "Memory" [ref=e64]:
+          - /url: /memory
+        - link "Settings" [ref=e76]:
+          - /url: /settings
+    - generic [ref=e81]:
+      - button "Choose a profile" [ref=e83]:
+        - generic [ref=e89]:
+          - generic [ref=e90]: Learner
+          - generic [ref=e91]: No profile
+      - button "Collapse sidebar" [ref=e95]:
+        - generic [ref=e99]: Collapse
+  - main [ref=e100]:
+    - status "Loading page..." [ref=e104]
