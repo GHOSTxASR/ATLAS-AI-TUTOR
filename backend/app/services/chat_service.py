@@ -39,8 +39,23 @@ class ChatService:
         return chat_session
 
     async def create_session(self, profile_id: str, data: ChatSessionCreate) -> ChatSession:
+        """Create a thread, reusing the one for a roadmap topic if it exists.
+
+        Creating from a topic twice should land in the same conversation; the
+        duplicates only existed because nothing recorded which topic a thread
+        belonged to.
+        """
+        if data.roadmap_node_id:
+            existing = await self.session_repo.get_by_roadmap_node(
+                profile_id, data.roadmap_node_id
+            )
+            if existing is not None:
+                return existing
+
         title = data.title if data.title and data.title.strip() else "New Chat"
-        return await self.session_repo.create(profile_id=profile_id, title=title)
+        return await self.session_repo.create(
+            profile_id=profile_id, title=title, roadmap_node_id=data.roadmap_node_id
+        )
 
     async def update_session(self, profile_id: str, session_id: str, data: ChatSessionUpdate) -> ChatSession:
         chat_session = await self.get_session(profile_id, session_id)
@@ -63,6 +78,53 @@ class ChatService:
         if len(title) > _TITLE_MAX_CHARS:
             title = title[:_TITLE_MAX_CHARS].rsplit(" ", 1)[0].rstrip(",;:") + "…"
         return title.strip()
+
+    async def session_for_topic(
+        self, profile_id: str, topic: str, roadmap_node_id: str | None = None
+    ) -> tuple[ChatSession, bool]:
+        """Return the thread for a topic, creating one only if none exists.
+
+        Launching the tutor from a roadmap topic used to drop the learner on
+        /chat with the topic typed into the box and no thread attached, so every
+        visit started another one and the sidebar filled with identical rows.
+
+        Keyed on the roadmap node when there is one, because that survives the
+        thread being renamed -- by hand or by auto-naming. Title matching stays
+        as the fallback for topics that are not roadmap nodes, and for threads
+        created before the link existed.
+
+        Returns the thread and whether it was created.
+        """
+        topic = (topic or "").strip()
+        if not topic and not roadmap_node_id:
+            raise AtlasError(
+                status_code=422, code="VALIDATION_ERROR", message="A topic is required."
+            )
+
+        if roadmap_node_id:
+            linked = await self.session_repo.get_by_roadmap_node(profile_id, roadmap_node_id)
+            if linked is not None:
+                return linked, False
+
+        existing = await self.session_repo.get_by_profile_id(profile_id)
+        wanted = topic.casefold()
+        if wanted:
+            # Newest first, so resuming picks up the most recent thread.
+            for chat_session in existing:
+                if (chat_session.title or "").strip().casefold() == wanted:
+                    # Adopt it, so the next lookup goes by id rather than title.
+                    if roadmap_node_id and not chat_session.roadmap_node_id:
+                        chat_session = await self.session_repo.update(
+                            chat_session, roadmap_node_id=roadmap_node_id
+                        )
+                    return chat_session, False
+
+        created = await self.session_repo.create(
+            profile_id=profile_id,
+            title=topic or "New Chat",
+            roadmap_node_id=roadmap_node_id,
+        )
+        return created, True
 
     async def autotitle_session(self, profile_id: str, session_id: str) -> ChatSession:
         """Name a session after what it is actually about.

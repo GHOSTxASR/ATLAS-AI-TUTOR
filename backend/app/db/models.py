@@ -60,6 +60,15 @@ class ChatSession(Base):
         String, ForeignKey("profiles.id", ondelete="CASCADE"), nullable=False, index=True
     )
     title: Mapped[str] = mapped_column(String, nullable=False)
+    # The roadmap topic this thread is about, when it was opened from one.
+    # Without it there was no way to ask "is there already a chat for this
+    # topic", so every visit to a node started another identical thread, and
+    # nothing studied in a chat could be reflected back onto the roadmap.
+    # SET NULL rather than CASCADE: regenerating a roadmap replaces its nodes,
+    # and that should not delete the conversations.
+    roadmap_node_id: Mapped[str | None] = mapped_column(
+        String, ForeignKey("roadmap_nodes.id", ondelete="SET NULL"), nullable=True, index=True
+    )
 
 
 class ChatMessage(Base):

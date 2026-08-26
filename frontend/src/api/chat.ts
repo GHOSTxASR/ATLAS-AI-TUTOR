@@ -97,6 +97,22 @@ export const chatApi = {
     return response.data.data;
   },
 
+  /**
+   * Resolve a roadmap topic to its chat thread, creating one only if none
+   * exists. Keyed on the roadmap node so a renamed thread is still found.
+   */
+  sessionForTopic: async (
+    profileId: string,
+    topic: string,
+    roadmapNodeId?: string
+  ): Promise<ChatSession & { created: boolean }> => {
+    const response = await apiClient.post<ApiResponse<ChatSession & { created: boolean }>>(
+      `/profiles/${profileId}/sessions/for-topic`,
+      { topic, roadmap_node_id: roadmapNodeId }
+    );
+    return response.data.data;
+  },
+
   updateSession: async (
     profileId: string,
     sessionId: string,

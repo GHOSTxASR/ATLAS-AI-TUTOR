@@ -90,6 +90,27 @@ async def update_session(
     return envelope(data=ChatSessionResponse.model_validate(session).model_dump())
 
 
+@router.post("/sessions/for-topic", response_model=dict)
+async def session_for_topic(
+    profile_id: str,
+    body: dict,
+    service: ChatService = Depends(get_chat_service),
+):
+    """Resolve a topic to its chat session, creating one only if needed.
+
+    Lets the roadmap open the thread for a topic instead of starting a fresh
+    one every time it is clicked.
+    """
+    session, created = await service.session_for_topic(
+        profile_id,
+        str(body.get("topic") or ""),
+        roadmap_node_id=(str(body["roadmap_node_id"]) if body.get("roadmap_node_id") else None),
+    )
+    payload = ChatSessionResponse.model_validate(session).model_dump()
+    payload["created"] = created
+    return envelope(data=payload)
+
+
 @router.post("/sessions/{session_id}/autotitle", response_model=dict)
 async def autotitle_session(
     profile_id: str,

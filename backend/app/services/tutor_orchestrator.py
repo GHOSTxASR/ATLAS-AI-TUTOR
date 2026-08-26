@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.config import Settings, get_settings
 from app.db.repositories.analytics_repo import AnalyticsRepository
 from app.db.repositories.chat_repo import ChatMessageRepository, ChatSessionRepository
+from app.db.repositories.roadmap_repo import RoadmapRepository
 from app.db.repositories.profile_repo import ProfileRepository
 from app.exceptions import AtlasError
 from app.tasks.background import spawn
@@ -69,6 +70,7 @@ class TutorOrchestrator:
         self.session_repo = ChatSessionRepository(session)
         self.message_repo = ChatMessageRepository(session)
         self.analytics_repo = AnalyticsRepository(session)
+        self.roadmap_repo = RoadmapRepository(session)
         self.context_service = UnifiedContextService(session=session, settings=self.settings)
 
     def build_system_prompt(
@@ -118,7 +120,20 @@ class TutorOrchestrator:
         # 1. Ensure or create session
         session_id = request.session_id
         if not session_id:
-            session = await self.session_repo.create(profile_id=profile_id, title=f"Chat ({request.mode.title()})")
+            # Opening the tutor from a roadmap topic should return to that
+            # topic's thread rather than starting another one; visiting a node
+            # three times used to leave three identical "Chat (Teaching)" rows.
+            session = None
+            if request.roadmap_node_id:
+                session = await self.session_repo.get_by_roadmap_node(
+                    profile_id, request.roadmap_node_id
+                )
+            if session is None:
+                session = await self.session_repo.create(
+                    profile_id=profile_id,
+                    title=f"Chat ({request.mode.title()})",
+                    roadmap_node_id=request.roadmap_node_id,
+                )
             session_id = session.id
         else:
             session = await self.session_repo.get_by_id(session_id)
@@ -217,7 +232,21 @@ class TutorOrchestrator:
         except Exception as e:
             logger.warning("Could not record chat_turn analytics event: %s", e)
 
-        # 9. Extract learner memories from the exchange.
+        # 9. A studied topic is a started topic.
+        #    Mastery still comes only from assessment -- a conversation does not
+        #    prove you know something -- but leaving a node "not started" after
+        #    a tutoring session on it is plainly wrong, and it is the only way
+        #    chatting moves the roadmap at all.
+        node_id = request.roadmap_node_id or getattr(session, "roadmap_node_id", None)
+        if node_id:
+            try:
+                node = await self.roadmap_repo.get_node(node_id)
+                if node and node.profile_id == profile_id and node.status == "not_started":
+                    await self.roadmap_repo.update_node(node, status="in_progress")
+            except Exception as e:
+                logger.warning("Could not mark roadmap node %s in progress: %s", node_id, e)
+
+        # 10. Extract learner memories from the exchange.
         #    Only the WebSocket path did this, so a turn taken over REST left no
         #    trace in memory at all -- the same split that once left chat turns
         #    out of analytics. Detached and tracked, so it neither delays the

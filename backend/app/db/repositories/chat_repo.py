@@ -30,6 +30,26 @@ class ChatSessionRepository(BaseRepository[ChatSession]):
         )
         return result.scalars().all()
 
+    async def get_by_roadmap_node(
+        self, profile_id: str, roadmap_node_id: str
+    ) -> ChatSession | None:
+        """The most recently used thread for a roadmap topic, if one exists.
+
+        Most recent rather than first: if several were created before threads
+        were linked to topics, the one the learner actually came back to is the
+        useful one to reopen.
+        """
+        result = await self.session.execute(
+            select(ChatSession)
+            .where(
+                ChatSession.profile_id == profile_id,
+                ChatSession.roadmap_node_id == roadmap_node_id,
+            )
+            .order_by(ChatSession.updated_at.desc())
+            .limit(1)
+        )
+        return result.scalars().first()
+
     async def search(self, profile_id: str, query: str) -> Sequence[ChatSession]:
         # Basic LIKE search on the title
         # In a later milestone, FTS5 will be used for full-text search.

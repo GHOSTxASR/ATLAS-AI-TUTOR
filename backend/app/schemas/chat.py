@@ -18,6 +18,9 @@ LearningMode = Literal[
 class ChatSessionCreate(BaseModel):
     title: str | None = Field(None, description="Optional title, defaults to 'New Chat'")
     default_mode: LearningMode = Field("teaching", description="Default learning mode for session")
+    roadmap_node_id: str | None = Field(
+        None, description="Roadmap topic this thread is about, when opened from one"
+    )
 
 
 class ChatSessionUpdate(BaseModel):
@@ -31,6 +34,7 @@ class ChatSessionResponse(BaseModel):
     id: str
     profile_id: str
     title: str
+    roadmap_node_id: str | None = None
     created_at: datetime
     updated_at: datetime
 

@@ -35,6 +35,8 @@ export interface ChatSession {
   created_at: string;
   updated_at: string;
   messages?: ChatMessage[];
+  /** Roadmap topic this thread belongs to, when opened from one. */
+  roadmap_node_id?: string | null;
 }
 
 export interface ChatSessionCreate {

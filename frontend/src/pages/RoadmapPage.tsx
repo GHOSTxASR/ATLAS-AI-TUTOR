@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { chatApi } from "../api/chat";
 import { useProfileStore } from "../stores/profileStore";
 import {
   roadmapApi,
@@ -32,6 +33,8 @@ export function RoadmapPage() {
 
   const [roadmap, setRoadmap] = useState<RoadmapDetail | null>(null);
   const [selectedNode, setSelectedNode] = useState<RoadmapNode | null>(null);
+  const [openingTutor, setOpeningTutor] = useState(false);
+  const navigate = useNavigate();
   const [loading, setLoading] = useState<boolean>(true);
   const [modeFilter, setModeFilter] = useState<string>("all");
   const [actionError, setActionError] = useState<string | null>(null);
@@ -77,6 +80,25 @@ export function RoadmapPage() {
   useEffect(() => {
     loadRoadmap();
   }, [activeProfileId, urlNodeId]);
+
+  // Resolve the topic to its existing thread before navigating, rather than
+  // linking to /chat?topic=... which attached no session and so started a new
+  // conversation on every visit.
+  const openTutorForNode = async (node: RoadmapNode) => {
+    if (!activeProfileId || openingTutor) return;
+    setOpeningTutor(true);
+    setActionError(null);
+    try {
+      const session = await chatApi.sessionForTopic(activeProfileId, node.title, node.id);
+      navigate(`/chat/${session.id}`);
+    } catch (err: any) {
+      setActionError(
+        err?.response?.data?.error?.message || "Could not open the tutor for this topic."
+      );
+    } finally {
+      setOpeningTutor(false);
+    }
+  };
 
   const handleUpdateStatus = async (
     nodeId: string,
@@ -269,9 +291,19 @@ export function RoadmapPage() {
                     </div>
 
                     <div className="flex items-center gap-3 shrink-0">
-                      <span className="text-xs font-mono text-primary">
-                        {Math.round(node.mastery_score * 100)}%
-                      </span>
+                      {node.mastery_score > 0 ? (
+                        <span
+                          className="text-xs font-mono text-primary"
+                          title="Mastery, from quiz results"
+                        >
+                          {Math.round(node.mastery_score * 100)}%
+                        </span>
+                      ) : node.status === "completed" ? (
+                        <CheckCircle2
+                          className="w-4 h-4 text-primary"
+                          aria-label="Marked complete"
+                        />
+                      ) : null}
                       <ChevronRight className="w-4 h-4 text-on-surface-variant" />
                     </div>
                   </div>
@@ -342,12 +374,15 @@ export function RoadmapPage() {
 
               {/* Actions */}
               <div className="pt-3 border-t border-glass-border space-y-2">
-                <Link
-                  to={`/chat?topic=${encodeURIComponent(selectedNode.title)}`}
+                <button
+                  type="button"
+                  onClick={() => openTutorForNode(selectedNode)}
+                  disabled={openingTutor}
                   className="atlas-btn atlas-btn-primary w-full"
                 >
-                  <MessageSquare className="w-4 h-4" /> Start AI Tutorial
-                </Link>
+                  <MessageSquare className="w-4 h-4" />
+                  {openingTutor ? "Opening…" : "Start AI Tutorial"}
+                </button>
                 <Link
                   to={`/quiz?topic=${encodeURIComponent(selectedNode.title)}`}
                   className="atlas-btn w-full"
