@@ -18,6 +18,7 @@ foreground makes the logs visible and the lifetime obvious.
 from __future__ import annotations
 
 import argparse
+import ipaddress
 import os
 import socket
 import subprocess
@@ -46,6 +47,7 @@ def _supports_colour() -> bool:
 
 
 C_OK = "\033[32m" if _supports_colour() else ""
+C_WARN = "\033[33m" if _supports_colour() else ""
 C_ERR = "\033[31m" if _supports_colour() else ""
 C_DIM = "\033[90m" if _supports_colour() else ""
 C_OFF = "\033[0m" if _supports_colour() else ""
@@ -115,6 +117,34 @@ def open_browser_when_ready(health_url: str, app_url: str) -> None:
             print(f"{C_ERR}  the server did not become healthy in time{C_OFF}", file=sys.stderr)
 
     threading.Thread(target=worker, daemon=True).start()
+
+
+def warn_if_not_loopback(host: str) -> None:
+    """Atlas has no login and no per-request authentication.
+
+    The only thing standing between "private to this machine" and "an
+    unauthenticated API, everyone's documents, and a spendable AI provider
+    key open to the network" is binding to loopback. That is the default and
+    almost nobody should change it; this fires only when --host or
+    ATLAS_HOST says otherwise, so it never bothers the default path.
+    """
+    if host.lower() == "localhost":
+        return
+    try:
+        is_loopback = ipaddress.ip_address(host).is_loopback
+    except ValueError:
+        # Not an IP literal, so it is a hostname that is not "localhost" --
+        # there is no way to know it resolves to loopback, so warn.
+        is_loopback = False
+    if is_loopback:
+        return
+
+    print(f"{C_WARN}{'=' * 55}{C_OFF}")
+    print(f"{C_WARN}  Atlas has no login. Binding to {host} makes it reachable{C_OFF}")
+    print(f"{C_WARN}  by anyone who can reach this network -- your documents,{C_OFF}")
+    print(f"{C_WARN}  memory, and any configured AI provider key with them.{C_OFF}")
+    print(f"{C_WARN}{'=' * 55}{C_OFF}")
+    print()
 
 
 def preflight(dev: bool) -> None:
@@ -234,6 +264,7 @@ def main() -> int:
     parser.add_argument("--no-browser", action="store_true", help="do not open a browser")
     args = parser.parse_args()
 
+    warn_if_not_loopback(args.host)
     preflight(args.dev)
 
     if not port_is_free(args.host, args.port):

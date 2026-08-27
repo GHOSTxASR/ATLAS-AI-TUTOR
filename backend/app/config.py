@@ -74,6 +74,10 @@ class ModelSettings:
 @dataclass(frozen=True)
 class IngestionSettings:
     max_file_size_mb: int = 50
+    # A profile export bundles every document a profile has, so it is
+    # naturally much larger than any single upload -- a distinct, generous
+    # limit rather than reusing max_file_size_mb or leaving imports unbounded.
+    max_import_size_mb: int = 500
     ocr_language: str = "eng"
     tesseract_path: str = ""
 
@@ -234,6 +238,9 @@ def load_settings(config_path: Path | None = None) -> Settings:
         max_file_size_mb=_int_env(
             "ATLAS_MAX_FILE_SIZE_MB", int(_setting(raw, "ingestion", "max_file_size_mb", 50))
         ),
+        max_import_size_mb=_int_env(
+            "ATLAS_MAX_IMPORT_SIZE_MB", int(_setting(raw, "ingestion", "max_import_size_mb", 500))
+        ),
         ocr_language=str(
             _env("ATLAS_OCR_LANGUAGE", _setting(raw, "ingestion", "ocr_language", "eng"))
         ),
@@ -272,6 +279,7 @@ context_window = {settings.model.context_window}
 
 [ingestion]
 max_file_size_mb = {settings.ingestion.max_file_size_mb}
+max_import_size_mb = {settings.ingestion.max_import_size_mb}
 ocr_language = "{settings.ingestion.ocr_language}"
 tesseract_path = "{settings.ingestion.tesseract_path}"
 """

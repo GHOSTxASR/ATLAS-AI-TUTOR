@@ -311,3 +311,24 @@ def test_upload_returns_before_extraction_runs(tmp_path, monkeypatch):
         settled = uploaded_document(client, profile_id, document["id"])
         assert settled["status"] in ("extracted", "indexed")
         assert extraction_calls == [document["id"]]
+
+
+def test_upload_over_the_configured_limit_is_rejected(tmp_path, monkeypatch):
+    """The router-level size check, wired end to end through the real settings."""
+    monkeypatch.setenv("ATLAS_MAX_FILE_SIZE_MB", "1")
+    app = _make_app(tmp_path, monkeypatch)
+
+    with TestClient(app) as client:
+        profile_id = _create_profile(client)
+
+        oversized = b"x" * (2 * 1024 * 1024)  # 2MB against a 1MB cap
+        response = client.post(
+            f"/api/v1/profiles/{profile_id}/documents",
+            files={"file": ("big.txt", oversized, "text/plain")},
+        )
+
+        assert response.status_code == 422
+        error = response.json()["error"]
+        assert error["code"] == "VALIDATION_ERROR"
+        assert "1MB" in error["message"]
+        assert error["details"] == {"max_file_size_mb": 1}

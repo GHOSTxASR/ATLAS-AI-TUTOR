@@ -5,6 +5,30 @@ versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Security
+
+- **Upgraded FastAPI/Starlette/python-multipart, fixing a real Windows CVE.**
+  The pinned Starlette (0.37.2) did not confine a resolved path in
+  `StaticFiles`, so a UNC path (`\\host\share`) could make the server open an
+  outbound SMB connection — a known technique for leaking a Windows machine's
+  NTLM hash to an attacker-controlled listener. Atlas's own SPA route has its
+  own containment check and was never affected, but the `/assets` mount used
+  Starlette's `StaticFiles` directly. `python-multipart` (0.0.9) also carried
+  several denial-of-service parsing bugs, fixed upstream since.
+- **Uploads no longer buffer the entire body before checking the size limit.**
+  Both the document-upload and profile-import endpoints read the whole
+  request into memory before their size cap was applied, so an oversized POST
+  paid the memory cost the cap exists to avoid before being rejected. Both
+  now read in bounded chunks and abort as soon as the limit is crossed.
+  Profile import gets its own cap (`ATLAS_MAX_IMPORT_SIZE_MB`, default 500MB)
+  instead of reusing the per-document limit or being unbounded, since an
+  export bundles every document a profile has.
+- **A warning when Atlas is reachable beyond this machine.** Atlas has no
+  login — its only access control is binding to loopback. Setting `--host` or
+  `ATLAS_HOST` to anything else now prints a clear warning naming what that
+  exposes (documents, memory, any configured provider key) rather than
+  silently doing it.
+
 ### Changed
 
 - **One installer and one launcher, instead of eleven scripts.** The repo root

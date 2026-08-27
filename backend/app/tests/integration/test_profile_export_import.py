@@ -150,3 +150,27 @@ def test_imported_documents_are_reindexed(tmp_path, monkeypatch):
     assert restored["status"] == "indexed"
     assert restored["chunk_count"] >= 1
     assert restored["id"] != original_id
+
+
+def test_import_over_the_configured_limit_is_rejected(tmp_path, monkeypatch):
+    """The router-level size check on /profiles/import, wired to its own setting.
+
+    A profile export bundles every document a profile has, so it gets a
+    distinct, larger cap than a single document upload rather than reusing
+    max_file_size_mb or being left unbounded.
+    """
+    monkeypatch.setenv("ATLAS_MAX_IMPORT_SIZE_MB", "1")
+    app = _make_app(tmp_path, monkeypatch)
+
+    with TestClient(app) as client:
+        oversized = b"x" * (2 * 1024 * 1024)  # 2MB against a 1MB cap
+        response = client.post(
+            "/api/v1/profiles/import",
+            files={"file": ("big.zip", oversized, "application/zip")},
+        )
+
+        assert response.status_code == 422
+        error = response.json()["error"]
+        assert error["code"] == "VALIDATION_ERROR"
+        assert "1MB" in error["message"]
+        assert error["details"] == {"max_import_size_mb": 1}

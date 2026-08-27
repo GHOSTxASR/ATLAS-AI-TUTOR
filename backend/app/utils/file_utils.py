@@ -4,6 +4,53 @@ import hashlib
 import re
 import uuid
 from pathlib import Path
+from typing import TYPE_CHECKING, Any
+
+from app.exceptions import AtlasError
+
+if TYPE_CHECKING:
+    from fastapi import UploadFile
+
+
+#: Read in bounded pieces rather than one `await file.read()`. That call
+#: materialises the entire body as a single bytes object regardless of how the
+#: transport received it, so checking the size limit afterwards has already
+#: paid the memory cost the limit exists to avoid -- a large enough POST could
+#: exhaust memory before the configured cap ever got a chance to reject it.
+_UPLOAD_CHUNK_SIZE = 1024 * 1024
+
+
+async def read_upload_within_limit(
+    file: "UploadFile",
+    max_bytes: int,
+    *,
+    error_message: str,
+    error_details: dict[str, Any] | None = None,
+    chunk_size: int = _UPLOAD_CHUNK_SIZE,
+) -> bytes:
+    """Read an upload's body, aborting as soon as it exceeds `max_bytes`.
+
+    Memory use is bounded to roughly `max_bytes + chunk_size` even for a client
+    that declares a small `Content-Length` and then keeps streaming, or omits
+    it entirely -- the check is on bytes actually received, not on a header
+    the client controls.
+    """
+    chunks: list[bytes] = []
+    total = 0
+    while True:
+        chunk = await file.read(chunk_size)
+        if not chunk:
+            break
+        total += len(chunk)
+        if total > max_bytes:
+            raise AtlasError(
+                status_code=422,
+                code="VALIDATION_ERROR",
+                message=error_message,
+                details=error_details or {},
+            )
+        chunks.append(chunk)
+    return b"".join(chunks)
 
 
 def sha256_file(path: Path) -> str:

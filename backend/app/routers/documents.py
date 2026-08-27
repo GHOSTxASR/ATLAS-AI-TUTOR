@@ -9,6 +9,7 @@ from app.dependencies import get_settings_dependency
 from app.schemas.document import DocumentResponse, DocumentStatusResponse
 from app.services.ingestion_service import IngestionService
 from app.tasks.document_pipeline_task import run_document_pipeline
+from app.utils.file_utils import read_upload_within_limit
 
 router = APIRouter(prefix="/api/v1/profiles/{profile_id}/documents", tags=["documents"])
 
@@ -31,13 +32,20 @@ async def upload_document(
     file: UploadFile = File(...),
     is_syllabus: bool = Form(False),
     service: IngestionService = Depends(get_ingestion_service),
+    settings: Settings = Depends(get_settings_dependency),
 ):
     """Store the upload and return immediately.
 
     Extraction, OCR and chunking run afterwards; poll
     ``GET /documents/{id}/status`` (the frontend already does) for progress.
     """
-    content = await file.read()
+    max_bytes = settings.ingestion.max_file_size_mb * 1024 * 1024
+    content = await read_upload_within_limit(
+        file,
+        max_bytes,
+        error_message=f"File exceeds the {settings.ingestion.max_file_size_mb}MB upload limit.",
+        error_details={"max_file_size_mb": settings.ingestion.max_file_size_mb},
+    )
     document = await service.upload_document(
         profile_id, filename=file.filename or "upload", content=content, is_syllabus=is_syllabus
     )
