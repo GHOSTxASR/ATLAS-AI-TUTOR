@@ -10,6 +10,44 @@ from app.schemas.syllabus import (
 )
 
 
+#: Page furniture, not curriculum. Uploaded syllabi are PDFs, so every page
+#: contributes a header and a footer -- and the parser's last rule absorbs any
+#: unrecognised line as content, which is how "Page 4 of 12" ended up as a
+#: roadmap topic a learner was asked to study.
+_PAGE_FURNITURE = re.compile(
+    r"""^(?:
+        page\s+\d+(?:\s+of\s+\d+)?
+      | \d+\s*[|/]\s*page
+      | -\s*\d+\s*-
+      | \d{1,3}
+      | syllabus\b.*
+      | (?:semester|academic\s+year|session)\s*[:\-]?\s*[\dIVXLCDM]+.*
+      | (?:examination|exam|evaluation|marking|assessment)\s+(?:pattern|scheme).*
+      | (?:total\s+)?(?:marks|credits|contact\s+hours)\s*[:\-].*
+    )$""",
+    re.IGNORECASE | re.VERBOSE,
+)
+
+#: Headings after which the lines are bibliography or admin rather than
+#: syllabus. Skipped as a section rather than line by line, because
+#: "Higher Engineering Mathematics, B.S. Grewal" is indistinguishable from a
+#: topic title on its own -- only its position under "Prescribed Textbooks"
+#: reveals what it is.
+_NON_CONTENT_SECTION = re.compile(
+    r"^(?:prescribed\s+|recommended\s+|suggested\s+)?"
+    r"(?:text\s*books?|reference\s+books?|references|readings?|"
+    r"further\s+reading|bibliography)\s*[:\-]?\s*$",
+    re.IGNORECASE,
+)
+
+#: What ends such a section. Deliberately only strong headings: a numbered
+#: bibliography entry ("1. Grewal...") looks exactly like a numbered chapter.
+_STRUCTURAL_HEADING = re.compile(
+    r"^(?:#{1,6}\s+|(?:unit|module|chapter|section|part)\s+[\dIVXLCDM]+\b)",
+    re.IGNORECASE,
+)
+
+
 def parse_heuristically(text: str, default_title: str) -> ParsedSyllabus:
     """Deterministic regex and heading parser for offline or fallback syllabus extraction."""
     lines = [line.strip() for line in text.splitlines() if line.strip()]
@@ -63,7 +101,23 @@ def parse_heuristically(text: str, default_title: str) -> ParsedSyllabus:
             subj.chapters.append(current_chapter)
         return current_chapter
 
+    in_non_content_section = False
+
     for line in lines:
+        # 0. Drop what is not curriculum before anything can absorb it.
+        if _PAGE_FURNITURE.match(line):
+            continue
+
+        if in_non_content_section:
+            if _STRUCTURAL_HEADING.match(line):
+                in_non_content_section = False
+            else:
+                continue
+
+        if _NON_CONTENT_SECTION.match(line):
+            in_non_content_section = True
+            continue
+
         # 1. Check Subtopic (deepest level)
         if current_topic is not None and re_subtopic.match(line) and not line.startswith("#"):
             sub_match = re_subtopic.match(line)

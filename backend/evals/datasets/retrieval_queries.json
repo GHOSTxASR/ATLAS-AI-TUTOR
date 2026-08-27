@@ -1,0 +1,149 @@
+{
+  "_comment": [
+    "Queries phrased the way a student types them -- not as keyword strings.",
+    "",
+    "Three kinds, tagged so a regression can be traced to a category:",
+    "  paraphrase  -- asks for a concept without using its name",
+    "  ambiguous   -- a term that means different things in two subjects; the",
+    "                 correct passage is only recoverable from context",
+    "  multi       -- more than one passage genuinely answers it",
+    "",
+    "'relevant' lists every passage a tutor could legitimately cite. Being",
+    "strict here would punish correct behaviour, and being loose would make",
+    "the metric unable to fail."
+  ],
+  "queries": [
+    {
+      "id": "q-force-accel",
+      "kind": "paraphrase",
+      "query": "why does pushing a heavier object make it speed up more slowly?",
+      "relevant": ["phys-newton-2"]
+    },
+    {
+      "id": "q-recoil",
+      "kind": "paraphrase",
+      "query": "when I push against a wall, why does it push back on me?",
+      "relevant": ["phys-newton-3"]
+    },
+    {
+      "id": "q-braking",
+      "kind": "paraphrase",
+      "query": "why is it so much harder to stop a car going twice as fast?",
+      "relevant": ["phys-kinetic"]
+    },
+    {
+      "id": "q-collision",
+      "kind": "multi",
+      "query": "what stays the same when two objects collide?",
+      "relevant": ["phys-momentum", "phys-kinetic"]
+    },
+    {
+      "id": "q-work-mechanics",
+      "kind": "ambiguous",
+      "query": "if I carry a heavy bag across a flat room, how much work do I do against gravity?",
+      "relevant": ["phys-work"]
+    },
+    {
+      "id": "q-work-thermo",
+      "kind": "ambiguous",
+      "query": "how does heat added to a gas relate to the work it does and its internal energy?",
+      "relevant": ["thermo-first-law"]
+    },
+    {
+      "id": "q-time-direction",
+      "kind": "paraphrase",
+      "query": "why do physical processes have a direction in time?",
+      "relevant": ["thermo-entropy"]
+    },
+    {
+      "id": "q-induction-em",
+      "kind": "ambiguous",
+      "query": "how does moving a magnet near a coil of wire generate a voltage?",
+      "relevant": ["phys-induction"]
+    },
+    {
+      "id": "q-induction-proof",
+      "kind": "ambiguous",
+      "query": "how do you prove a statement holds for every natural number?",
+      "relevant": ["cs-induction"]
+    },
+    {
+      "id": "q-plant-energy",
+      "kind": "paraphrase",
+      "query": "how do plants turn sunlight into food?",
+      "relevant": ["bio-photosynthesis"]
+    },
+    {
+      "id": "q-atp",
+      "kind": "paraphrase",
+      "query": "where in the cell is most of the ATP actually produced?",
+      "relevant": ["bio-respiration"]
+    },
+    {
+      "id": "q-chromosome-count",
+      "kind": "paraphrase",
+      "query": "which type of cell division keeps the chromosome number the same?",
+      "relevant": ["bio-mitosis"]
+    },
+    {
+      "id": "q-lagging-strand",
+      "kind": "paraphrase",
+      "query": "why is one new DNA strand built in short pieces instead of continuously?",
+      "relevant": ["bio-dna"]
+    },
+    {
+      "id": "q-water-movement",
+      "kind": "paraphrase",
+      "query": "why does water move into a cell placed in pure water?",
+      "relevant": ["bio-osmosis"]
+    },
+    {
+      "id": "q-tree-bio",
+      "kind": "ambiguous",
+      "query": "how are evolutionary relationships between species represented?",
+      "relevant": ["bio-phylogeny"]
+    },
+    {
+      "id": "q-tree-cs",
+      "kind": "ambiguous",
+      "query": "what data structure keeps keys ordered so lookup is logarithmic?",
+      "relevant": ["cs-bst"]
+    },
+    {
+      "id": "q-constant-lookup",
+      "kind": "paraphrase",
+      "query": "which structure gives average constant time lookup by key?",
+      "relevant": ["cs-hashtable"]
+    },
+    {
+      "id": "q-sort-worst-case",
+      "kind": "paraphrase",
+      "query": "which sorting algorithm degrades badly when the pivot is chosen poorly?",
+      "relevant": ["cs-quicksort"]
+    },
+    {
+      "id": "q-negative-edges",
+      "kind": "multi",
+      "query": "what should I use for shortest paths when some edge weights are negative?",
+      "relevant": ["cs-dijkstra"]
+    },
+    {
+      "id": "q-threads-stuck",
+      "kind": "paraphrase",
+      "query": "two threads are each waiting on a lock the other holds and nothing progresses",
+      "relevant": ["cs-deadlock"]
+    },
+    {
+      "id": "q-learning-rate",
+      "kind": "paraphrase",
+      "query": "my model diverges when I raise the step size, why?",
+      "relevant": ["cs-gradient"]
+    },
+    {
+      "id": "q-scaling",
+      "kind": "paraphrase",
+      "query": "how do I describe how an algorithm's cost grows as the input gets bigger?",
+      "relevant": ["cs-bigo"]
+    }
+  ]
+}

@@ -245,7 +245,16 @@ class DocumentEmbedder:
             return provider_default
         if not configured:
             return provider_default
-        if configured == self.DEFAULT_EMBEDDING_MODEL and self.provider != "openai":
+
+        # A name that is some *other* provider's default is a leftover from
+        # before the provider changed, not a deliberate choice. Switching to
+        # local embeddings while "gemini-embedding-001" is still configured
+        # otherwise crashes on a model the backend has never heard of.
+        stale_defaults = {
+            name for provider, name in DEFAULT_EMBEDDING_MODELS.items()
+            if provider != self.provider
+        }
+        if configured in stale_defaults:
             return provider_default
         return configured
 

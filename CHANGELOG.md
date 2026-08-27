@@ -37,6 +37,11 @@ grouped by what changed rather than by version.
 - **Pointer overlay** — a dot that tracks exactly with a ring that trails it,
   declining to take over on coarse pointers, in forced-colors mode, and over
   text fields.
+- **Evals** for the AI parts — retrieval scored with precision/recall/MRR/NDCG
+  over a golden set of student-phrased questions, and syllabus parsing scored
+  on structural recall *and* precision. Both run through the real pipeline,
+  embed locally so they need no API key, and gate CI on every push. The
+  syllabus suite immediately found a live bug (below).
 - **ESLint** with `react-hooks/exhaustive-deps` as an error, wired into CI.
 - **CI**: backend suite on Python 3.11/3.12/3.13, frontend lint/typecheck/test/
   build, a secrets scan, and a fresh-install job that boots the app from
@@ -82,6 +87,11 @@ grouped by what changed rather than by version.
   budget thinking and return a null content field; that null reached
   `json.loads` as an empty string, and the budgets were too small besides.
   Extraction also only ran on the WebSocket path.
+- **Page furniture became syllabus topics.** The deterministic parser absorbed
+  any unrecognised line as content, so PDF page footers, "Prescribed Textbooks"
+  lists and exam-pattern boilerplate were promoted into the structure — and
+  roadmaps asked learners to study "Page 4 of 4". Found by the new syllabus
+  eval, which scores precision precisely because recall cannot see this.
 - **Short answers were graded on keyword overlap, not meaning.** The evaluator
   was given a 350-token budget, which a reasoning model spends before writing
   any JSON, so every short answer quietly fell through to the terminology

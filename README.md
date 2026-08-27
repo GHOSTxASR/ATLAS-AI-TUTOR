@@ -137,8 +137,9 @@ python -m venv .venv
 .venv/Scripts/activate          # Windows;  source .venv/bin/activate on macOS/Linux
 pip install -r requirements-dev.txt   # includes runtime deps + test tooling
 
-pytest                          # 193 tests
-ruff check app/ alembic/
+pytest                          # 206 tests
+ruff check app/ evals/ alembic/
+python -m evals.run             # retrieval + syllabus scorecards (no API key)
 
 # Frontend
 cd frontend
@@ -147,6 +148,27 @@ npm test                        # vitest
 npm run typecheck               # tsc --noEmit
 npm run dev                     # vite dev server on :5173
 ```
+
+### Evals
+
+Tests prove the AI parts *run*. Evals measure whether they *work* — the failures
+that mattered here never raised. The memory extractor returned nothing for
+weeks; syllabus parsing silently degraded to a heuristic that turned page
+footers into topics; short answers were graded on keyword overlap. Each one
+looked healthy from the outside.
+
+```bash
+python -m evals.run             # scorecards
+pytest app/tests/evals          # the same numbers, as pass/fail thresholds
+```
+
+Retrieval is measured through the real vector store and retriever with
+precision/recall/MRR/NDCG over a golden set of student-phrased questions;
+syllabus parsing is scored on structure recall *and* precision, the latter
+because page furniture reaching the roadmap is invisible to recall. Both embed
+locally, so neither needs an API key and both run in CI on every push.
+
+See [backend/evals/README.md](backend/evals/README.md).
 
 `requirements.txt` holds runtime dependencies only. Use
 **`requirements-dev.txt`** (which includes it) when working on the project —

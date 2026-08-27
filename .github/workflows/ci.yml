@@ -36,11 +36,20 @@ jobs:
 
       - name: Lint
         working-directory: backend
-        run: ruff check app/ alembic/
+        run: ruff check app/ evals/ alembic/
 
       - name: Test
         working-directory: backend
         run: pytest -q
+
+      # Whether the AI parts still work, not just whether they run. Retrieval
+      # embeds locally and the syllabus suite scores the deterministic parser,
+      # so neither needs an API key and both can gate a push. Thresholds are
+      # asserted by pytest above; this prints the numbers so a run's log shows
+      # the trend rather than only pass/fail.
+      - name: Evals
+        working-directory: backend
+        run: python -m evals.run
 
   # Installs runtime dependencies ONLY, then actually boots the app.
   #

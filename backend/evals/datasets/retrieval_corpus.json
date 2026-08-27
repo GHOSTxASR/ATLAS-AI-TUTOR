@@ -1,0 +1,124 @@
+{
+  "_comment": [
+    "A study corpus in the shape Atlas actually sees: textbook-style paragraphs",
+    "from a few subjects a student might have uploaded at once.",
+    "",
+    "Deliberately contains near-misses -- 'work' in physics vs. 'work' in",
+    "thermodynamics, 'tree' in data structures vs. phylogenetic 'tree',",
+    "'induction' in maths vs. electromagnetic induction. A retriever that only",
+    "matches keywords scores badly on these, which is the point: without them",
+    "the metric would look good no matter what the retriever did."
+  ],
+  "passages": [
+    {
+      "id": "phys-newton-2",
+      "subject": "physics",
+      "text": "Newton's second law states that the net force acting on a body is equal to the product of its mass and its acceleration, written F = ma. It explains why the same push produces a smaller acceleration on a heavier object, and it reduces to the first law when the net force is zero."
+    },
+    {
+      "id": "phys-newton-3",
+      "subject": "physics",
+      "text": "Newton's third law says that for every action there is an equal and opposite reaction. The two forces in such a pair always act on different bodies, which is why they never cancel each other out despite being equal in magnitude."
+    },
+    {
+      "id": "phys-work",
+      "subject": "physics",
+      "text": "In mechanics, work is done when a force displaces an object along the direction of that force, calculated as W = F·d·cos(theta). No work is done when the displacement is perpendicular to the force, which is why carrying a bag horizontally does no work against gravity."
+    },
+    {
+      "id": "phys-kinetic",
+      "subject": "physics",
+      "text": "The kinetic energy of a moving body is one half its mass times the square of its speed. Because the dependence on speed is quadratic, doubling a car's speed quadruples the energy that its brakes must dissipate to stop it."
+    },
+    {
+      "id": "phys-momentum",
+      "subject": "physics",
+      "text": "Linear momentum is the product of mass and velocity, and the total momentum of an isolated system is conserved. Collisions are analysed by equating momentum before and after; in an elastic collision kinetic energy is also conserved, in an inelastic one it is not."
+    },
+    {
+      "id": "phys-induction",
+      "subject": "physics",
+      "text": "Electromagnetic induction is the production of an electromotive force across a conductor when it is exposed to a changing magnetic field. Faraday's law gives the induced EMF as the negative rate of change of magnetic flux, and Lenz's law fixes its direction so as to oppose the change."
+    },
+    {
+      "id": "thermo-first-law",
+      "subject": "physics",
+      "text": "The first law of thermodynamics states that the change in a system's internal energy equals the heat added to it minus the work it does on its surroundings. It is a statement of energy conservation applied to thermal processes."
+    },
+    {
+      "id": "thermo-entropy",
+      "subject": "physics",
+      "text": "Entropy measures the number of microscopic arrangements consistent with a system's macroscopic state. The second law of thermodynamics holds that the entropy of an isolated system never decreases, which is what gives thermal processes a direction in time."
+    },
+    {
+      "id": "bio-photosynthesis",
+      "subject": "biology",
+      "text": "Photosynthesis converts light energy into chemical energy stored in glucose. The light-dependent reactions in the thylakoid membranes produce ATP and NADPH, which the Calvin cycle then uses in the stroma to fix carbon dioxide into sugar."
+    },
+    {
+      "id": "bio-respiration",
+      "subject": "biology",
+      "text": "Cellular respiration releases energy from glucose in three stages: glycolysis in the cytoplasm, the Krebs cycle in the mitochondrial matrix, and oxidative phosphorylation at the inner mitochondrial membrane, which produces the great majority of the ATP."
+    },
+    {
+      "id": "bio-mitosis",
+      "subject": "biology",
+      "text": "Mitosis divides a cell's replicated chromosomes into two identical daughter nuclei, passing through prophase, metaphase, anaphase and telophase. It maintains the chromosome number, unlike meiosis, which halves it to produce gametes."
+    },
+    {
+      "id": "bio-dna",
+      "subject": "biology",
+      "text": "DNA replication is semi-conservative: each strand of the double helix serves as a template for a new complementary strand, so every daughter molecule retains one original strand. DNA polymerase extends only in the 5' to 3' direction, which is why the lagging strand is built in Okazaki fragments."
+    },
+    {
+      "id": "bio-phylogeny",
+      "subject": "biology",
+      "text": "A phylogenetic tree represents evolutionary relationships among species, with branch points marking common ancestors. Branch lengths may encode time or the amount of genetic change, and the tree is inferred from morphological or molecular data rather than observed directly."
+    },
+    {
+      "id": "bio-osmosis",
+      "subject": "biology",
+      "text": "Osmosis is the net movement of water across a semi-permeable membrane from a region of lower solute concentration to one of higher solute concentration. It requires no energy input, being driven entirely by the water potential gradient."
+    },
+    {
+      "id": "cs-bst",
+      "subject": "computer science",
+      "text": "A binary search tree keeps every key in the left subtree smaller than the node and every key in the right subtree larger. Lookup, insertion and deletion take time proportional to the height of the tree, which is logarithmic when the tree stays balanced and linear when it degenerates into a chain."
+    },
+    {
+      "id": "cs-hashtable",
+      "subject": "computer science",
+      "text": "A hash table maps keys to buckets using a hash function, giving average constant-time lookup. Collisions are resolved by chaining or open addressing, and performance degrades as the load factor rises, which is why tables are resized once they pass a threshold."
+    },
+    {
+      "id": "cs-quicksort",
+      "subject": "computer science",
+      "text": "Quicksort partitions an array around a pivot so that smaller elements precede it and larger ones follow, then sorts each side recursively. It averages n log n comparisons but degrades to quadratic time when pivots are consistently poor, which randomised pivot selection avoids."
+    },
+    {
+      "id": "cs-dijkstra",
+      "subject": "computer science",
+      "text": "Dijkstra's algorithm finds shortest paths from a source vertex in a graph with non-negative edge weights, repeatedly settling the nearest unsettled vertex. It fails on negative edges, where the Bellman-Ford algorithm is used instead."
+    },
+    {
+      "id": "cs-induction",
+      "subject": "computer science",
+      "text": "Proof by induction establishes a statement for every natural number by proving a base case and then showing that truth at n implies truth at n+1. Structural induction generalises this to recursively defined data such as lists and trees, which is how recursive algorithms are proved correct."
+    },
+    {
+      "id": "cs-bigo",
+      "subject": "computer science",
+      "text": "Big-O notation describes an upper bound on how an algorithm's cost grows with input size, discarding constant factors and lower-order terms. It describes asymptotic behaviour, so an O(n log n) algorithm can still lose to an O(n squared) one on small inputs."
+    },
+    {
+      "id": "cs-deadlock",
+      "subject": "computer science",
+      "text": "Deadlock occurs when threads each hold a resource the other needs and none can proceed. It requires four simultaneous conditions -- mutual exclusion, hold and wait, no preemption, and circular wait -- so breaking any one of them prevents it."
+    },
+    {
+      "id": "cs-gradient",
+      "subject": "computer science",
+      "text": "Gradient descent minimises a loss function by repeatedly stepping in the direction of steepest descent, scaled by a learning rate. Too large a rate overshoots and diverges; too small a rate converges slowly and can stall on plateaus."
+    }
+  ]
+}

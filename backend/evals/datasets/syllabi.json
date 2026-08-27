@@ -1,0 +1,93 @@
+{
+  "_comment": [
+    "Syllabus fixtures in the formats students actually upload: markdown",
+    "headings, numbered outlines, and 'Unit I / Unit II' university style.",
+    "",
+    "Every case includes noise the parser must NOT promote into topics --",
+    "page footers, 'Prescribed Textbooks' sections, exam-pattern boilerplate.",
+    "That is exactly the bug that shipped once: page headers became topics and",
+    "the roadmap filled with entries like 'Page 4 of 12'. Recall alone cannot",
+    "catch it, which is why precision is scored too."
+  ],
+  "syllabi": [
+    {
+      "id": "markdown-physics",
+      "format": "markdown headings",
+      "default_title": "Physics",
+      "text": "# Classical Mechanics\n\n## Kinematics\n\n### Motion in One Dimension\n### Projectile Motion\n\n## Dynamics\n\n### Newton's Laws of Motion\n### Friction and Circular Motion\n\n# Thermodynamics\n\n## Laws of Thermodynamics\n\n### Zeroth and First Law\n### Entropy and the Second Law\n",
+      "expected": {
+        "subjects": ["Classical Mechanics", "Thermodynamics"],
+        "chapters": ["Kinematics", "Dynamics", "Laws of Thermodynamics"],
+        "topics": [
+          "Motion in One Dimension",
+          "Projectile Motion",
+          "Newton's Laws of Motion",
+          "Friction and Circular Motion",
+          "Zeroth and First Law",
+          "Entropy and the Second Law"
+        ]
+      }
+    },
+    {
+      "id": "numbered-cs",
+      "format": "numbered outline",
+      "default_title": "CS Curriculum",
+      "text": "Module 1: Data Structures\n\n1. Linear Structures\n1.1 Arrays and Linked Lists\n1.2 Stacks and Queues\n\n2. Trees and Graphs\n2.1 Binary Search Trees\n2.2 Graph Traversal\n\nModule 2: Algorithms\n\n3. Sorting and Searching\n3.1 Comparison Sorts\n3.2 Binary Search\n",
+      "expected": {
+        "subjects": ["Data Structures", "Algorithms"],
+        "chapters": ["Linear Structures", "Trees and Graphs", "Sorting and Searching"],
+        "topics": [
+          "Arrays and Linked Lists",
+          "Stacks and Queues",
+          "Binary Search Trees",
+          "Graph Traversal",
+          "Comparison Sorts",
+          "Binary Search"
+        ]
+      }
+    },
+    {
+      "id": "university-units-with-noise",
+      "format": "unit style with page furniture",
+      "default_title": "Engineering Mathematics",
+      "text": "SYLLABUS - SEMESTER III\nPage 1 of 4\n\nUnit I: Linear Algebra\n\nChapter 1: Matrices\n1.1 Rank and Determinants\n1.2 Eigenvalues and Eigenvectors\n\nPage 2 of 4\n\nUnit II: Calculus\n\nChapter 2: Differential Calculus\n2.1 Partial Derivatives\n2.2 Maxima and Minima\n\nPage 3 of 4\n\nPrescribed Textbooks:\nHigher Engineering Mathematics, B.S. Grewal\nAdvanced Engineering Mathematics, Erwin Kreyszig\n\nExamination Pattern: 3 hours, 100 marks\nPage 4 of 4\n",
+      "expected": {
+        "subjects": ["Linear Algebra", "Calculus"],
+        "chapters": ["Matrices", "Differential Calculus"],
+        "topics": [
+          "Rank and Determinants",
+          "Eigenvalues and Eigenvectors",
+          "Partial Derivatives",
+          "Maxima and Minima"
+        ],
+        "must_not_appear": [
+          "Page 1 of 4",
+          "Page 2 of 4",
+          "Page 3 of 4",
+          "Page 4 of 4",
+          "SYLLABUS - SEMESTER III",
+          "Examination Pattern: 3 hours, 100 marks",
+          "Higher Engineering Mathematics, B.S. Grewal"
+        ]
+      }
+    },
+    {
+      "id": "bulleted-biology",
+      "format": "bulleted list",
+      "default_title": "Biology",
+      "text": "# Cell Biology\n\n## Cell Structure\n\n- Prokaryotic and Eukaryotic Cells\n- Organelles and Their Functions\n\n## Cell Division\n\n- Mitosis\n- Meiosis\n\n# Genetics\n\n## Inheritance\n\n- Mendelian Genetics\n- Non-Mendelian Inheritance\n",
+      "expected": {
+        "subjects": ["Cell Biology", "Genetics"],
+        "chapters": ["Cell Structure", "Cell Division", "Inheritance"],
+        "topics": [
+          "Prokaryotic and Eukaryotic Cells",
+          "Organelles and Their Functions",
+          "Mitosis",
+          "Meiosis",
+          "Mendelian Genetics",
+          "Non-Mendelian Inheritance"
+        ]
+      }
+    }
+  ]
+}
