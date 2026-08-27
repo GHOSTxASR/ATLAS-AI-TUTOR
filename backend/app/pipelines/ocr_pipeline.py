@@ -277,7 +277,7 @@ class OcrPipeline:
         pytesseract = _import_pytesseract()
         if pytesseract is None:
             raise OcrUnavailableError(
-                "pytesseract is not installed. Run setup.bat/setup.sh, then retry."
+                "pytesseract is not installed. Run: python install.py"
             )
         executable = find_tesseract_executable(self.tesseract_path)
         if executable is None:

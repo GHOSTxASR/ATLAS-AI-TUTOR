@@ -6,6 +6,11 @@ Atlas uses a monorepo structure containing two primary domains: a Python/FastAPI
 ## 2. Root Level Files
 *   `README.md`: High-level project description, features, and quickstart instructions.
 *   `start.bat` / `start.sh`: The main entrypoint scripts for running the application in production mode.
+> **Superseded.** The eleven root scripts described below were consolidated
+> into `install.py` and `start.py` (with `install.bat` / `install.sh` /
+> `start.bat` / `start.sh` as one-line shims). `stop.bat` is replaced by Ctrl+C
+> and `start-dev.bat` by `start.py --dev`. See the README.
+
 *   `start-dev.bat`: Launches both the backend with reload and the frontend dev server.
 *   `setup.bat` / `setup.sh`: Environment initialization (installs dependencies, sets up DB).
 *   `.env.example`: Template for optional environment variables (though most config is in `settings.toml`).

@@ -51,7 +51,8 @@ jobs:
         working-directory: backend
         run: python -m evals.run
 
-  # Installs runtime dependencies ONLY, then actually boots the app.
+  # Runs the installer a user actually runs, on both platforms, then boots
+  # what it produced.
   #
   # This exists because a working local venv proves nothing about a clean one.
   # SQLAlchemy declares `greenlet` conditionally (python_version < "3.13"), so a
@@ -59,9 +60,18 @@ jobs:
   # at runtime while the whole test suite still passed locally. Import checks
   # alone would not have caught it -- the failure only appears once the async
   # engine opens a connection, so this job drives a real request.
-  fresh-install:
-    name: Fresh install smoke test
-    runs-on: ubuntu-latest
+  #
+  # Windows is in the matrix deliberately. install.bat once shipped exiting 255
+  # for every user and setup.sh shipped with CRLF shebangs, both on a repo whose
+  # CI was Linux-only. The installer is the first thing a user touches and was
+  # the last thing anything tested.
+  installer:
+    name: Installer (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
 
     steps:
       - uses: actions/checkout@v4
@@ -70,23 +80,23 @@ jobs:
         with:
           python-version: "3.13"
 
-      - name: Install runtime dependencies only
-        working-directory: backend
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
 
-      - name: Boot the app and exercise the database
-        working-directory: backend
+      - name: Install Atlas the way a user does
+        run: python install.py --quiet
+
+      - name: Boot it and exercise the database
+        shell: bash
         env:
           ATLAS_DATA_DIR: ${{ runner.temp }}/atlas-fresh
-          ATLAS_ENV: development
         run: |
-          python -m uvicorn app.main:app --host 127.0.0.1 --port 8000 &
+          python start.py --port 8000 --no-browser &
           server_pid=$!
           trap 'kill $server_pid 2>/dev/null || true' EXIT
 
-          for _ in $(seq 1 40); do
+          for _ in $(seq 1 60); do
             if curl -sf http://127.0.0.1:8000/api/v1/health >/dev/null; then
               break
             fi
@@ -96,6 +106,10 @@ jobs:
           echo "--- health ---"
           curl -sf http://127.0.0.1:8000/api/v1/health || {
             echo "health check failed"; exit 1; }
+
+          echo "--- the interface is served, not just the API ---"
+          curl -sf http://127.0.0.1:8000/ >/dev/null || {
+            echo "SPA was not served"; exit 1; }
 
           # Hits the async SQLAlchemy engine for real; a missing greenlet fails here.
           echo "--- profiles (exercises the DB) ---"
@@ -110,6 +124,19 @@ jobs:
 
           echo ""
           echo "fresh install is functional"
+
+      - name: start.py refuses clearly when nothing is installed
+        shell: bash
+        run: |
+          # The most common first mistake: run the launcher before the
+          # installer. It must name the fix, not stack-trace.
+          rm -rf backend/.venv
+          if python start.py --no-browser 2>err.txt; then
+            echo "expected a non-zero exit"; exit 1
+          fi
+          grep -q "install.py" err.txt || {
+            echo "the error did not point at install.py:"; cat err.txt; exit 1; }
+          echo "refused correctly:"; cat err.txt
 
   frontend:
     name: Frontend

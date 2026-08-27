@@ -5,7 +5,39 @@ versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-Nothing yet.
+### Changed
+
+- **One installer and one launcher, instead of eleven scripts.** The repo root
+  held `install.bat`, `install.ps1`, `setup.bat`, `setup.sh`, `start.bat`,
+  `start.ps1`, `start.sh`, `start-dev.bat`, `stop.bat`, `stop.ps1` and
+  `update.bat` — of which four did real work, three were unreferenced
+  PowerShell reimplementations, one was a nine-line forwarder, and one
+  duplicated the installer.
+
+  The logic now lives in **`install.py`** and **`start.py`**, with `install.bat`
+  / `install.sh` / `start.bat` / `start.sh` as one-line shims so double-clicking
+  still works. Python is already a hard prerequisite, so a Python installer
+  costs nothing and cannot drift from itself — the batch and shell versions had
+  already diverged, with only the shell one explaining how to install Tesseract.
+
+  `stop.bat` is gone: `start.py` runs in the foreground, so Ctrl+C stops it and
+  the logs are visible. `start-dev.bat` is now `start.py --dev`, which runs the
+  backend with `--reload` and the Vite dev server together and stops both at
+  once.
+
+- **The installer is now tested by CI, on Windows as well as Linux.** It runs
+  `install.py`, boots what that produced, exercises the database, and checks
+  that `start.py` refuses clearly when run before installing. `install.bat`
+  once shipped exiting 255 for every user, and `setup.sh` shipped with CRLF
+  shebangs — both on a repo whose CI was Linux-only and never ran either file.
+
+### Fixed
+
+- **A dead setting in the first file a user opens.** The installer wrote
+  `AI_PROVIDER=offline` into `.env`; nothing has ever read `AI_PROVIDER`.
+- **A fresh install reported `development`** on its health endpoint, because
+  the `.env` it created was copied verbatim from the contributor template.
+- An OCR error told users to run `setup.bat/setup.sh`, which no longer exist.
 
 ## [0.1.0] - 2026-08-27
 

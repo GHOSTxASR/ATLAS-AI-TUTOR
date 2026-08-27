@@ -70,24 +70,24 @@ an embedding provider explicitly in Settings to override it.
 
 ## Quick Start
 
-### Windows
-
-```bat
-install.bat
-```
-
-Then launch it:
-
-```bat
-start.bat
-```
-
-### macOS / Linux
+Install once:
 
 ```bash
-./setup.sh
-./start.sh
+python install.py
 ```
+
+Then run it, any time:
+
+```bash
+python start.py
+```
+
+On Windows you can double-click **`install.bat`** and **`start.bat`** instead;
+on macOS/Linux, **`./install.sh`** and **`./start.sh`**. All four are one-line
+shims onto the same two Python scripts, so there is only one implementation to
+keep working.
+
+Stop Atlas with **Ctrl+C** in the window it is running in.
 
 Atlas is then available at **<http://127.0.0.1:8000>**.
 
@@ -151,6 +151,9 @@ npm run typecheck               # tsc --noEmit
 npm run dev                     # vite dev server on :5173
 ```
 
+For day-to-day work, `python start.py --dev` runs the backend with
+`--reload` and the Vite dev server together, and stops both with one Ctrl+C.
+
 ### Evals
 
 Tests prove the AI parts *run*. Evals measure whether they *work* — the failures
@@ -174,7 +177,7 @@ See [backend/evals/README.md](backend/evals/README.md).
 
 `requirements.txt` holds runtime dependencies only. Use
 **`requirements-dev.txt`** (which includes it) when working on the project —
-`pytest` and `ruff` are not installed by `install.bat`.
+`pytest` and `ruff` are not installed by `install.py`.
 
 Configuration is read from `~/.atlas/config/settings.toml`, overridable with
 `ATLAS_*` environment variables — see [.env.example](.env.example). Copy it to
