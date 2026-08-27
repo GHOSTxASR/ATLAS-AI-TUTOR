@@ -26,6 +26,8 @@ export interface ProvidersData {
   active_embedding_provider?: string;
   /** Providers that cannot embed at all, so the UI can mark them. */
   providers_without_embeddings?: string[];
+  /** Backends that embed but do not chat, so they are absent from `providers`. */
+  embedding_only_providers?: ProviderItem[];
 }
 
 export interface ModelInfo {

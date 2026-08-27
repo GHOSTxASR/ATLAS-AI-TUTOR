@@ -96,7 +96,14 @@ export function SettingsPage() {
   };
 
   // Re-query whenever the provider changes; lists go stale on their own.
-  const effectiveEmbeddingProvider = embeddingProvider || selectedProvider;
+  //
+  // What the backend says is serving, which is not always the chat provider:
+  // with nothing chosen, or a chat provider that cannot embed, it resolves to
+  // the local backend. Trust it over guessing, so the model list belongs to
+  // the backend actually doing the work.
+  const activeEmbeddingProvider = providersData?.active_embedding_provider ?? "";
+  const effectiveEmbeddingProvider =
+    embeddingProvider || activeEmbeddingProvider || selectedProvider;
 
   useEffect(() => {
     loadModels(selectedProvider);
@@ -399,7 +406,14 @@ export function SettingsPage() {
                     onChange={(e) => setEmbeddingProvider(e.target.value)}
                     className="w-full min-h-[44px] px-3 bg-surface-container/50 border border-glass-border text-on-surface focus:outline-hidden focus:border-primary"
                   >
-                    <option value="">Same as chat provider</option>
+                    <option value="">Automatic</option>
+                    {/* Listed first: it is the only option that needs nothing
+                        configured, so it is the one that always works. */}
+                    {(providersData?.embedding_only_providers ?? []).map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.label}
+                      </option>
+                    ))}
                     {(providersData?.providers ?? [])
                       .filter(
                         (p) =>
@@ -412,18 +426,28 @@ export function SettingsPage() {
                       ))}
                   </select>
 
-                  {!embeddingProvider &&
-                    (providersData?.providers_without_embeddings ?? []).includes(
-                      selectedProvider
-                    ) && (
-                      <div className="mt-2 p-3 bg-primary-container/25 border border-primary/30 text-luminous-highlight text-[11px] leading-relaxed">
-                        {providersData?.providers.find((p) => p.id === selectedProvider)?.label ??
-                          selectedProvider}{" "}
-                        has no embeddings API, so document search is off while embeddings
-                        follow it. Pick a separate embedding provider above to keep search
-                        working — your chat provider stays as it is.
-                      </div>
-                    )}
+                  {/* "Automatic" hides which backend is really running, so say
+                      it outright -- otherwise a user whose key stopped working
+                      sees search keep working and never learns why. */}
+                  {!embeddingProvider && activeEmbeddingProvider && (
+                    <div className="mt-2 p-3 bg-primary-container/25 border border-primary/30 text-luminous-highlight text-[11px] leading-relaxed">
+                      {activeEmbeddingProvider === "local" ? (
+                        <>
+                          Embedding on this device — no API key needed. Atlas falls back
+                          here whenever your chat provider has no embeddings API or no key,
+                          so document search keeps working either way.
+                        </>
+                      ) : (
+                        <>
+                          Following your chat provider (
+                          {providersData?.providers.find(
+                            (p) => p.id === activeEmbeddingProvider
+                          )?.label ?? activeEmbeddingProvider}
+                          ).
+                        </>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 {/* Embedding model. Separate catalogue, and separate stakes:

@@ -14,6 +14,12 @@ grouped by what changed rather than by version.
 - **Landing page** at `/` with the profile chooser: every profile as a card,
   inline creation, and a canvas particle field that pauses in a background tab
   and renders a single static frame under `prefers-reduced-motion`.
+- **Local embeddings, used by default.** Atlas embeds on your own machine with
+  a small ONNX model, so a fresh clone can upload, index and search documents
+  before any API key exists. It is also the fallback whenever the configured
+  provider cannot embed — no key, or no embeddings API at all — so search stops
+  being something that can be switched off by a chat-provider choice. An
+  explicitly chosen embedding provider is never silently replaced.
 - **Separate providers for chat and embeddings.** Choosing a chat provider with
   no embeddings API — OpenRouter, Groq, Anthropic, DeepSeek — no longer takes
   document search down with it.

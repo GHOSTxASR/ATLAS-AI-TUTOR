@@ -5,11 +5,32 @@ from typing import Any
 
 from app.config import Settings, project_root, get_settings
 from app.exceptions import AtlasError
-from app.models.model_catalog import PROVIDERS_WITHOUT_EMBEDDINGS, FALLBACK_MODELS, get_models, indexed_embedding_models
+from app.models.model_catalog import (
+    FALLBACK_MODELS,
+    LOCAL_EMBEDDING_MODEL,
+    LOCAL_EMBEDDING_PROVIDER,
+    PROVIDERS_WITHOUT_EMBEDDINGS,
+    get_models,
+    indexed_embedding_models,
+)
 from app.models.provider_factory import get_all_providers, get_model_client
 from app.models.resilience import provider_error_from
 from app.security.keystore import KeyStore
 
+
+
+#: Backends that can embed but cannot chat, so they have no place in
+#: get_all_providers() and still need to be offerable for embeddings.
+EMBEDDING_ONLY_PROVIDERS: list[dict[str, object]] = [
+    {
+        "id": LOCAL_EMBEDDING_PROVIDER,
+        "label": "On this device (no API key)",
+        "env_key": "",
+        "default_model": LOCAL_EMBEDDING_MODEL,
+        "docs_url": "",
+        "key_set": True,
+    }
+]
 
 
 class SettingsService:
@@ -46,9 +67,27 @@ class SettingsService:
             # Empty when embeddings follow chat; the UI needs to tell the two
             # states apart to show "same as chat" rather than a stale pick.
             "embedding_provider": self.settings.model.embedding_provider.lower(),
-            "active_embedding_provider": self.settings.model.effective_embedding_provider,
+            # What is actually serving embeddings, which is not always what was
+            # configured: with nothing set, or a chat provider that cannot
+            # embed, this resolves to the local backend. The page should say so
+            # rather than report a provider that is not doing the work.
+            "active_embedding_provider": self._resolved_embedding_provider(),
             "providers_without_embeddings": sorted(PROVIDERS_WITHOUT_EMBEDDINGS),
+            "embedding_only_providers": EMBEDDING_ONLY_PROVIDERS,
         }
+
+    def _resolved_embedding_provider(self) -> str:
+        """Ask the embedder who it would actually use.
+
+        Constructing it is cheap -- resolution is pure config, and the ONNX
+        model is only loaded when something is embedded.
+        """
+        from app.pipelines.embedder import DocumentEmbedder
+
+        try:
+            return DocumentEmbedder(settings=self.settings).provider
+        except Exception:
+            return self.settings.model.effective_embedding_provider
 
     async def list_models(
         self, provider: str | None = None, *, refresh: bool = False

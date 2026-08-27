@@ -77,6 +77,7 @@ def test_gemini_provider_gets_a_gemini_embedding_model(monkeypatch, tmp_path):
         ATLAS_EMBEDDING_BACKEND="auto",
         ATLAS_MODEL_PROVIDER="gemini",
         ATLAS_EMBEDDING_MODEL="text-embedding-3-small",
+        GEMINI_API_KEY="test-key-not-real",
     )
     assert embedder.embedding_model == "gemini-embedding-001"
 
@@ -88,6 +89,7 @@ def test_explicit_embedding_model_is_honoured(monkeypatch, tmp_path):
         ATLAS_EMBEDDING_BACKEND="auto",
         ATLAS_MODEL_PROVIDER="gemini",
         ATLAS_EMBEDDING_MODEL="gemini-embedding-2",
+        GEMINI_API_KEY="test-key-not-real",
     )
     assert embedder.embedding_model == "gemini-embedding-2"
 
@@ -103,8 +105,16 @@ def test_production_default_never_uses_hash_backend(monkeypatch, tmp_path):
     assert embedder.embedding_model != HASH_BACKEND_MODEL
 
 
-async def test_provider_without_embeddings_api_raises(monkeypatch, tmp_path):
-    """Anthropic/Groq/etc. have no embeddings endpoint - say so, don't fake it."""
+async def test_provider_without_embeddings_api_raises_when_no_local_backend(
+    monkeypatch, tmp_path
+):
+    """Anthropic/Groq/etc. have no embeddings endpoint - say so, don't fake it.
+
+    With fastembed installed this case now falls back to local embeddings
+    (see test_local_embeddings.py). Without it there is nothing to fall back
+    to, and the error still has to name the real problem.
+    """
+    monkeypatch.setattr("app.pipelines.embedder._LOCAL_EMBEDDINGS_AVAILABLE", False)
     embedder = _embedder(
         monkeypatch,
         tmp_path,
@@ -117,6 +127,8 @@ async def test_provider_without_embeddings_api_raises(monkeypatch, tmp_path):
 
 
 async def test_missing_api_key_raises_instead_of_fabricating(monkeypatch, tmp_path):
+    """Without a local backend, a missing key is still an error, not a guess."""
+    monkeypatch.setattr("app.pipelines.embedder._LOCAL_EMBEDDINGS_AVAILABLE", False)
     monkeypatch.delenv("OPENAI_API_KEY", raising=False)
     embedder = _embedder(
         monkeypatch,

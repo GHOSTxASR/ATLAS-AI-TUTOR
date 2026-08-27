@@ -21,6 +21,8 @@ from app.models.model_catalog import (
     DEFAULT_EMBEDDING_MODELS,
     GEMINI_EMBEDDING_BASE_URL,
     GEMINI_EMBEDDING_DIMENSION,
+    LOCAL_EMBEDDING_MODEL,
+    LOCAL_EMBEDDING_PROVIDER,
     OPENAI_COMPATIBLE_EMBEDDING_URLS,
     PROVIDERS_WITHOUT_EMBEDDINGS,
 )
@@ -36,6 +38,12 @@ try:
 except ImportError:
     _CHROMADB_AVAILABLE = False
     ClientAPI = Any  # type: ignore
+
+try:
+    import fastembed  # noqa: F401
+    _LOCAL_EMBEDDINGS_AVAILABLE = True
+except ImportError:
+    _LOCAL_EMBEDDINGS_AVAILABLE = False
 
 
 # Global singleton ChromaDB client to avoid SQLite file locks in embedded mode
@@ -82,6 +90,45 @@ HASH_BACKEND_NAME = "hash"
 HASH_BACKEND_MODEL = "hash-dev-1536"
 
 
+# The ONNX model is a few hundred milliseconds to load and ~130MB to fetch the
+# very first time, so it is held for the life of the process rather than
+# rebuilt per request.
+_LOCAL_MODEL: Any = None
+_LOCAL_MODEL_NAME: str | None = None
+
+
+def get_local_embedding_model(model_name: str) -> Any:
+    """Return the process-wide local embedding model, loading it on first use."""
+    global _LOCAL_MODEL, _LOCAL_MODEL_NAME
+    if _LOCAL_MODEL is None or _LOCAL_MODEL_NAME != model_name:
+        from fastembed import TextEmbedding
+
+        logger.info("Loading local embedding model %s (first run downloads it)", model_name)
+        _LOCAL_MODEL = TextEmbedding(model_name=model_name)
+        _LOCAL_MODEL_NAME = model_name
+    return _LOCAL_MODEL
+
+
+def provider_can_embed(settings: Settings, provider: str) -> bool:
+    """Whether `provider` could actually produce embeddings right now.
+
+    Both halves matter: some providers have no embeddings API at all, and the
+    ones that do still need a key.
+    """
+    if not provider or provider in PROVIDERS_WITHOUT_EMBEDDINGS:
+        return False
+    if provider in (LOCAL_EMBEDDING_PROVIDER, "ollama"):
+        return True  # Runs locally; there is no key to check.
+
+    from app.models.provider_factory import OPENAI_COMPATIBLE_PROVIDERS
+
+    env_keys = {
+        "gemini": "GEMINI_API_KEY",
+        **{pid: info["env_key"] for pid, info in OPENAI_COMPATIBLE_PROVIDERS.items()},
+    }
+    return bool(resolve_api_key(settings, provider, env_keys.get(provider, "OPENAI_API_KEY")))
+
+
 def generate_deterministic_embedding(text: str, dim: int = 1536) -> list[float]:
     """Deterministic pseudo-random unit vector derived from text.
 
@@ -126,13 +173,14 @@ class DocumentEmbedder:
         self.settings = settings or get_settings()
         self.repo = repo
         self.chroma_dir = self.settings.paths.chroma_dir
-        # Deliberately the embedding provider, not the chat one: everything
-        # downstream in this class keys off self.provider, so splitting the
-        # two is a matter of resolving it here.
-        self.provider = self.settings.model.effective_embedding_provider
         self.use_hash_backend = (
             getattr(self.settings.model, "embedding_backend", "auto") == HASH_BACKEND_NAME
         )
+        # Deliberately the embedding provider, not the chat one: everything
+        # downstream in this class keys off self.provider, so splitting the
+        # two is a matter of resolving it here.
+        self.provider_was_inferred = False
+        self.provider = self._resolve_provider()
         self.embedding_model = self._resolve_embedding_model()
         if self.use_hash_backend and not DocumentEmbedder._hash_backend_warned:
             DocumentEmbedder._hash_backend_warned = True
@@ -142,6 +190,37 @@ class DocumentEmbedder:
                 "offline development or tests.",
                 HASH_BACKEND_NAME,
             )
+
+    def _resolve_provider(self) -> str:
+        """Pick who serves embeddings, defaulting to this machine.
+
+        An explicit ``embedding_provider`` is always honoured, including when
+        it cannot serve -- a chosen provider that fails should say so rather
+        than quietly become something else.
+
+        The fallback covers the case where nothing was chosen: a fresh install
+        follows the chat provider, which defaults to OpenAI and has no key, so
+        indexing a document used to fail before the app had ever been
+        configured. Falling back to local embeddings makes the app work out of
+        the box, and it also rescues chat providers with no embeddings API of
+        their own (OpenRouter, Groq, Anthropic, DeepSeek).
+        """
+        configured = self.settings.model.effective_embedding_provider
+
+        if self.use_hash_backend or self.settings.model.embedding_provider:
+            return configured
+        if provider_can_embed(self.settings, configured):
+            return configured
+        if not _LOCAL_EMBEDDINGS_AVAILABLE:
+            return configured
+
+        self.provider_was_inferred = True
+        logger.info(
+            "No embeddings backend configured for '%s'; using local embeddings (%s).",
+            configured or "unset",
+            LOCAL_EMBEDDING_MODEL,
+        )
+        return LOCAL_EMBEDDING_PROVIDER
 
     def _resolve_embedding_model(self) -> str:
         """Pick the embedding model for the active provider.
@@ -159,6 +238,11 @@ class DocumentEmbedder:
         configured = (self.settings.model.embedding_model or "").strip()
         provider_default = DEFAULT_EMBEDDING_MODELS.get(self.provider, self.DEFAULT_EMBEDDING_MODEL)
 
+        # A provider we inferred rather than one the user picked means the
+        # configured model name was chosen for somebody else. Carrying
+        # "gemini-embedding-001" over to the local backend just fails.
+        if self.provider_was_inferred:
+            return provider_default
         if not configured:
             return provider_default
         if configured == self.DEFAULT_EMBEDDING_MODEL and self.provider != "openai":
@@ -241,6 +325,18 @@ class DocumentEmbedder:
 
             return await retry_async(_request, provider="gemini")
 
+    async def _call_local_embeddings(self, texts: list[str]) -> list[list[float]]:
+        """Embed on this machine with a small ONNX model.
+
+        fastembed is synchronous and CPU-bound, so it runs off the event loop.
+        """
+
+        def _run() -> list[list[float]]:
+            model = get_local_embedding_model(self.embedding_model)
+            return [vector.tolist() for vector in model.embed(texts)]
+
+        return await asyncio.to_thread(_run)
+
     async def _call_ollama_embeddings(self, texts: list[str], base_url: str = "http://localhost:11434") -> list[list[float]]:
         """Call the Ollama embedding endpoint once per text."""
         vectors: list[list[float]] = []
@@ -313,6 +409,14 @@ class DocumentEmbedder:
 
         if self.use_hash_backend:
             return [generate_deterministic_embedding(t, self.DEFAULT_DIMENSION) for t in texts]
+
+        if self.provider == LOCAL_EMBEDDING_PROVIDER:
+            if not _LOCAL_EMBEDDINGS_AVAILABLE:
+                raise EmbeddingUnavailableError(
+                    "Local embeddings need the 'fastembed' package, which is not "
+                    "installed. Run: pip install -r requirements.txt"
+                )
+            return await self._call_local_embeddings(texts)
 
         if self.provider in PROVIDERS_WITHOUT_EMBEDDINGS:
             supported = ", ".join(sorted(DEFAULT_EMBEDDING_MODELS))

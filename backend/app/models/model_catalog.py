@@ -44,9 +44,17 @@ OPENAI_COMPATIBLE_EMBEDDING_URLS: dict[str, str] = {
 # indexed while one of these is the active provider.
 PROVIDERS_WITHOUT_EMBEDDINGS = frozenset({"anthropic", "groq", "deepseek", "openrouter"})
 
+#: Embeddings that run on this machine. No API key, no account, and after the
+#: first run no network either -- which is what lets a fresh clone index a
+#: document before the user has configured anything at all.
+LOCAL_EMBEDDING_PROVIDER = "local"
+LOCAL_EMBEDDING_MODEL = "BAAI/bge-small-en-v1.5"
+LOCAL_EMBEDDING_DIMENSION = 384
+
 # Sensible per-provider default, used when the global embedding_model setting
 # still holds its cross-provider default value.
 DEFAULT_EMBEDDING_MODELS: dict[str, str] = {
+    LOCAL_EMBEDDING_PROVIDER: LOCAL_EMBEDDING_MODEL,
     "openai": "text-embedding-3-small",
     "mistral": "mistral-embed",
     "together": "BAAI/bge-base-en-v1.5",

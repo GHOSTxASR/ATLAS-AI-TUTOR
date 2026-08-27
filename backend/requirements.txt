@@ -20,6 +20,12 @@ pytesseract>=0.3.10
 opencv-python-headless>=4.9.0
 chromadb>=0.5.0
 tiktoken>=0.7.0
+
+# Local embeddings, so a fresh install can index and search documents before
+# any API key exists. Runs a small ONNX model on the CPU -- no account, and no
+# network after it fetches the model (~130MB) on first use.
+fastembed>=0.8.0
+
 apscheduler>=3.10.0
 # Imported directly by the knowledge graph and OCR pipelines. Both were
 # previously only present transitively, so a clean install could not boot.

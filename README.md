@@ -49,7 +49,13 @@ hardcoded. Any model id can also be typed in by hand.
 offers an embeddings API — Anthropic, Groq, DeepSeek and OpenRouter do not — but
 that no longer constrains your chat model. Pick any provider for chat, and one
 of OpenAI, Gemini, Mistral, Together or a local Ollama model for embeddings.
-Settings warns you if the embedding provider you choose cannot index documents.
+
+**Embeddings need no API key at all.** By default Atlas embeds on your own
+machine with a small ONNX model (`BAAI/bge-small-en-v1.5`, ~130 MB, fetched
+once on first use). So document upload, semantic search and the knowledge graph
+work on a fresh clone before you have configured anything — and they keep
+working if you pick a chat provider that has no embeddings API of its own. Set
+an embedding provider explicitly in Settings to override it.
 
 ---
 
@@ -83,9 +89,11 @@ start.bat
 
 Atlas is then available at **<http://127.0.0.1:8000>**.
 
-On first run you will be asked to create a learner profile. To use a hosted
-model, open **Settings** and paste an API key — it is encrypted at rest before
-being written to disk. Ollama needs no key.
+On first run you will be asked to create a learner profile. Document upload and
+search work immediately — embeddings run locally and need no key. For the AI
+tutor, quizzes and roadmap generation you need a chat model: open **Settings**
+and paste an API key (encrypted at rest before being written to disk), or point
+Atlas at a local Ollama model, which needs no key either.
 
 ## Local URLs
 
