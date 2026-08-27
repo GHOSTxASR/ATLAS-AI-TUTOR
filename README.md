@@ -9,6 +9,8 @@ locally. Your documents, notes, progress and API keys never leave your machine.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
+![Atlas — a tour: pick a profile, see your progress, ask the tutor, follow the roadmap, explore the graph](docs/demo.gif)
+
 ---
 
 ## Screenshots
