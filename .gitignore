@@ -48,3 +48,28 @@ Thumbs.db
 # Internal AI-agent working files (kept locally, not distributed)
 .agents/
 ORIGINAL_REQUEST.md
+
+# Coding-agent instructions and scratch state. These describe how to drive an
+# assistant against this repo; they are not part of the software and they date
+# badly, so they stay on the machine that made them.
+CLAUDE.md
+AGENTS.md
+GEMINI.md
+.claude/
+.cursor/
+.cursorrules
+.aider*
+.windsurfrules
+.continue/
+.clinerules
+.roo/
+.github/copilot-instructions.md
+.specstory/
+.tabnine/
+
+# Planning and handoff documents written before or alongside the build. The
+# reference docs in docs/ describe how Atlas works and stay; these describe how
+# it was going to be built, and are already contradicted by the code in places.
+docs/00_IMPLEMENTATION_PLAN.md
+docs/15_IMPLEMENTATION_COVERAGE_AUDIT.md
+docs/20_AGENT_GUIDE.md

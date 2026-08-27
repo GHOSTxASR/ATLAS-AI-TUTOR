@@ -213,7 +213,7 @@ If Alembic `upgrade head` fails on startup:
 *   **Window Functions**: Used heavily in `AnalyticsService` for computing moving averages of mastery without pulling all rows into Python.
 
 ## 18. Master Plan Schema Alignment
-The table list in Section 3 is a compact starting point. The implementation must use the fuller schema below so the database matches `00_IMPLEMENTATION_PLAN.md`.
+The table list in Section 3 is a compact starting point; the fuller schema below is what the migrations in `backend/alembic/versions/` actually build.
 
 ### Required Field Additions
 | Table | Add / Preserve These Fields | Reason |

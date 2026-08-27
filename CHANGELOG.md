@@ -25,6 +25,19 @@ versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   backend with `--reload` and the Vite dev server together and stops both at
   once.
 
+- **A clean repository root.** Only `install.py`, `start.py` and the standard
+  project files (README, LICENSE, CHANGELOG, CONTRIBUTING, SECURITY) remain at
+  the top level; the double-click shims moved to `scripts/`.
+
+- **Planning and coding-agent documents are no longer distributed.** The
+  implementation plan, its coverage audit and the agent guide described how
+  Atlas was going to be built rather than how it works, and had drifted from
+  the code — the plan still specified scripts that no longer exist. They stay
+  on the machine that made them, along with the usual assistant files
+  (`CLAUDE.md`, `AGENTS.md`, `.cursor/`, and so on). The reference docs in
+  `docs/` that describe the running system are unaffected, and `docs/README.md`
+  is now an index for people rather than a handoff note for agents.
+
 - **The installer is now tested by CI, on Windows as well as Linux.** It runs
   `install.py`, boots what that produced, exercises the database, and checks
   that `start.py` refuses clearly when run before installing. `install.bat`

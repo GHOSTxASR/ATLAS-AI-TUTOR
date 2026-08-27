@@ -219,10 +219,10 @@ Frontend (React/Vite)
 *   **Portability**: Primary target Windows, but fully compatible with macOS and Linux. Standardized path handling.
 
 ## 16. Build-Time Architecture Contracts
-These contracts fill in details from `00_IMPLEMENTATION_PLAN.md` that coding agents must preserve while building the repository.
+These contracts record decisions the implementation depends on.
 
 ### Source of Truth Rules
-*   `00_IMPLEMENTATION_PLAN.md` remains the product and system source of truth. This file is the architecture working reference.
+*   The code is the source of truth. This file is the architecture working reference.
 *   If this file conflicts with the master plan, prefer the master plan, then update this file in the same change.
 *   Any feature that changes data ownership, service boundaries, ports, startup order, or persistence must update this file and the affected specialist document.
 

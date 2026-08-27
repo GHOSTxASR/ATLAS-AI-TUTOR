@@ -82,10 +82,10 @@ Then run it, any time:
 python start.py
 ```
 
-On Windows you can double-click **`install.bat`** and **`start.bat`** instead;
-on macOS/Linux, **`./install.sh`** and **`./start.sh`**. All four are one-line
-shims onto the same two Python scripts, so there is only one implementation to
-keep working.
+Prefer double-clicking? `scripts/` holds **`install.bat`** and **`start.bat`**
+for Windows, **`install.sh`** and **`start.sh`** for macOS/Linux. All four are
+one-line shims onto the same two Python scripts, so there is only one
+implementation to keep working.
 
 Stop Atlas with **Ctrl+C** in the window it is running in.
 

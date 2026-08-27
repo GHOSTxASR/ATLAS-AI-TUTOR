@@ -4,7 +4,7 @@
 This document defines the security and privacy requirements for Atlas. The application is local-first, but local applications still need careful handling of secrets, files, logs, deletion, and outbound AI-provider calls.
 
 Related documents:
-* `00_IMPLEMENTATION_PLAN.md`: master source of truth.
+* The code is the source of truth; this file records the intent behind it.
 * `04_API_SPECIFICATION.md`: API errors and endpoint behavior.
 * `06_BACKEND_ARCHITECTURE.md`: middleware, exception handling, and services.
 * `13_DEPLOYMENT.md`: local setup, packaging, and script behavior.

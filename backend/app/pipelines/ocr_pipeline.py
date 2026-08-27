@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 # ─────────────────────────────────────────────────────────────
 # Configuration constants
 # ─────────────────────────────────────────────────────────────
-# Tesseract config modes (see 00_IMPLEMENTATION_PLAN.md section 22.2).
+# Tesseract page-segmentation / engine modes.
 PSM = 3   # Fully automatic page segmentation
 OEM = 3   # Default engine (LSTM neural nets + legacy)
 
@@ -255,7 +255,7 @@ def _join_orphan_characters(text: str) -> str:
 class OcrPipeline:
     """Tesseract-based OCR for standalone images and scanned/image PDFs.
 
-    Trigger conditions (00_IMPLEMENTATION_PLAN.md section 22.1):
+    Trigger conditions:
     * File type is an image (PNG, JPG, TIFF, WEBP).
     * PDF is flagged as image-based (no extractable text layer).
 

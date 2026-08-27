@@ -4,7 +4,7 @@
 This document defines the product experience, interaction model, visual system, and page-level acceptance criteria for Atlas. It expands the frontend architecture into concrete UI/UX instructions that a coding agent can implement without guessing.
 
 Related documents:
-* `00_IMPLEMENTATION_PLAN.md`: master source of truth.
+* The code is the source of truth; this file records the intent behind it.
 * `04_API_SPECIFICATION.md`: backend payloads and WebSocket contracts.
 * `05_FRONTEND_ARCHITECTURE.md`: frontend architecture and state ownership.
 * `14_DEVELOPMENT_ROADMAP.md`: implementation sequence and phase gates.
