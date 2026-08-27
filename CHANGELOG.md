@@ -5,9 +5,13 @@ versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-Everything below is the work leading up to the first tagged release. Atlas has
-not been released yet, so there is no upgrade path to describe: entries are
-grouped by what changed rather than by version.
+Nothing yet.
+
+## [0.1.0] - 2026-08-27
+
+First tagged release. Everything below is the work leading up to it, so there
+is no upgrade path to describe: entries are grouped by what changed rather
+than by version.
 
 ### Added
 
@@ -118,4 +122,5 @@ grouped by what changed rather than by version.
 - Uploads are validated by magic bytes rather than extension, size-capped, and
   stored under generated names so a filename cannot traverse.
 
-[Unreleased]: https://github.com/OWNER/atlas/commits/master
+[Unreleased]: https://github.com/OWNER/atlas/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/OWNER/atlas/releases/tag/v0.1.0
