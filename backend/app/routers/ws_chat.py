@@ -18,6 +18,7 @@ from app.models.provider_factory import get_model_client
 from app.models.resilience import provider_error_from, sanitize_provider_text
 from app.rag.pipeline import RAGPipeline
 from app.schemas.chat import LearningMode
+from app.security.origins import is_allowed_origin
 from app.services.memory_service import MemoryService
 from app.services.tutor_orchestrator import TutorOrchestrator
 from app.tasks.background import spawn
@@ -39,6 +40,17 @@ async def ws_chat(websocket: WebSocket, profile_id: str, session_id: str):
                   {"type": "done", "message_id": "..."} when complete
                   {"type": "error", "content": "..."} on error
     """
+    # CORS does not apply to WebSockets, so without this any page the user
+    # happens to visit could open a socket to this endpoint and drive the
+    # tutor -- spending their provider credits and reading back answers built
+    # from their own documents. Refused before `accept()`, so the handshake
+    # never completes.
+    origin = websocket.headers.get("origin")
+    if not is_allowed_origin(origin, get_settings()):
+        logger.warning("Rejected WebSocket handshake from origin %r", origin)
+        await websocket.close(code=1008, reason="Origin not allowed")
+        return
+
     await websocket.accept()
 
     try:

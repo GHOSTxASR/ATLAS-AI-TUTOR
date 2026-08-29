@@ -11,7 +11,10 @@ starlette>=1.0.1
 
 fastapi==0.141.1
 uvicorn==0.29.0
-python-dotenv==1.0.1
+# Not imported anywhere -- Atlas reads .env with its own loader in
+# app/utils/env_utils.py. It arrives transitively (pydantic-settings, uvicorn),
+# and pinning it here only served to hold it at a version with a symlink-
+# following bug in set_key/unset_key. Left to resolve forward.
 sqlalchemy[asyncio]==2.0.36
 alembic==1.13.1
 aiosqlite==0.20.0

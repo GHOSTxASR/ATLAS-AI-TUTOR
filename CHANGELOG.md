@@ -28,6 +28,30 @@ versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `ATLAS_HOST` to anything else now prints a clear warning naming what that
   exposes (documents, memory, any configured provider key) rather than
   silently doing it.
+- **The chat WebSocket now checks `Origin`.** CORS does not apply to
+  WebSockets, so any page you visited could previously open a socket to the
+  tutor — spending your provider credits and reading back answers built from
+  your own documents. The handshake is now refused before `accept()` unless
+  the origin is loopback. (Exploiting it needed a profile and session UUID,
+  which CORS keeps out of a foreign page's reach, so this was hard to use in
+  practice — but it should never have been reachable.)
+- **Cross-origin writes are blocked.** CORS stops another site *reading* a
+  response but not *causing* the request; a form on any page could POST to
+  `127.0.0.1` as a simple request. JSON endpoints were already protected by
+  the preflight this forces, but the two `multipart/form-data` endpoints
+  (document upload, profile import) were the exact shape a cross-origin form
+  can produce. Requests whose `Origin` is not loopback are now rejected with
+  403. A missing `Origin` is still allowed, so curl and native clients work.
+- **Security response headers**, verified against the running app rather than
+  just set: a Content Security Policy (`script-src 'self'`, `object-src
+  'none'`, `frame-ancestors 'none'`, no `unsafe-eval`) plus `nosniff`,
+  `X-Frame-Options`, `Referrer-Policy: no-referrer` and a `Permissions-Policy`
+  denying camera/microphone/geolocation/payment. `Strict-Transport-Security`
+  is deliberately not sent — Atlas is plain HTTP on loopback, and pinning a
+  browser to HTTPS for `localhost` would break every local app on that origin.
+- **Dropped the `python-dotenv` pin.** It is imported nowhere (Atlas reads
+  `.env` with its own loader); the pin only held it at a version with a
+  symlink-following bug in `set_key`/`unset_key`.
 
 ### Changed
 

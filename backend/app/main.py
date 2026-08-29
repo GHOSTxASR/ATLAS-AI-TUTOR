@@ -15,6 +15,9 @@ from app.config import APP_TAGLINE, get_settings
 from app.exceptions import AtlasError
 from app.pipelines.embedder import EmbeddingUnavailableError
 from app.lifespan import lifespan
+from app.security.http_headers import SecurityHeadersMiddleware
+from app.security.origin_guard import OriginGuardMiddleware
+from app.security.origins import LOOPBACK_ORIGIN_REGEX, allowed_origins
 from app.security.redaction import redact_secrets
 from app.utils.file_utils import ensure_within_directory
 from app.utils.logging import configure_logging
@@ -51,18 +54,24 @@ def create_app() -> FastAPI:
         version=settings.app.version,
         lifespan=lifespan,
     )
+    # Middleware runs in reverse registration order, so these are added
+    # outermost-last: the security headers wrap everything (including the
+    # 403 the origin guard returns), and the origin guard runs before any
+    # route code so a blocked write never reaches a handler.
+    app.add_middleware(SecurityHeadersMiddleware)
+    app.add_middleware(OriginGuardMiddleware)
+
     # In production the SPA is served from this same origin, so no cross-origin
     # access is needed at all. Development allows only the Vite dev server.
     # `allow_origins=["*"]` together with `allow_credentials=True` is an invalid
     # combination and would have let any site call this API with cookies.
-    dev_origins = [
-        f"http://{host}:{port}"
-        for host in ("localhost", "127.0.0.1")
-        for port in (5173, settings.server.port)
-    ]
+    # The regex is what actually matches, so the app is not broken by running
+    # on a port other than the configured one; the explicit list keeps the
+    # common origins readable in the configuration.
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=sorted(set(dev_origins)),
+        allow_origins=allowed_origins(settings),
+        allow_origin_regex=LOOPBACK_ORIGIN_REGEX,
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],

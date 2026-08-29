@@ -123,7 +123,15 @@ API keys are encrypted with Fernet (AES-128-CBC + HMAC-SHA256) into
 account. Keys are redacted from logs and error messages, and are never included
 in request URLs.
 
-The only network calls Atlas makes are to the model provider you configure.
+The only network calls Atlas makes with **your data** are to the model provider
+you configure. Two others carry no data of yours: the interface loads its fonts
+from Google Fonts, and the local embedding model is downloaded once from
+Hugging Face on first use.
+
+Atlas serves itself over plain HTTP on `127.0.0.1` and has **no login** — the
+loopback binding is what keeps it private. It sets a strict Content Security
+Policy, refuses cross-origin writes and WebSocket handshakes, and warns you if
+you start it on a non-loopback address.
 
 > The in-repository `profiles/` folder is a structural placeholder and must not
 > contain real user data.
