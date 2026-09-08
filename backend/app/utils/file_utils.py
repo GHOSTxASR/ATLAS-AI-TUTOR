@@ -1,10 +1,13 @@
 from __future__ import annotations
 
 import hashlib
+import os
 import re
+import tempfile
 import uuid
+from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, AsyncIterator
 
 from app.exceptions import AtlasError
 
@@ -51,6 +54,51 @@ async def read_upload_within_limit(
             )
         chunks.append(chunk)
     return b"".join(chunks)
+
+
+@asynccontextmanager
+async def upload_to_temp_file(
+    file: "UploadFile",
+    max_bytes: int,
+    *,
+    error_message: str,
+    error_details: dict[str, Any] | None = None,
+    suffix: str = "",
+    chunk_size: int = _UPLOAD_CHUNK_SIZE,
+) -> AsyncIterator[Path]:
+    """Stream an upload to a temporary file and yield its path.
+
+    For uploads that are consumed by something able to work from disk -- a ZIP
+    archive, say. `read_upload_within_limit` still has to hold the whole body
+    in memory to return it; this never holds more than one chunk, so the size
+    limit stops being what protects memory and becomes an ordinary policy
+    choice.
+
+    The file is removed when the block exits, on success or on failure.
+    """
+    fd, temp_name = tempfile.mkstemp(prefix="atlas-upload-", suffix=suffix)
+    temp_path = Path(temp_name)
+    try:
+        total = 0
+        # fdopen takes ownership of the descriptor, so the file is closed
+        # exactly once even if the limit check raises mid-write.
+        with os.fdopen(fd, "wb") as out:
+            while True:
+                chunk = await file.read(chunk_size)
+                if not chunk:
+                    break
+                total += len(chunk)
+                if total > max_bytes:
+                    raise AtlasError(
+                        status_code=422,
+                        code="VALIDATION_ERROR",
+                        message=error_message,
+                        details=error_details or {},
+                    )
+                out.write(chunk)
+        yield temp_path
+    finally:
+        temp_path.unlink(missing_ok=True)
 
 
 def sha256_file(path: Path) -> str:

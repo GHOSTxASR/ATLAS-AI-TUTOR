@@ -10,7 +10,7 @@ from app.dependencies import get_settings_dependency
 from app.schemas.profile import ProfileCreate, ProfileResponse, ProfileUpdate
 from app.services.profile_service import ProfileService
 from app.tasks.document_pipeline_task import process_pending_documents_for_profile
-from app.utils.file_utils import read_upload_within_limit
+from app.utils.file_utils import upload_to_temp_file
 
 router = APIRouter(prefix="/api/v1/profiles", tags=["profiles"])
 
@@ -50,13 +50,17 @@ async def import_profile(
     the source files but not the vectors.
     """
     max_bytes = settings.ingestion.max_import_size_mb * 1024 * 1024
-    content = await read_upload_within_limit(
+    # Streamed to disk rather than held in memory: an export bundles every
+    # document a profile owns, so buffering it made the size limit a memory
+    # limit. The temp file is removed when this block exits either way.
+    async with upload_to_temp_file(
         file,
         max_bytes,
+        suffix=".zip",
         error_message=f"Import archive exceeds the {settings.ingestion.max_import_size_mb}MB limit.",
         error_details={"max_import_size_mb": settings.ingestion.max_import_size_mb},
-    )
-    profile = await service.import_profile(content)
+    ) as archive:
+        profile = await service.import_profile(archive)
     background_tasks.add_task(process_pending_documents_for_profile, profile.id)
     return envelope(data=ProfileResponse.model_validate(profile).model_dump())
 

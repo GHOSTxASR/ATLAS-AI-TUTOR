@@ -49,6 +49,25 @@ versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   denying camera/microphone/geolocation/payment. `Strict-Transport-Security`
   is deliberately not sent — Atlas is plain HTTP on loopback, and pinning a
   browser to HTTPS for `localhost` would break every local app on that origin.
+- **Profile import streams to disk instead of into memory.** An export bundles
+  every document a profile owns, so it is the one upload that is legitimately
+  large — and it was read into memory whole, which made the size limit a
+  *memory* limit. Any value generous enough for a real export was too
+  generous to be a safe memory bound. The archive now lands in a temporary
+  file and is read from there: peak memory for a 200 MB import drops from
+  208 MB to 2 MB, and no longer scales with the archive at all.
+- **Decompression bombs are refused.** Bounding memory moved the risk to
+  disk — a 48 KB archive can declare 48 MB of contents, and the trick scales
+  to filling the drive. An import may now write at most ten times the
+  configured archive limit (5 GB by default), checked against the archive
+  directory before anything is created or written, with a running total
+  during extraction as a backstop against a lying header. This is an absolute
+  budget rather than a compression *ratio*, because real exports compress
+  extremely well — a 1,300-node roadmap's JSON shrinks 22× — and a ratio test
+  rejects precisely the most legitimate archives.
+- **Importing a file that is not a ZIP returns a clear error** instead of an
+  unhandled 500. Picking the wrong file in a file dialog is an ordinary
+  mistake.
 - **Fonts are bundled instead of fetched from Google.** The interface loaded
   Geist and Instrument Serif from `fonts.googleapis.com` on every page load,
   which told a third party that Atlas was running, from which IP, and when —

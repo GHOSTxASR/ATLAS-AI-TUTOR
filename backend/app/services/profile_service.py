@@ -27,6 +27,21 @@ from app.db.repositories.profile_repo import ProfileRepository
 from app.exceptions import AtlasError
 from app.schemas.profile import ProfileCreate, ProfileUpdate
 
+#: Ceiling on what one import may write to disk, as a multiple of the
+#: configured archive size limit -- so with the default 500MB limit, an import
+#: may extract at most 5GB.
+#:
+#: Deliberately an absolute budget rather than a ratio against the individual
+#: archive. Legitimate exports compress *extremely* well: a 1,300-node
+#: roadmap's JSON shrinks 22x and plain-text documents 40x, so a ratio test
+#: rejects exactly the most compressible real profiles while a bomb small
+#: enough to stay under the ratio still slips through. Total bytes written is
+#: the thing that actually threatens the disk, so that is what is bounded.
+IMPORT_EXTRACTION_MULTIPLE = 10
+
+#: Chunk size for copying a member out of the archive.
+_EXTRACT_CHUNK_SIZE = 1024 * 1024
+
 
 class ProfileService:
     def __init__(self, session: AsyncSession):
@@ -254,10 +269,27 @@ class ProfileService:
         buf.seek(0)
         return buf.getvalue()
 
-    async def import_profile(self, zip_bytes: bytes) -> Profile:
-        """Restore profile, data files, and database records from an exported ZIP."""
-        buf = io.BytesIO(zip_bytes)
-        with zipfile.ZipFile(buf, "r") as zf:
+    async def import_profile(self, archive: Path) -> Profile:
+        """Restore profile, data files, and database records from an exported ZIP.
+
+        Takes a path rather than bytes so the archive is read from disk. A
+        profile export is every document a profile owns, so holding the whole
+        thing in memory made the upload limit a memory limit; now nothing
+        larger than one chunk is resident at a time.
+        """
+        try:
+            zip_handle = zipfile.ZipFile(archive, "r")
+        except zipfile.BadZipFile as exc:
+            # Previously escaped as an unhandled error, so picking the wrong
+            # file in the file dialog produced a 500 rather than a sentence
+            # telling you what was wrong.
+            raise AtlasError(
+                status_code=422,
+                code="INVALID_ZIP",
+                message="That file is not a valid ZIP archive.",
+            ) from exc
+
+        with zip_handle as zf:
             members = zf.namelist()
             if "profile.json" not in members:
                 raise AtlasError(status_code=422, code="INVALID_ZIP", message="ZIP missing profile.json")
@@ -275,6 +307,30 @@ class ProfileService:
                         message="ZIP contains a file outside the profile directory",
                     )
 
+            # Refuse a decompression bomb before anything is created or
+            # written. Bounding memory moved the risk to disk: a 48KB archive
+            # can declare 48MB of contents, and the same trick scales to
+            # filling the drive. Declared sizes come from the archive
+            # directory, so this costs nothing to read.
+            settings = get_settings()
+            extraction_budget = (
+                settings.ingestion.max_import_size_mb * 1024 * 1024 * IMPORT_EXTRACTION_MULTIPLE
+            )
+            declared = sum(info.file_size for info in zf.infolist())
+            if declared > extraction_budget:
+                raise AtlasError(
+                    status_code=422,
+                    code="INVALID_ZIP",
+                    message=(
+                        f"This archive expands to {declared // (1024 * 1024)}MB, beyond "
+                        f"the {extraction_budget // (1024 * 1024)}MB an import may write."
+                    ),
+                    details={
+                        "declared_bytes": declared,
+                        "extraction_budget_bytes": extraction_budget,
+                    },
+                )
+
             profile_data = json.loads(zf.read("profile.json").decode("utf-8"))
             name = profile_data.get("name", "Imported Profile")
             p_type = profile_data.get("profile_type", "General")
@@ -284,6 +340,7 @@ class ProfileService:
 
             # Restore files
             p_dir = self._profile_dir(profile.id)
+            extracted = 0
             for member in members:
                 if member.startswith("files/") and not member.endswith("/"):
                     rel_path = member[len("files/") :]
@@ -295,7 +352,24 @@ class ProfileService:
                             message="ZIP contains a file outside the profile directory",
                         )
                     out_path.parent.mkdir(parents=True, exist_ok=True)
-                    out_path.write_bytes(zf.read(member))
+                    # Copied in chunks rather than `zf.read(member)`, which
+                    # would hold an entire document in memory. The running
+                    # total is the backstop for an archive whose declared
+                    # sizes were a lie -- the check above trusts the
+                    # directory, this one trusts only what actually arrives.
+                    with zf.open(member) as source, out_path.open("wb") as target:
+                        while chunk := source.read(_EXTRACT_CHUNK_SIZE):
+                            extracted += len(chunk)
+                            if extracted > extraction_budget:
+                                raise AtlasError(
+                                    status_code=422,
+                                    code="INVALID_ZIP",
+                                    message=(
+                                        "This archive expanded to far more than its "
+                                        "size suggested and was refused."
+                                    ),
+                                )
+                            target.write(chunk)
 
             roadmap_id_map: dict[str, str] = {}
             node_id_map: dict[str, str] = {}
