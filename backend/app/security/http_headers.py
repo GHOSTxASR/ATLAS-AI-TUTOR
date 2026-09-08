@@ -18,15 +18,11 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import Response
 
-#: Google Fonts is the one external origin the interface loads from; the
-#: stylesheet comes from fonts.googleapis.com and the font files it references
-#: come from fonts.gstatic.com.
-_FONT_CSS = "https://fonts.googleapis.com"
-_FONT_FILES = "https://fonts.gstatic.com"
-
 CONTENT_SECURITY_POLICY = "; ".join(
     (
-        # Anything not named below may only load from this origin.
+        # Anything not named below may only load from this origin. Since the
+        # fonts were brought in-tree there is no external origin left to
+        # allow, so this policy names no third party at all.
         "default-src 'self'",
         # The directive that actually stops injected script. No 'unsafe-inline'
         # and no 'unsafe-eval': the built bundle needs neither.
@@ -34,8 +30,8 @@ CONTENT_SECURITY_POLICY = "; ".join(
         # 'unsafe-inline' is required here and is not a meaningful weakness:
         # style injection cannot execute script, and both Tailwind's runtime
         # and KaTeX set inline styles.
-        f"style-src 'self' 'unsafe-inline' {_FONT_CSS}",
-        f"font-src 'self' {_FONT_FILES} data:",
+        "style-src 'self' 'unsafe-inline'",
+        "font-src 'self' data:",
         # data: for inlined icons, blob: for canvas exports and object URLs.
         "img-src 'self' data: blob:",
         # Same-origin only. The API and the chat WebSocket are both served

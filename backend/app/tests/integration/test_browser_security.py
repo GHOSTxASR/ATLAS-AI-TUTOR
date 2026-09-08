@@ -69,20 +69,34 @@ def test_csp_blocks_the_directives_that_matter(tmp_path, monkeypatch):
 def test_csp_still_permits_the_interfaces_own_resources(tmp_path, monkeypatch):
     """A policy that breaks the app would just get switched off.
 
-    The built frontend loads its stylesheet from Google Fonts and the font
-    files from a second Google origin, and both Tailwind and KaTeX set inline
-    styles.
+    Both Tailwind's runtime and KaTeX set inline styles, and the API and chat
+    WebSocket are both same-origin.
     """
     app = _make_app(tmp_path, monkeypatch)
 
     with TestClient(app) as client:
         csp = client.get("/api/v1/health").headers["content-security-policy"]
 
-    assert "https://fonts.googleapis.com" in csp
-    assert "https://fonts.gstatic.com" in csp
     assert "style-src 'self' 'unsafe-inline'" in csp
-    # Same-origin API and WebSocket calls.
     assert "connect-src 'self'" in csp
+    assert "font-src 'self' data:" in csp
+
+
+def test_csp_names_no_external_origin(tmp_path, monkeypatch):
+    """The fonts were brought in-tree precisely so this could be true.
+
+    Atlas claims nothing leaves the machine but calls to the model provider
+    you configure. A policy permitting a font CDN would be that claim's one
+    standing exception, and a page load telling Google when Atlas ran.
+    """
+    app = _make_app(tmp_path, monkeypatch)
+
+    with TestClient(app) as client:
+        csp = client.get("/api/v1/health").headers["content-security-policy"]
+
+    # 'self', 'none', 'unsafe-inline', data: -- no scheme-qualified host.
+    assert "//" not in csp, f"CSP allows an external origin: {csp}"
+    assert "http" not in csp
 
 
 def test_hsts_is_not_sent(tmp_path, monkeypatch):

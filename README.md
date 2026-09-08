@@ -123,10 +123,11 @@ API keys are encrypted with Fernet (AES-128-CBC + HMAC-SHA256) into
 account. Keys are redacted from logs and error messages, and are never included
 in request URLs.
 
-The only network calls Atlas makes with **your data** are to the model provider
-you configure. Two others carry no data of yours: the interface loads its fonts
-from Google Fonts, and the local embedding model is downloaded once from
-Hugging Face on first use.
+**The only network calls Atlas makes at runtime are to the model provider you
+configure.** Fonts are bundled rather than fetched from a CDN, so opening the
+app tells nobody that it is running. The single other call happens once, not at
+runtime: the local embedding model (~130 MB) is downloaded from Hugging Face
+the first time you index a document, and never again.
 
 Atlas serves itself over plain HTTP on `127.0.0.1` and has **no login** — the
 loopback binding is what keeps it private. It sets a strict Content Security

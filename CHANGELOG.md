@@ -49,6 +49,13 @@ versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   denying camera/microphone/geolocation/payment. `Strict-Transport-Security`
   is deliberately not sent — Atlas is plain HTTP on loopback, and pinning a
   browser to HTTPS for `localhost` would break every local app on that origin.
+- **Fonts are bundled instead of fetched from Google.** The interface loaded
+  Geist and Instrument Serif from `fonts.googleapis.com` on every page load,
+  which told a third party that Atlas was running, from which IP, and when —
+  the one standing exception to "nothing leaves your machine". The nine
+  `woff2` files (140 KB, every subset, both under OFL-1.1 with licences
+  included) now ship in-tree, and the Content Security Policy no longer names
+  any external origin at all.
 - **Dropped the `python-dotenv` pin.** It is imported nowhere (Atlas reads
   `.env` with its own loader); the pin only held it at a version with a
   symlink-following bug in `set_key`/`unset_key`.

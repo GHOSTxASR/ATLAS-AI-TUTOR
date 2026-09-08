@@ -7,6 +7,7 @@ import { router } from "./router";
 import { CustomCursor } from "./components/common/CustomCursor";
 // KaTeX ships its own stylesheet; without it rendered formulas are unreadable.
 import "katex/dist/katex.min.css";
+import "./styles/fonts.css";
 import "./styles/tokens.css";
 import "./styles/globals.css";
 
