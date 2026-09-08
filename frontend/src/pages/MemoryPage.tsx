@@ -1,3 +1,5 @@
+import type { LucideIcon } from "lucide-react";
+import { getErrorMessage } from "../utils/errors";
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { useProfileStore } from "../stores/profileStore";
 import { memoryApi, MemoryRecord, MemoryCategory } from "../api/memory";
@@ -70,8 +72,8 @@ export function MemoryPage() {
       setSubject("");
       setContent("");
       loadMemories();
-    } catch (err: any) {
-      setActionError(err?.response?.data?.error?.message || "Failed to create memory.");
+    } catch (err) {
+      setActionError(getErrorMessage(err, "Failed to create memory."));
     } finally {
       setCreating(false);
     }
@@ -83,8 +85,8 @@ export function MemoryPage() {
     try {
       await memoryApi.deleteMemory(activeProfileId, memoryId);
       loadMemories();
-    } catch (err: any) {
-      setActionError(err?.response?.data?.error?.message || "Failed to delete memory.");
+    } catch (err) {
+      setActionError(getErrorMessage(err, "Failed to delete memory."));
     }
   };
 
@@ -102,7 +104,7 @@ export function MemoryPage() {
 
   const categoryConfig: Record<
     MemoryCategory,
-    { label: string; icon: any; color: string; bg: string }
+    { label: string; icon: LucideIcon; color: string; bg: string }
   > = {
     weakness: {
       label: "Weaknesses",

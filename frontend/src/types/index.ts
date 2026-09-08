@@ -1,3 +1,5 @@
+import type { ApiEnvelope } from "../api/client";
+
 export type ProfileType = "JEE" | "GATE" | "Semester Study" | "Custom Learning";
 
 export interface Profile {
@@ -18,15 +20,14 @@ export interface ProfileUpdate {
   profile_type?: ProfileType;
 }
 
-export interface ApiResponse<T> {
-  data: T;
-  error: {
-    code: string;
-    message: string;
-    details: any;
-  } | null;
-  meta: any;
-}
+/**
+ * The response envelope every endpoint returns.
+ *
+ * An alias rather than a second declaration: this used to be a looser copy of
+ * `ApiEnvelope` with `any` where that has `Record<string, unknown>`, so the
+ * two could drift and half the codebase got the weaker types.
+ */
+export type ApiResponse<T> = ApiEnvelope<T>;
 
 export interface ChatSession {
   id: string;

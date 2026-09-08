@@ -1,3 +1,4 @@
+import { getErrorMessage } from "../utils/errors";
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useProfileStore } from "../stores/profileStore";
@@ -115,8 +116,8 @@ export function NotesPage() {
       setSelectedRoadmapNodeId("");
       loadNotes();
       setSelectedNote(created);
-    } catch (err: any) {
-      setActionError(err?.response?.data?.error?.message || "Failed generating note.");
+    } catch (err) {
+      setActionError(getErrorMessage(err, "Failed generating note."));
     } finally {
       setGenerating(false);
     }
@@ -128,8 +129,8 @@ export function NotesPage() {
       await notesApi.deleteNote(activeProfileId, noteId);
       loadNotes();
       if (selectedNote?.id === noteId) setSelectedNote(null);
-    } catch (err: any) {
-      setActionError(err?.response?.data?.error?.message || "Failed to delete note.");
+    } catch (err) {
+      setActionError(getErrorMessage(err, "Failed to delete note."));
     }
   };
 

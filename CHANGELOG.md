@@ -49,6 +49,22 @@ versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   denying camera/microphone/geolocation/payment. `Strict-Transport-Security`
   is deliberately not sent — Atlas is plain HTTP on loopback, and pinning a
   browser to HTTPS for `localhost` would break every local app on that origin.
+- **Profile export streams from disk too.** The archive was assembled in
+  memory and then copied again by `getvalue()`, so exporting peaked at roughly
+  twice its size — the mirror of the import problem. It is now written to a
+  temporary file and streamed from there: peak memory for a 200 MB export
+  drops from 218 MB to 0.3 MB. The file is deleted once the response is sent,
+  and because Starlette skips that cleanup when a client disconnects
+  mid-download, each export also clears out any abandoned archive older than
+  an hour.
+- **One way to read an API error, instead of twenty-seven.** Every `catch`
+  block took `err: any` and picked the message apart itself — pages reached
+  for the server's envelope, stores only looked at `err.message`. The stores
+  were therefore *discarding the real reason*: a failed message send showed
+  "Request failed with status code 503" where the server had said "No OpenAI
+  API key configured. Set it on the Settings page." `getErrorMessage` narrows
+  from `unknown` once and prefers the server's explanation, so every call site
+  now surfaces it.
 - **Profile import streams to disk instead of into memory.** An export bundles
   every document a profile owns, so it is the one upload that is legitimately
   large — and it was read into memory whole, which made the size limit a

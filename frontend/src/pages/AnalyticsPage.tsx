@@ -228,15 +228,15 @@ export function AnalyticsPage() {
           <h2 className="font-editorial text-2xl text-on-surface">Mastery Distribution</h2>
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            {[
+            {([
               { id: "mastered", label: "Mastered (>85%)", count: mastery?.mastered_count ?? 0, color: "text-emerald-400" },
               { id: "proficient", label: "Proficient (60-85%)", count: mastery?.proficient_count ?? 0, color: "text-primary" },
               { id: "needs_practice", label: "Needs Practice (<60%)", count: mastery?.needs_practice_count ?? 0, color: "text-luminous-highlight" },
               { id: "unstarted", label: "Unstarted", count: mastery?.unstarted_count ?? 0, color: "text-on-surface-variant" },
-            ].map((tab) => (
+            ] as const).map((tab) => (
               <button
                 key={tab.id}
-                onClick={() => setSelectedMasteryTab(tab.id as any)}
+                onClick={() => setSelectedMasteryTab(tab.id)}
                 className={`p-3 border text-left transition ${
                   selectedMasteryTab === tab.id
                     ? "bg-surface-container/70 border-primary shadow-[0_0_8px_rgba(var(--accent-rgb),0.2)] luminous-active"

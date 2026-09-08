@@ -47,3 +47,26 @@ Keys are additionally protected at runtime:
 
 If you believe a key of yours has been exposed, rotate it with the provider
 immediately, then remove it in **Settings** and add the new one.
+
+## Known advisories that do not apply
+
+`pip-audit` reports four advisories against `chromadb` that Atlas is not
+exposed to. They are recorded here so nobody has to re-derive that.
+
+| Advisory | What it affects |
+| --- | --- |
+| PYSEC-2026-311 | Pre-auth code injection via a remote model repository |
+| CVE-2026-45830 | Missing tenant authorisation on collection reads and writes |
+| CVE-2026-45833 | Code injection via `trust_remote_code` |
+| CVE-2026-45831 | `SimpleRBACAuthorizationProvider` ignores tenant scope |
+
+All four are vulnerabilities in Chroma's **standalone HTTP server** — its
+authentication, its authorisation, and the remote model loading it exposes.
+Atlas never runs that server. It uses `chromadb.PersistentClient` as an
+in-process library against a local directory (see
+`app/pipelines/embedder.py`), so there is no listening socket, no tenant
+model, and no remote model loading to reach.
+
+There is also nothing to upgrade to: 1.5.9 is the current release and carries
+these advisories. If Atlas ever gains a client/server Chroma mode, this
+assessment stops holding and must be redone.

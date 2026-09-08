@@ -195,6 +195,98 @@ def test_a_real_import_leaves_no_temporary_file_behind(tmp_path, monkeypatch):
     assert set(temp_root.glob("atlas-upload-*")) == before
 
 
+# ── Export, the mirror of the same problem ────────────────────────────
+
+
+def test_export_leaves_no_archive_behind(tmp_path, monkeypatch):
+    """The export is staged on disk and deleted once the response is sent.
+
+    Held in memory the archive was resident *and* copied by `getvalue()`, so
+    exporting peaked at roughly twice its size. Staging it on disk fixes that
+    but introduces a file that has to be cleaned up.
+    """
+    import tempfile
+    from pathlib import Path
+
+    app = _make_app(tmp_path, monkeypatch)
+    temp_root = Path(tempfile.gettempdir())
+    before = set(temp_root.glob("atlas-export-*"))
+
+    with TestClient(app) as client:
+        pid = client.post(
+            "/api/v1/profiles",
+            json={"name": "Exportable", "profile_type": "Custom Learning"},
+        ).json()["data"]["id"]
+
+        response = client.post(f"/api/v1/profiles/{pid}/export")
+
+        assert response.status_code == 200
+        assert response.headers["content-type"] == "application/zip"
+        assert "attachment" in response.headers["content-disposition"]
+        # The bytes really are a usable archive, not an empty file.
+        with zipfile.ZipFile(io.BytesIO(response.content)) as zf:
+            assert "profile.json" in zf.namelist()
+
+    assert set(temp_root.glob("atlas-export-*")) == before
+
+
+def test_a_stale_export_is_swept_but_a_fresh_one_is_not(tmp_path, monkeypatch):
+    """Starlette skips the cleanup task when a client disconnects mid-download.
+
+    Rather than leak one archive per cancelled download forever, each export
+    clears out anything older than an hour. A concurrent export must survive
+    that, so only genuinely old files are removed.
+    """
+    import os
+    import tempfile
+    import time
+    from pathlib import Path
+
+    from app.services.profile_service import _STALE_EXPORT_SECONDS, _sweep_stale_exports
+
+    temp_root = Path(tempfile.gettempdir())
+    stale = temp_root / "atlas-export-stale-test.zip"
+    fresh = temp_root / "atlas-export-fresh-test.zip"
+    stale.write_bytes(b"old")
+    fresh.write_bytes(b"new")
+    old_time = time.time() - _STALE_EXPORT_SECONDS - 60
+    os.utime(stale, (old_time, old_time))
+
+    try:
+        _sweep_stale_exports()
+        assert not stale.exists(), "an abandoned export was not swept"
+        assert fresh.exists(), "the sweep removed an export that was still in use"
+    finally:
+        stale.unlink(missing_ok=True)
+        fresh.unlink(missing_ok=True)
+
+
+def test_export_import_round_trip_still_works_end_to_end(tmp_path, monkeypatch):
+    """Both halves changed; this is the check that they still meet."""
+    app = _make_app(tmp_path, monkeypatch)
+
+    with TestClient(app) as client:
+        pid = client.post(
+            "/api/v1/profiles",
+            json={"name": "RoundTrip", "profile_type": "Custom Learning"},
+        ).json()["data"]["id"]
+        client.post(
+            f"/api/v1/profiles/{pid}/documents",
+            files={"file": ("notes.txt", b"Force equals mass times acceleration. " * 50, "text/plain")},
+        )
+
+        archive = client.post(f"/api/v1/profiles/{pid}/export").content
+        imported = client.post(
+            "/api/v1/profiles/import",
+            files={"file": ("profile.zip", archive, "application/zip")},
+        )
+
+        assert imported.status_code == 201
+        new_id = imported.json()["data"]["id"]
+        assert new_id != pid
+        assert len(client.get(f"/api/v1/profiles/{new_id}/documents").json()["data"]) == 1
+
+
 # ── The size limit still applies, and is no longer a memory bound ─────
 
 

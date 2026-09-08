@@ -10,7 +10,7 @@ export interface GlobalSearchResultItem {
   category: GlobalCategory;
   url_path: string;
   score: number;
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
 }
 
 export interface GlobalSearchResponse {

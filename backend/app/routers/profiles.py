@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 
-from fastapi import APIRouter, BackgroundTasks, Depends, File, Response, UploadFile, status
+from fastapi import APIRouter, BackgroundTasks, Depends, File, UploadFile, status
+from fastapi.responses import FileResponse
+from starlette.background import BackgroundTask
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import Settings
@@ -95,10 +97,16 @@ async def delete_profile(
 async def export_profile(
     profile_id: str, service: ProfileService = Depends(get_profile_service)
 ):
-    """Export complete profile package as a downloadable ZIP."""
-    zip_bytes = await service.export_profile(profile_id)
-    return Response(
-        content=zip_bytes,
+    """Export complete profile package as a downloadable ZIP.
+
+    Streamed from a temporary file rather than returned as bytes, so a large
+    profile does not have to fit in memory twice over. The file is removed
+    once the response has been sent.
+    """
+    archive = await service.export_profile(profile_id)
+    return FileResponse(
+        archive,
         media_type="application/zip",
-        headers={"Content-Disposition": f"attachment; filename=profile_{profile_id}.zip"},
+        filename=f"profile_{profile_id}.zip",
+        background=BackgroundTask(archive.unlink, missing_ok=True),
     )

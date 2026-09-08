@@ -1,3 +1,4 @@
+import { getErrorMessage } from "../utils/errors";
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { useProfileStore } from "../stores/profileStore";
 import {
@@ -87,7 +88,7 @@ export function GraphPage() {
           setSelectedNode((current) => current ?? data.nodes[0]);
         }
       })
-      .catch((err) => setError(err?.response?.data?.error?.message || "Failed to load knowledge graph."))
+      .catch((err) => setError(getErrorMessage(err, "Failed to load knowledge graph.")))
       .finally(() => setLoading(false));
   }, [activeProfileId, urlNodeId]);
 
@@ -113,8 +114,8 @@ export function GraphPage() {
       setNewMastery(0.0);
       loadGraph();
       setSelectedNode(node);
-    } catch (err: any) {
-      setActionError(err?.response?.data?.error?.message || "Failed to create node.");
+    } catch (err) {
+      setActionError(getErrorMessage(err, "Failed to create node."));
     }
   };
 
@@ -131,8 +132,8 @@ export function GraphPage() {
       });
       setShowLinkModal(false);
       loadGraph();
-    } catch (err: any) {
-      setActionError(err?.response?.data?.error?.message || "Failed to link concepts.");
+    } catch (err) {
+      setActionError(getErrorMessage(err, "Failed to link concepts."));
     }
   };
 
@@ -150,8 +151,8 @@ export function GraphPage() {
       setShowEnrichModal(false);
       setEnrichText("");
       setEnrichSourceLabel("");
-    } catch (err: any) {
-      setActionError(err?.response?.data?.error?.message || "Failed to enrich graph.");
+    } catch (err) {
+      setActionError(getErrorMessage(err, "Failed to enrich graph."));
     } finally {
       setLoading(false);
     }
@@ -163,8 +164,8 @@ export function GraphPage() {
       await graphApi.deleteNode(activeProfileId, nodeId);
       if (selectedNode?.id === nodeId) setSelectedNode(null);
       loadGraph();
-    } catch (err: any) {
-      setActionError(err?.response?.data?.error?.message || "Failed to delete node.");
+    } catch (err) {
+      setActionError(getErrorMessage(err, "Failed to delete node."));
     }
   };
 
@@ -176,8 +177,8 @@ export function GraphPage() {
       });
       setSelectedNode(updated);
       loadGraph();
-    } catch (err: any) {
-      setActionError(err?.response?.data?.error?.message || "Failed to update mastery.");
+    } catch (err) {
+      setActionError(getErrorMessage(err, "Failed to update mastery."));
     }
   };
 
@@ -192,9 +193,9 @@ export function GraphPage() {
         setHighlightPathIds([]);
         setPathInfo("No directed path found between these concepts");
       }
-    } catch (err: any) {
+    } catch (err) {
       setHighlightPathIds([]);
-      setPathInfo("Path search error: " + (err?.message || "Not reachable"));
+      setPathInfo("Path search error: " + getErrorMessage(err, "Not reachable"));
     }
   };
 

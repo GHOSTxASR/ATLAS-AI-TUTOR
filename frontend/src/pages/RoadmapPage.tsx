@@ -1,3 +1,4 @@
+import { getErrorMessage, getErrorStatus } from "../utils/errors";
 import React, { useEffect, useState, useCallback } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { chatApi } from "../api/chat";
@@ -59,7 +60,7 @@ export function RoadmapPage() {
         }
       })
       .catch((err) => {
-        if (err?.response?.status === 404) {
+        if (getErrorStatus(err) === 404) {
           setRoadmap(null);
           setSelectedNode(null);
           return;
@@ -83,9 +84,9 @@ export function RoadmapPage() {
     try {
       const session = await chatApi.sessionForTopic(activeProfileId, node.title, node.id);
       navigate(`/chat/${session.id}`);
-    } catch (err: any) {
+    } catch (err) {
       setActionError(
-        err?.response?.data?.error?.message || "Could not open the tutor for this topic."
+        getErrorMessage(err, "Could not open the tutor for this topic.")
       );
     } finally {
       setOpeningTutor(false);
@@ -101,8 +102,8 @@ export function RoadmapPage() {
     try {
       await roadmapApi.updateNodeStatus(activeProfileId, roadmap.id, nodeId, { status });
       loadRoadmap();
-    } catch (err: any) {
-      setActionError(err?.response?.data?.error?.message || "Failed updating roadmap status.");
+    } catch (err) {
+      setActionError(getErrorMessage(err, "Failed updating roadmap status."));
     }
   };
 

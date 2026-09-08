@@ -1,5 +1,16 @@
 import { apiClient, ApiEnvelope } from "./client";
 
+export interface AnalyticsEvent {
+  id: string;
+  profile_id: string;
+  event_type: string;
+  entity_type: string;
+  entity_id: string | null;
+  value: number | null;
+  metadata_json: string | null;
+  occurred_at: string;
+}
+
 export interface ChapterProgressItem {
   chapter_title: string;
   total_topics: number;
@@ -126,8 +137,8 @@ export const analyticsApi = {
       value?: number;
       metadata_json?: string;
     }
-  ): Promise<any> => {
-    const res = await apiClient.post<ApiEnvelope<any>>(
+  ): Promise<AnalyticsEvent> => {
+    const res = await apiClient.post<ApiEnvelope<AnalyticsEvent>>(
       `/profiles/${profileId}/analytics/events`,
       payload
     );

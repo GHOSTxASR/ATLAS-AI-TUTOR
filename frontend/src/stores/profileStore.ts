@@ -1,3 +1,4 @@
+import { getErrorMessage } from "../utils/errors";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { profileApi } from "../api/profiles";
@@ -50,8 +51,8 @@ export const useProfileStore = create<ProfileState>()(
             // If active profile was deleted elsewhere
             set({ activeProfileId: profiles.length > 0 ? profiles[0].id : null });
           }
-        } catch (err: any) {
-          set({ error: err.message || "Failed to load profiles", isLoading: false });
+        } catch (err) {
+          set({ error: getErrorMessage(err, "Failed to load profiles"), isLoading: false });
         }
       },
 
@@ -61,8 +62,8 @@ export const useProfileStore = create<ProfileState>()(
           const newProfile = await profileApi.create(data);
           const profiles = [...get().profiles, newProfile];
           set({ profiles, activeProfileId: newProfile.id, isLoading: false });
-        } catch (err: any) {
-          set({ error: err.message || "Failed to create profile", isLoading: false });
+        } catch (err) {
+          set({ error: getErrorMessage(err, "Failed to create profile"), isLoading: false });
         }
       },
 
@@ -72,8 +73,8 @@ export const useProfileStore = create<ProfileState>()(
           const updatedProfile = await profileApi.update(id, data);
           const profiles = get().profiles.map((p) => (p.id === id ? updatedProfile : p));
           set({ profiles, isLoading: false });
-        } catch (err: any) {
-          set({ error: err.message || "Failed to update profile", isLoading: false });
+        } catch (err) {
+          set({ error: getErrorMessage(err, "Failed to update profile"), isLoading: false });
         }
       },
 
@@ -88,8 +89,8 @@ export const useProfileStore = create<ProfileState>()(
             activeProfileId: activeProfileId === id ? (profiles.length > 0 ? profiles[0].id : null) : activeProfileId,
             isLoading: false,
           });
-        } catch (err: any) {
-          set({ error: err.message || "Failed to delete profile", isLoading: false });
+        } catch (err) {
+          set({ error: getErrorMessage(err, "Failed to delete profile"), isLoading: false });
         }
       },
 

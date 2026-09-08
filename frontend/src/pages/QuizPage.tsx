@@ -1,3 +1,4 @@
+import { getErrorMessage, getErrorStatus } from "../utils/errors";
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { useProfileStore } from "../stores/profileStore";
 import {
@@ -50,7 +51,7 @@ export function QuizPage() {
     roadmapApi.getActiveRoadmap(activeProfileId)
       .then(setActiveRoadmap)
       .catch((err) => {
-        if (err?.response?.status !== 404) setHistoryError("Failed to load quiz topics.");
+        if (getErrorStatus(err) !== 404) setHistoryError("Failed to load quiz topics.");
         setActiveRoadmap(null);
       });
     quizApi.getHistory(activeProfileId)
@@ -97,8 +98,8 @@ export function QuizPage() {
       setTimeRemaining(timeLimit ?? null);
       submissionStarted.current = false;
       setViewState("taking");
-    } catch (err: any) {
-      setActionError(err?.response?.data?.error?.message || "Failed to generate quiz.");
+    } catch (err) {
+      setActionError(getErrorMessage(err, "Failed to generate quiz."));
     } finally {
       setLoading(false);
     }
@@ -125,9 +126,9 @@ export function QuizPage() {
       setQuizResult(res);
       setViewState("results");
       quizApi.getHistory(activeProfileId).then(setHistory).catch(() => setHistoryError("Failed to refresh quiz history."));
-    } catch (err: any) {
+    } catch (err) {
       submissionStarted.current = false;
-      setActionError(err?.response?.data?.error?.message || "Failed submitting quiz.");
+      setActionError(getErrorMessage(err, "Failed submitting quiz."));
     } finally {
       setLoading(false);
     }

@@ -1,7 +1,9 @@
 from __future__ import annotations
 
-import io
 import json
+import os
+import tempfile
+import time
 import zipfile
 from pathlib import Path
 from typing import Sequence
@@ -42,6 +44,38 @@ IMPORT_EXTRACTION_MULTIPLE = 10
 #: Chunk size for copying a member out of the archive.
 _EXTRACT_CHUNK_SIZE = 1024 * 1024
 
+#: Prefix for export archives staged in the system temp directory.
+_EXPORT_PREFIX = "atlas-export-"
+
+#: How long a staged export may sit before it is assumed abandoned.
+_STALE_EXPORT_SECONDS = 60 * 60
+
+
+def _sweep_stale_exports() -> None:
+    """Delete export archives left behind by downloads that never finished.
+
+    The endpoint deletes its archive in a background task, but Starlette only
+    runs those *after* the response is sent -- so a client that disconnects
+    mid-download leaves the file behind. Rather than add a scheduled job for
+    something this small, each export clears out anything older than an hour,
+    which keeps the failure self-correcting.
+
+    Never raises: an export must not fail because a stale file could not be
+    removed (another process may still be sending it, and Windows will not
+    unlink an open file).
+    """
+    cutoff = time.time() - _STALE_EXPORT_SECONDS
+    try:
+        candidates = Path(tempfile.gettempdir()).glob(f"{_EXPORT_PREFIX}*.zip")
+        for stale in candidates:
+            try:
+                if stale.stat().st_mtime < cutoff:
+                    stale.unlink(missing_ok=True)
+            except OSError:
+                continue
+    except OSError:
+        return
+
 
 class ProfileService:
     def __init__(self, session: AsyncSession):
@@ -78,8 +112,14 @@ class ProfileService:
         vector_store = VectorStore()
         await vector_store.delete_all_profile_data(profile_id)
 
-    async def export_profile(self, profile_id: str) -> bytes:
-        """Package entire profile data, documents, and database records into a ZIP."""
+    async def export_profile(self, profile_id: str) -> Path:
+        """Package a profile's data, documents and records into a ZIP on disk.
+
+        Returns the path to a temporary file rather than bytes, so neither the
+        archive nor a copy of it is held in memory. **The caller owns that
+        file and must delete it** -- the export endpoint does so in a
+        background task once the response has been sent.
+        """
         profile = await self.get_profile(profile_id)
 
         # 1. Fetch domain records
@@ -115,9 +155,16 @@ class ProfileService:
         documents_q = await self.session.execute(select(Document).where(Document.profile_id == profile_id))
         documents = documents_q.scalars().all()
 
-        # 2. Assemble ZIP
-        buf = io.BytesIO()
-        with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
+        # 2. Assemble ZIP on disk rather than in memory. Held in a BytesIO,
+        #    the whole archive was resident and `getvalue()` then copied it,
+        #    so exporting peaked at roughly twice the archive size -- the
+        #    mirror of the problem the import side had.
+        _sweep_stale_exports()
+        fd, temp_name = tempfile.mkstemp(prefix=_EXPORT_PREFIX, suffix=".zip")
+        os.close(fd)
+        archive_path = Path(temp_name)
+
+        with zipfile.ZipFile(archive_path, "w", zipfile.ZIP_DEFLATED) as zf:
             zf.writestr(
                 "profile.json",
                 json.dumps(
@@ -266,8 +313,7 @@ class ProfileService:
                         rel = f.relative_to(p_dir)
                         zf.write(f, arcname=f"files/{rel}")
 
-        buf.seek(0)
-        return buf.getvalue()
+        return archive_path
 
     async def import_profile(self, archive: Path) -> Profile:
         """Restore profile, data files, and database records from an exported ZIP.

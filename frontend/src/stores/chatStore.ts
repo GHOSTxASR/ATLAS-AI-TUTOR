@@ -1,3 +1,4 @@
+import { getErrorMessage } from "../utils/errors";
 import { create } from "zustand";
 import { chatApi, LearningMode } from "../api/chat";
 import { apiClient } from "../api/client";
@@ -73,9 +74,9 @@ export const useChatStore = create<ChatState>((set, get) => ({
       const { searchQuery } = get();
       const sessions = await chatApi.getSessions(profileId, searchQuery || undefined);
       set({ sessions, isLoading: false });
-    } catch (err: any) {
+    } catch (err) {
       set({
-        error: err.message || "Failed to load chat sessions",
+        error: getErrorMessage(err, "Failed to load chat sessions"),
         isLoading: false,
       });
     }
@@ -187,9 +188,9 @@ export const useChatStore = create<ChatState>((set, get) => ({
       };
 
       set({ ws });
-    } catch (err: any) {
+    } catch (err) {
       set({
-        error: err.message || "Failed to load chat session",
+        error: getErrorMessage(err, "Failed to load chat session"),
         isLoading: false,
       });
     }
@@ -206,9 +207,9 @@ export const useChatStore = create<ChatState>((set, get) => ({
       });
       // Load the newly created session
       await get().loadSession(profileId, newSession.id);
-    } catch (err: any) {
+    } catch (err) {
       set({
-        error: err.message || "Failed to create chat session",
+        error: getErrorMessage(err, "Failed to create chat session"),
         isLoading: false,
       });
     }
@@ -253,8 +254,8 @@ export const useChatStore = create<ChatState>((set, get) => ({
             ? { ...activeSession, ...updatedSession }
             : activeSession,
       });
-    } catch (err: any) {
-      set({ error: err.message || "Failed to update chat session" });
+    } catch (err) {
+      set({ error: getErrorMessage(err, "Failed to update chat session") });
     }
   },
 
@@ -272,9 +273,9 @@ export const useChatStore = create<ChatState>((set, get) => ({
           activeSession?.id === sessionId ? null : activeSession,
         isLoading: false,
       });
-    } catch (err: any) {
+    } catch (err) {
       set({
-        error: err.message || "Failed to delete chat session",
+        error: getErrorMessage(err, "Failed to delete chat session"),
         isLoading: false,
       });
     }
@@ -307,8 +308,8 @@ export const useChatStore = create<ChatState>((set, get) => ({
         const rest = sessions.filter((s) => s.id !== sessionId);
         set({ sessions: [sessionToMove, ...rest] });
       }
-    } catch (err: any) {
-      set({ error: err.message || "Failed to send message" });
+    } catch (err) {
+      set({ error: getErrorMessage(err, "Failed to send message") });
     }
   },
 

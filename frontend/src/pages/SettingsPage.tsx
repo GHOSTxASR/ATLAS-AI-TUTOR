@@ -1,3 +1,4 @@
+import { getErrorMessage } from "../utils/errors";
 import { useEffect, useState } from "react";
 import {
   Check,
@@ -147,8 +148,8 @@ export function SettingsPage() {
       setApiKey("");
       await loadProviders();
       await loadEmbeddingModels(effectiveEmbeddingProvider, true);
-    } catch (err: any) {
-      setError(err.response?.data?.error?.message || "Failed to save settings");
+    } catch (err) {
+      setError(getErrorMessage(err, "Failed to save settings"));
     } finally {
       setSaving(false);
     }
@@ -169,10 +170,10 @@ export function SettingsPage() {
             }
           : { ok: false, message: result.error || "Connection failed." }
       );
-    } catch (err: any) {
+    } catch (err) {
       setTestResult({
         ok: false,
-        message: err.response?.data?.error?.message || "Connection test failed.",
+        message: getErrorMessage(err, "Connection test failed."),
       });
     } finally {
       setTesting(false);
@@ -193,8 +194,8 @@ export function SettingsPage() {
       await settingsApi.deleteApiKey(activeProviderInfo.id);
       setSuccess(`Removed the stored ${activeProviderInfo.label} API key.`);
       await loadProviders();
-    } catch (err: any) {
-      setError(err.response?.data?.error?.message || "Failed to remove the API key.");
+    } catch (err) {
+      setError(getErrorMessage(err, "Failed to remove the API key."));
     }
   };
 
