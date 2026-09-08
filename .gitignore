@@ -66,6 +66,10 @@ GEMINI.md
 .github/copilot-instructions.md
 .specstory/
 .tabnine/
+# Browser console logs and page dumps written by automated UI testing. Agent
+# working output, not project files -- and they carry profile ids and local
+# URLs from whoever ran them.
+.playwright-cli/
 
 # Planning and handoff documents written before or alongside the build. The
 # reference docs in docs/ describe how Atlas works and stay; these describe how
