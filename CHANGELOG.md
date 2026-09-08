@@ -49,6 +49,16 @@ versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   denying camera/microphone/geolocation/payment. `Strict-Transport-Security`
   is deliberately not sent — Atlas is plain HTTP on loopback, and pinning a
   browser to HTTPS for `localhost` would break every local app on that origin.
+- **The knowledge graph copes with a large one.** On a 1,300-node graph the
+  layout re-rendered all 1,300 nodes — six SVG elements each — on every
+  physics frame, which blocked the main thread for 1.4 seconds across 20 long
+  tasks and left the page stuttering for around nine. The simulation still
+  steps every frame, so the layout it converges to is unchanged, but a large
+  graph now publishes positions to React on an interval instead of every
+  frame, and node text is skipped at zoom levels where it renders at under a
+  pixel. Blocking time halved to 0.65 s and the layout finishes in about five.
+  Graphs of 150 nodes or fewer are untouched — same commit-every-frame, same
+  labels at every zoom.
 - **Profile export streams from disk too.** The archive was assembled in
   memory and then copied again by `getvalue()`, so exporting peaked at roughly
   twice its size — the mirror of the import problem. It is now written to a

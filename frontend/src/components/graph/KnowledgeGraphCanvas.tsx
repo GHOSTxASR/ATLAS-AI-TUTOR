@@ -34,7 +34,7 @@ export function KnowledgeGraphCanvas({
 
   // Positions come from the simulation hook; this component owns only the
   // camera, the pointer interactions and the SVG.
-  const { simNodes, setSimNodes, hasSettled } = useGraphSimulation(
+  const { simNodes, setNodePosition, hasSettled } = useGraphSimulation(
     nodes,
     edges,
     draggedNodeId,
@@ -76,9 +76,7 @@ export function KnowledgeGraphCanvas({
       const mouseX = (e.clientX - rect.left - transform.x) / transform.k;
       const mouseY = (e.clientY - rect.top - transform.y) / transform.k;
 
-      setSimNodes((prev) =>
-        prev.map((n) => (n.id === draggedNodeId ? { ...n, x: mouseX, y: mouseY, vx: 0, vy: 0 } : n))
-      );
+      setNodePosition(draggedNodeId, mouseX, mouseY);
     }
   };
 
@@ -170,6 +168,17 @@ export function KnowledgeGraphCanvas({
     autoFittedFor.current = simNodes.length;
     handleResetView();
   }, [hasSettled, simNodes.length, handleResetView]);
+
+  // Text is half of every node's markup -- an emoji, a label and a mastery
+  // badge against two circles -- and on a large graph zoomed out to fit, all
+  // three render at well under a pixel. Dropping them there is not a
+  // compromise: nothing legible is lost, and the node count that makes them
+  // expensive is exactly the count that makes them unreadable.
+  //
+  // Gated on node count as well as zoom so an ordinary graph is never affected:
+  // a 26-node graph sits around k=0.56 when framed, which would otherwise put
+  // it the wrong side of the threshold.
+  const showNodeText = simNodes.length <= 150 || transform.k >= 0.35;
 
   // Neighborhood connected node IDs
   const connectedNodeIds = useMemo(() => {
@@ -378,6 +387,7 @@ export function KnowledgeGraphCanvas({
                 />
 
                 {/* Node Type Emoji or Initial */}
+                {showNodeText && (
                 <text
                   textAnchor="middle"
                   dy=".3em"
@@ -394,8 +404,10 @@ export function KnowledgeGraphCanvas({
                     ? "🏛️"
                     : "💡"}
                 </text>
+                )}
 
                 {/* Node Label Text */}
+                {showNodeText && (
                 <text
                   y={node.radius + 14}
                   textAnchor="middle"
@@ -407,9 +419,10 @@ export function KnowledgeGraphCanvas({
                 >
                   {node.label.length > 22 ? `${node.label.slice(0, 20)}…` : node.label}
                 </text>
+                )}
 
                 {/* Mastery Badge (if > 0) */}
-                {node.mastery_score > 0 && (
+                {showNodeText && node.mastery_score > 0 && (
                   <text
                     y={-node.radius - 6}
                     textAnchor="middle"

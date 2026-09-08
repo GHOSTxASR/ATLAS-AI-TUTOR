@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { GraphEdge, GraphNode } from "../api/graph";
 
@@ -9,6 +9,34 @@ export interface SimulatedNode extends GraphNode {
   vy: number;
   radius: number;
 }
+
+/**
+ * Above this many nodes, publishing to React every frame costs more than the
+ * physics does.
+ *
+ * Measured on a 1,300-node graph: the force step is ~11ms a frame, but the
+ * re-render of 1,300 nodes -- six SVG elements each -- takes ~60ms, so the
+ * layout ran at 14fps for 20 seconds before settling. Below this threshold the
+ * per-frame cost is irrelevant and the layout commits every frame exactly as
+ * it always did.
+ */
+const LARGE_GRAPH_NODES = 150;
+
+/**
+ * How often a large graph publishes positions while the layout is running.
+ *
+ * The simulation still steps every frame -- skipping steps would change the
+ * layout it converges to. Only the hand-off to React is throttled, so the
+ * result is identical and the animation is a lower frame rate rather than a
+ * different shape.
+ *
+ * Has to be comfortably longer than a commit takes, or it saves nothing: a
+ * commit on a 1,300-node graph costs ~48ms, so an 80ms interval still spent
+ * one frame in two rendering. At 250ms the physics gets four or five frames
+ * to itself between publishes, which is what brings the layout down to being
+ * bound by the simulation rather than by React.
+ */
+const COMMIT_INTERVAL_MS = 250;
 
 /**
  * Force-directed layout for the knowledge graph.
@@ -29,9 +57,20 @@ export function useGraphSimulation(
   const [simNodes, setSimNodes] = useState<SimulatedNode[]>([]);
   const [hasSettled, setHasSettled] = useState(false);
 
+  // The positions the simulation actually works on. Physics mutates this in
+  // place and publishes a copy to state on a schedule; keeping it out of state
+  // is what lets the two run at different rates.
+  const workingRef = useRef<SimulatedNode[]>([]);
+
+  /** Publish the working positions to React. */
+  const commit = useCallback(() => {
+    setSimNodes(workingRef.current.map((n) => ({ ...n })));
+  }, []);
+
   // Initialize simulation positions in a ring/circle layout
   useEffect(() => {
     if (nodes.length === 0) {
+      workingRef.current = [];
       setSimNodes([]);
       return;
     }
@@ -44,8 +83,8 @@ export function useGraphSimulation(
     // that is still present should stay where the simulation put it, and
     // reading that from state would either go stale or, if depended on, restart
     // seeding every time seeding wrote.
-    setSimNodes((previous) =>
-      nodes.map((node, i) => {
+    setSimNodes((previous) => {
+      const seeded = nodes.map((node, i) => {
         const radius = Math.min(36, Math.max(18, 16 + (node.mention_count || 1) * 2));
         const existing = previous.find((sn) => sn.id === node.id);
         if (existing) {
@@ -60,8 +99,11 @@ export function useGraphSimulation(
           vy: 0,
           radius,
         };
-      }),
-    );
+      });
+      // The physics works from its own copy, so seeding has to hand it one.
+      workingRef.current = seeded.map((n) => ({ ...n }));
+      return seeded;
+    });
   }, [nodes]);
 
   // Run force-directed physics iteration
@@ -74,12 +116,16 @@ export function useGraphSimulation(
     // Settling is detected below, so a simple graph still stops early.
     const maxIterations = 400;
     let settled = false;
+    // A small graph publishes every frame, exactly as before; only a large one
+    // is throttled, and only while it is still moving.
+    const throttleCommits = simNodes.length > LARGE_GRAPH_NODES;
+    let lastCommit = 0;
     setHasSettled(false);
 
-    const tick = () => {
-      setSimNodes((currentNodes) => {
-        if (currentNodes.length === 0) return currentNodes;
-        const next = currentNodes.map((n) => ({ ...n }));
+    const tick = (now: number) => {
+      {
+        const next = workingRef.current;
+        if (next.length === 0) return;
         // Repulsion falls off with distance squared while the old centre
         // gravity grew linearly with it, so gravity won everywhere that
         // mattered: at 300px out it pulled 3.0 against 0.09 of push, and the
@@ -193,12 +239,19 @@ export function useGraphSimulation(
         // iteration budget every time.
         const energy = next.reduce((sum, n) => sum + Math.abs(n.vx) + Math.abs(n.vy), 0);
         settled = energy / Math.max(1, next.length) < 0.04;
-
-        return next;
-      });
+      }
 
       iteration++;
-      if ((iteration < maxIterations && !settled) || draggedNodeId !== null) {
+      const finished = (iteration >= maxIterations || settled) && draggedNodeId === null;
+
+      // Always publish the final frame, so the layout the user is left looking
+      // at is the one the physics actually reached.
+      if (!throttleCommits || finished || now - lastCommit >= COMMIT_INTERVAL_MS) {
+        lastCommit = now;
+        commit();
+      }
+
+      if (!finished) {
         animId = requestAnimationFrame(tick);
       } else {
         setHasSettled(true);
@@ -218,7 +271,27 @@ export function useGraphSimulation(
     // every tick, so depending on its identity would restart the loop each
     // frame. The count is what this effect reacts to -- it bails when there are
     // no nodes, so it must re-run once they are seeded.
-  }, [edges, draggedNodeId, simNodes.length]);
+  }, [edges, draggedNodeId, simNodes.length, commit]);
 
-  return { simNodes, setSimNodes, hasSettled };
+  /**
+   * Move one node, as dragging does.
+   *
+   * Writes to the working copy as well as to state: the physics reads from the
+   * working copy, so updating only React would have the next simulation frame
+   * overwrite the drag and the node would spring back under the cursor.
+   */
+  const setNodePosition = useCallback((id: string, x: number, y: number) => {
+    const node = workingRef.current.find((n) => n.id === id);
+    if (node) {
+      node.x = x;
+      node.y = y;
+      node.vx = 0;
+      node.vy = 0;
+    }
+    setSimNodes((prev) =>
+      prev.map((n) => (n.id === id ? { ...n, x, y, vx: 0, vy: 0 } : n)),
+    );
+  }, []);
+
+  return { simNodes, setNodePosition, hasSettled };
 }
