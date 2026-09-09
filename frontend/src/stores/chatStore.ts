@@ -23,6 +23,8 @@ interface ChatState {
 
   // WebSocket
   ws: WebSocket | null;
+  /** True only once the socket handshake has finished and it can carry a message. */
+  wsReady: boolean;
 
   setSearchQuery: (query: string) => void;
   loadSessions: (profileId: string) => Promise<void>;
@@ -63,6 +65,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
   error: null,
   searchQuery: "",
   ws: null,
+  wsReady: false,
 
   setSearchQuery: (query: string) => {
     set({ searchQuery: query });
@@ -86,7 +89,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       const session = await chatApi.getSession(profileId, sessionId);
-      set({ activeSession: session, isLoading: false });
+      set({ activeSession: session, isLoading: false, wsReady: false });
 
       // Connect WebSocket for this session
       get().disconnectWs();
@@ -94,6 +97,17 @@ export const useChatStore = create<ChatState>((set, get) => ({
       const wsProtocol = apiBaseUrl.protocol === "https:" ? "wss:" : "ws:";
       const wsUrl = `${wsProtocol}//${apiBaseUrl.host}/ws/chat/${profileId}/${sessionId}`;
       const ws = new WebSocket(wsUrl);
+
+      // Nothing can be sent until the handshake finishes. The session is
+      // published to the rest of the app one line above, several hundred
+      // milliseconds before that happens, so anything reacting to the
+      // session appearing -- the roadmap's "start tutoring", or a fast
+      // typist -- used to be dropped as "not connected" with no sign of it.
+      ws.onopen = () => {
+        if (get().ws === ws) {
+          set({ wsReady: true });
+        }
+      };
 
       ws.onmessage = (event) => {
         const data = JSON.parse(event.data);
@@ -183,7 +197,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
       ws.onclose = () => {
         const state = get();
         if (state.ws === ws) {
-          set({ ws: null });
+          set({ ws: null, wsReady: false });
         }
       };
 
@@ -342,7 +356,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
     const { ws } = get();
     if (ws) {
       ws.close();
-      set({ ws: null });
+      set({ ws: null, wsReady: false });
     }
   },
 }));

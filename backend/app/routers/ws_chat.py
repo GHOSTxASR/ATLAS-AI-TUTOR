@@ -27,6 +27,16 @@ from app.utils.date_utils import elapsed_study_minutes
 
 logger = logging.getLogger(__name__)
 
+#: Output budget for the retry after a stream comes back empty.
+#:
+#: A reasoning model's thinking is charged against the same ceiling as the
+#: answer, so a model that spent the whole allowance thinking will do it again
+#: if the retry is given no more room -- which is what made the tutor return
+#: nothing at all on the default `openrouter/auto`, since a router picks a
+#: reasoning model whenever it feels like one. The syllabus parser hit this
+#: first and settled on the same figure. Only ever paid on a failed turn.
+EMPTY_REPLY_RETRY_MAX_TOKENS = 16000
+
 router = APIRouter(tags=["websocket-chat"])
 
 
@@ -88,9 +98,18 @@ async def ws_chat(websocket: WebSocket, profile_id: str, session_id: str):
                     await websocket.send_json({"type": "error", "content": "Session not found"})
                     continue
 
+                # Fall back to the topic the session was opened for. Sessions
+                # created from a roadmap carry their node, and without this the
+                # socket forgot it the moment the client did not resend it --
+                # so a thread explicitly about a topic was tutored with no
+                # curriculum context, and the topic never left "not started".
+                # The REST path has always done this; the socket is the one the
+                # interface actually uses.
+                effective_node_id = roadmap_node_id or chat_session.roadmap_node_id
+
                 node = None
-                if roadmap_node_id:
-                    node = await roadmap_repo.get_node(roadmap_node_id)
+                if effective_node_id:
+                    node = await roadmap_repo.get_node(effective_node_id)
                     if not node or node.profile_id != profile_id:
                         await websocket.send_json({"type": "error", "content": "Roadmap node not found"})
                         continue
@@ -126,7 +145,7 @@ async def ws_chat(websocket: WebSocket, profile_id: str, session_id: str):
                         query=user_content,
                         doc_ids=document_ids,
                         topic_context=topic_title,
-                        roadmap_node_id=roadmap_node_id,
+                        roadmap_node_id=effective_node_id,
                         learner_profile_context=learner_context,
                     )
                     if assembled.citations:
@@ -156,13 +175,16 @@ async def ws_chat(websocket: WebSocket, profile_id: str, session_id: str):
 
                 # Stream AI response
                 full_response = ""
+                temperature = (
+                    0.2 if mode in ("revision", "summary") else settings.model.temperature
+                )
                 try:
                     client = get_model_client(settings)
                     try:
                         async for chunk in client.chat_stream(
                             llm_messages,
                             model=settings.model.chat_model,
-                            temperature=0.2 if mode in ("revision", "summary") else settings.model.temperature,
+                            temperature=temperature,
                             max_tokens=settings.model.max_tokens,
                         ):
                             if chunk.done:
@@ -172,6 +194,36 @@ async def ws_chat(websocket: WebSocket, profile_id: str, session_id: str):
                                 await websocket.send_json({
                                     "type": "chunk",
                                     "content": chunk.content,
+                                })
+
+                        # A stream that yields nothing is not a finished answer.
+                        # Reasoning models -- and the "auto" routers that pick
+                        # one for you -- sometimes emit only their private
+                        # thinking and never any content. The same request
+                        # usually answers when it is not streamed, so ask once
+                        # more that way instead of leaving the question sitting
+                        # there unanswered.
+                        if not full_response:
+                            logger.warning(
+                                "Empty stream from %s; retrying without streaming "
+                                "on a %d-token budget.",
+                                settings.model.chat_model,
+                                EMPTY_REPLY_RETRY_MAX_TOKENS,
+                            )
+                            completion = await client.chat_complete(
+                                llm_messages,
+                                model=settings.model.chat_model,
+                                temperature=temperature,
+                                max_tokens=max(
+                                    settings.model.max_tokens,
+                                    EMPTY_REPLY_RETRY_MAX_TOKENS,
+                                ),
+                            )
+                            full_response = (completion.content or "").strip()
+                            if full_response:
+                                await websocket.send_json({
+                                    "type": "chunk",
+                                    "content": full_response,
                                 })
                     finally:
                         await client.close()
@@ -200,6 +252,36 @@ async def ws_chat(websocket: WebSocket, profile_id: str, session_id: str):
                         session_id=session_id, role="assistant", content=full_response
                     )
                     await session_repo.touch(chat_session)
+
+                    # Studying a topic with the tutor moves it off "not
+                    # started". The REST orchestrator has always done this; the
+                    # socket -- the path the interface actually uses -- did not,
+                    # so chatting about a topic never reached the roadmap.
+                    #
+                    # Before "done", not after: a client that closes the socket
+                    # on seeing "done" cancels this task, and cancellation is a
+                    # BaseException that an `except Exception` will not catch,
+                    # so the update was simply lost. Doing it first also means
+                    # the status is already correct when the client refetches.
+                    #
+                    # Re-read rather than reuse the instance loaded earlier:
+                    # saving the messages committed in between, which expires
+                    # it, and touching an expired attribute raises from the
+                    # async driver rather than returning a value.
+                    #
+                    # Mastery is deliberately untouched -- a conversation shows
+                    # you started, not that you understood.
+                    if effective_node_id:
+                        try:
+                            current = await roadmap_repo.get_node(effective_node_id)
+                            if current and current.status == "not_started":
+                                await roadmap_repo.update_node(current, status="in_progress")
+                        except Exception as e:
+                            logger.warning(
+                                "Could not mark roadmap node %s in progress: %s",
+                                effective_node_id,
+                                e,
+                            )
 
                     await websocket.send_json({
                         "type": "done",
@@ -232,10 +314,16 @@ async def ws_chat(websocket: WebSocket, profile_id: str, session_id: str):
                         name=f"memory-extraction:{session_id}",
                     )
                 else:
+                    # Nothing to persist, so this is a failed turn, not a
+                    # finished one. Reporting "done" here left the learner
+                    # looking at their own question with no answer and no
+                    # explanation of what went wrong.
                     await websocket.send_json({
-                        "type": "done",
-                        "message_id": "",
-                        "content": "",
+                        "type": "error",
+                        "content": (
+                            "The model returned an empty response. Try again, or "
+                            "pick a different chat model in Settings."
+                        ),
                     })
 
     except WebSocketDisconnect:

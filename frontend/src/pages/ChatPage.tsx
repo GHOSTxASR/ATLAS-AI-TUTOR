@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import {
   Loader2,
   MessageSquare,
@@ -25,6 +25,7 @@ import {
 import { useChatStore } from "../stores/chatStore";
 import { useProfileStore } from "../stores/profileStore";
 import { chatApi, LearningMode, UnifiedLearningContext } from "../api/chat";
+import { StudyIntent, openingPromptFor } from "../hooks/useOpenTutor";
 import { EmptyState, Skeleton } from "../components/common/LoadingStates";
 import { MarkdownContent } from "../components/common/MarkdownContent";
 import { CitationList } from "../components/chat/CitationList";
@@ -35,6 +36,7 @@ export function ChatPage() {
     sessions,
     activeSession,
     isStreaming,
+    wsReady,
     streamingContent,
     streamingCitations,
     error,
@@ -65,12 +67,55 @@ export function ChatPage() {
   const [searchParams] = useSearchParams();
   const targetSessionId = urlSessionId || searchParams.get("session_id");
   const topic = searchParams.get("topic");
+  const location = useLocation();
+  const studyTopic = (location.state as StudyIntent | null)?.studyTopic;
 
+  // A "?topic=" arrival with no session still just pre-fills the box: there is
+  // no thread to send into yet.
   useEffect(() => {
     if (topic) {
       setMessageInput(topic);
     }
   }, [topic]);
+
+  // Opened from the roadmap or the graph to study something: ask the first
+  // question on the learner's behalf, so the tutor actually starts.
+  //
+  // Three separate guards stop it repeating, because each covers a different
+  // way it could fire twice:
+  //   - the ref: re-renders while the answer streams in
+  //   - the empty-thread check: returning to a topic already discussed
+  //   - router state, which a reload discards: refreshing mid-answer
+  //
+  // It also waits for the socket: the session is in the store before the
+  // connection is usable, and sending into a half-open socket fails
+  // silently while still counting as the one attempt.
+  const autoStartedFor = useRef<string | null>(null);
+  useEffect(() => {
+    if (!studyTopic || !activeProfileId || !activeSession || isStreaming) return;
+    if (!wsReady) return;
+    if (autoStartedFor.current === activeSession.id) return;
+    if ((activeSession.messages ?? []).length > 0) return;
+
+    autoStartedFor.current = activeSession.id;
+    sendStreamingMessage(
+      activeProfileId,
+      activeSession.id,
+      openingPromptFor(studyTopic),
+      {
+        mode: selectedMode,
+        roadmapNodeId: activeSession.roadmap_node_id ?? undefined,
+      },
+    );
+  }, [
+    studyTopic,
+    activeProfileId,
+    activeSession,
+    isStreaming,
+    wsReady,
+    selectedMode,
+    sendStreamingMessage,
+  ]);
 
   useEffect(() => {
     if (activeProfileId) {
@@ -175,9 +220,15 @@ export function ChatPage() {
     if (!messageInput.trim() || !activeProfileId || !activeSession || isStreaming) {
       return;
     }
+    // Still connecting: keep what was typed rather than clearing it into a
+    // socket that cannot carry it.
+    if (!wsReady) return;
     const query = messageInput;
     setMessageInput("");
-    sendStreamingMessage(activeProfileId, activeSession.id, query, { mode: selectedMode });
+    sendStreamingMessage(activeProfileId, activeSession.id, query, {
+      mode: selectedMode,
+      roadmapNodeId: activeSession.roadmap_node_id ?? undefined,
+    });
   };
 
   if (!activeProfileId) {
@@ -449,7 +500,7 @@ export function ChatPage() {
                   />
                   <button
                     type="submit"
-                    disabled={!messageInput.trim() || isStreaming}
+                    disabled={!messageInput.trim() || isStreaming || !wsReady}
                     className="atlas-btn atlas-btn-primary shrink-0"
                   >
                     {isStreaming ? (

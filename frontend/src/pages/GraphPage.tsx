@@ -9,7 +9,7 @@ import {
   GraphEdgeType,
 } from "../api/graph";
 import { KnowledgeGraphCanvas } from "../components/graph/KnowledgeGraphCanvas";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   Network,
   Plus,
@@ -22,8 +22,10 @@ import {
 } from "lucide-react";
 import { EmptyState, ErrorState } from "../components/common/LoadingStates";
 import { useFocusTrap } from "../hooks/useFocusTrap";
+import { useOpenTutor } from "../hooks/useOpenTutor";
 
 export function GraphPage() {
+  const { openTutor, opening: openingTutor } = useOpenTutor();
   const navigate = useNavigate();
   const { activeProfileId, profiles } = useProfileStore();
   const activeProfile = profiles.find((p) => p.id === activeProfileId);
@@ -452,12 +454,26 @@ export function GraphPage() {
               </p>
             </div>
             <div className="flex items-center gap-2">
-              <Link
-                to={`/chat?topic=${encodeURIComponent(selectedNode.label)}`}
+              {/* Was a link to "/chat?topic=", which only typed the concept
+                  into the message box and left the tutor waiting. A graph
+                  concept carries the roadmap topic it came from when it has
+                  one, so the thread stays attached to the curriculum. */}
+              <button
+                type="button"
+                onClick={() =>
+                  activeProfileId &&
+                  openTutor(
+                    activeProfileId,
+                    selectedNode.label,
+                    selectedNode.roadmap_node_id ?? undefined,
+                  )
+                }
+                disabled={openingTutor}
+                title={`Open the AI tutor on "${selectedNode.label}"`}
                 className="atlas-btn atlas-btn-primary"
               >
                 <MessageSquare className="w-3.5 h-3.5" /> Tutor Topic
-              </Link>
+              </button>
               <button
                 onClick={() => handleDeleteNode(selectedNode.id)}
                 className="p-1.5 text-on-surface-variant hover:bg-rose-500/20 hover:text-rose-400 transition"

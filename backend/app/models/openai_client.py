@@ -22,6 +22,16 @@ from app.models.resilience import (
 logger = logging.getLogger(__name__)
 
 
+
+def _stream_error_message(error: object) -> str:
+    """Readable text for an error delivered inside a streaming body."""
+    if isinstance(error, dict):
+        message = error.get("message") or error.get("code") or ""
+        if message:
+            return str(message)
+    return str(error) if error else "The provider reported an error mid-stream."
+
+
 class OpenAIClient(BaseModelClient):
     """OpenAI-compatible chat client using raw httpx (works with OpenAI, Azure, any compatible API)."""
 
@@ -112,8 +122,20 @@ class OpenAIClient(BaseModelClient):
                                 break
                             try:
                                 chunk = json.loads(data_str)
+                            except json.JSONDecodeError:
+                                continue
+                            # An exhausted quota or a rejected request arrives
+                            # inside a 200 body rather than as an HTTP status.
+                            # Skipping it as "malformed" ended the turn looking
+                            # successful but empty, which read as the tutor
+                            # simply not answering.
+                            if isinstance(chunk, dict) and chunk.get("error"):
+                                raise ProviderError(
+                                    _stream_error_message(chunk["error"]), provider=provider
+                                )
+                            try:
                                 content = chunk["choices"][0].get("delta", {}).get("content", "")
-                            except (json.JSONDecodeError, KeyError, IndexError):
+                            except (KeyError, IndexError):
                                 continue
                             if content:
                                 produced = True

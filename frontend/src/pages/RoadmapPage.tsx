@@ -1,7 +1,6 @@
 import { getErrorMessage, getErrorStatus } from "../utils/errors";
 import React, { useEffect, useState, useCallback } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { chatApi } from "../api/chat";
+import { Link, useSearchParams } from "react-router-dom";
 import { useProfileStore } from "../stores/profileStore";
 import {
   roadmapApi,
@@ -17,6 +16,7 @@ import {
   Award,
   ChevronRight,
   } from "lucide-react";
+import { useOpenTutor } from "../hooks/useOpenTutor";
 import { EmptyState, ErrorState } from "../components/common/LoadingStates";
 import { GenerateRoadmapPanel } from "../components/roadmap/GenerateRoadmapPanel";
 
@@ -32,8 +32,7 @@ export function RoadmapPage() {
   // exactly when you need it again to rebuild from a grown syllabus.
   const [showGenerator, setShowGenerator] = useState(false);
   const [selectedNode, setSelectedNode] = useState<RoadmapNode | null>(null);
-  const [openingTutor, setOpeningTutor] = useState(false);
-  const navigate = useNavigate();
+  const { openTutor, opening: openingTutor, error: tutorError } = useOpenTutor();
   const [, setLoading] = useState<boolean>(true);
     const [actionError, setActionError] = useState<string | null>(null);
 
@@ -82,21 +81,11 @@ export function RoadmapPage() {
   // Resolve the topic to its existing thread before navigating, rather than
   // linking to /chat?topic=... which attached no session and so started a new
   // conversation on every visit.
-  const openTutorForNode = async (node: RoadmapNode) => {
-    if (!activeProfileId || openingTutor) return;
-    setOpeningTutor(true);
-    setActionError(null);
-    try {
-      const session = await chatApi.sessionForTopic(activeProfileId, node.title, node.id);
-      navigate(`/chat/${session.id}`);
-    } catch (err) {
-      setActionError(
-        getErrorMessage(err, "Could not open the tutor for this topic.")
-      );
-    } finally {
-      setOpeningTutor(false);
-    }
-  };
+  // Opening a topic used to create the thread and land on an empty box: the
+  // tutor was never asked anything, so "Start AI Tutorial" looked like it had
+  // done nothing. The shared launcher asks the first question too.
+  const openTutorForNode = (node: RoadmapNode) =>
+    openTutor(activeProfileId!, node.title, node.id);
 
   const handleUpdateStatus = async (
     nodeId: string,
@@ -129,6 +118,7 @@ export function RoadmapPage() {
 
   return (
     <div className="w-full min-w-0 space-y-6">
+      {tutorError && <ErrorState message={tutorError} />}
       {actionError && <ErrorState message={actionError} actionLabel="Dismiss" onRetry={() => setActionError(null)} />}
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -168,14 +158,16 @@ export function RoadmapPage() {
             </button>
           )}
           {currentNode && (
-            <Link
-              to={`/chat?topic=${encodeURIComponent(currentNode.title)}`}
+            <button
+              type="button"
+              onClick={() => openTutorForNode(currentNode)}
+              disabled={openingTutor}
               title={`Open the AI tutor on "${currentNode.title}"`}
               className="atlas-btn atlas-btn-primary max-w-[16rem]"
             >
               <MessageSquare className="w-4 h-4 shrink-0" />
               <span className="truncate">Study {currentNode.title}</span>
-            </Link>
+            </button>
           )}
         </div>
       </div>
