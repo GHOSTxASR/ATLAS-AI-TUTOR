@@ -183,3 +183,41 @@ def test_a_dropped_topic_with_work_behind_it_is_kept(client):
         "a topic with a conversation behind it was deleted with the syllabus edit"
     )
     assert _node(second, "Routing Basics")["id"] == routing["id"]
+
+
+NETWORKING_RENAMED_MODULE = """# Networking Fundamentals
+## Core Concepts
+### Packet Switching
+### Routing Basics
+"""
+
+
+def test_a_reworded_module_still_takes_its_chapters_with_it(client):
+    """Renaming the top of a syllabus is enough to break a naive update.
+
+    The module no longer matches, so it arrives as a new node, while the
+    chapters beneath it match and have to move under it. Writing those moves
+    before the module exists fails on the foreign key and loses the whole
+    update -- which is what a real syllabus, re-read and reworded slightly by
+    the parser, does on the very first try.
+    """
+    profile_id = _profile(client)
+    first = _build(client, profile_id, NETWORKING, "syllabus-v1")
+    packet = _node(first, "Packet Switching")
+
+    client.patch(
+        f"/api/v1/profiles/{profile_id}/roadmaps/{first['id']}/nodes/{packet['id']}",
+        json={"status": "in_progress"},
+    )
+
+    second = _build(client, profile_id, NETWORKING_RENAMED_MODULE, "syllabus-v2")
+
+    assert "Networking Fundamentals" in _titles(second), "the reworded module never landed"
+    carried = _node(second, "Packet Switching")
+    assert carried["id"] == packet["id"], "the topic was rebuilt under a new id"
+    assert carried["status"] == "in_progress", "progress was lost to a rename"
+
+    # The chapter now hangs off the new module rather than a deleted one.
+    chapter = _node(second, "Core Concepts")
+    module = _node(second, "Networking Fundamentals")
+    assert chapter["parent_id"] == module["id"]

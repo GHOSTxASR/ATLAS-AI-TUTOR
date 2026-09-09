@@ -208,48 +208,18 @@ class RoadmapRepository(BaseRepository[Roadmap]):
             roadmap.source_document_id = source_document_id
         self.session.add(roadmap)
 
-        for nd in nodes_data:
-            node_id = nd.get("id")
-            current = existing.get(node_id) if node_id else None
-            if current is not None:
-                # Same topic, possibly reworded or moved: refresh how it is
-                # described and where it sits, and leave the learner's
-                # progress alone.
-                current.title = nd["title"]
-                current.description = nd.get("description", "")
-                current.node_type = nd.get("node_type", current.node_type)
-                current.parent_id = nd.get("parent_id")
-                current.order_index = nd.get("order_index", current.order_index)
-                self.session.add(current)
-            else:
-                self.session.add(
-                    RoadmapNode(
-                        id=node_id,
-                        roadmap_id=roadmap.id,
-                        profile_id=roadmap.profile_id,
-                        title=nd["title"],
-                        description=nd.get("description", ""),
-                        node_type=nd.get("node_type", "topic"),
-                        status=nd.get("status", "not_started"),
-                        parent_id=nd.get("parent_id"),
-                        order_index=nd.get("order_index", 1),
-                        mastery_score=nd.get("mastery_score", 0.0),
-                        time_spent_minutes=nd.get("time_spent_minutes", 0),
-                        ai_generated=nd.get("ai_generated", False),
-                        completed_at=nd.get("completed_at"),
-                    )
-                )
-
         # Topics the new syllabus dropped. Ones the learner never touched go;
         # the rest stay, because deleting them would take real work with them.
+        # Done before anything is written so the rows are gone by the time the
+        # surviving topics are re-parented.
         removed = [
             node_id
             for node_id in existing
             if node_id not in incoming_ids and node_id not in keep_node_ids
         ]
         if removed:
-            # Children first: a parent_id still pointing at a deleted row
-            # would be nulled out and orphan whatever hangs off it.
+            # Detach the children first: a parent_id still pointing at a
+            # deleted row would orphan whatever hangs off it.
             await self.session.execute(
                 update(RoadmapNode)
                 .where(RoadmapNode.parent_id.in_(removed))
@@ -264,6 +234,51 @@ class RoadmapRepository(BaseRepository[Roadmap]):
             await self.session.execute(
                 delete(RoadmapNode).where(RoadmapNode.id.in_(removed))
             )
+
+        # New topics are inserted before the surviving ones are updated, and
+        # in the order the builder emitted them, which is parents first.
+        #
+        # A syllabus reworded at the top -- "Networking" becoming "Networking
+        # Fundamentals", which is all it takes -- leaves that module unmatched
+        # and new, while the chapters under it match and move beneath it. Had
+        # those moves been written first they would have pointed at a module
+        # that did not exist yet, and the whole update failed on the foreign
+        # key.
+        matched: list[tuple[RoadmapNode, dict[str, Any]]] = []
+        for nd in nodes_data:
+            node_id = nd.get("id")
+            current = existing.get(node_id) if node_id else None
+            if current is not None:
+                matched.append((current, nd))
+                continue
+            self.session.add(
+                RoadmapNode(
+                    id=node_id,
+                    roadmap_id=roadmap.id,
+                    profile_id=roadmap.profile_id,
+                    title=nd["title"],
+                    description=nd.get("description", ""),
+                    node_type=nd.get("node_type", "topic"),
+                    status=nd.get("status", "not_started"),
+                    parent_id=nd.get("parent_id"),
+                    order_index=nd.get("order_index", 1),
+                    mastery_score=nd.get("mastery_score", 0.0),
+                    time_spent_minutes=nd.get("time_spent_minutes", 0),
+                    ai_generated=nd.get("ai_generated", False),
+                    completed_at=nd.get("completed_at"),
+                )
+            )
+        await self.session.flush()
+
+        # Same topic, possibly reworded or moved: refresh how it is described
+        # and where it sits, and leave the learner's progress alone.
+        for current, nd in matched:
+            current.title = nd["title"]
+            current.description = nd.get("description", "")
+            current.node_type = nd.get("node_type", current.node_type)
+            current.parent_id = nd.get("parent_id")
+            current.order_index = nd.get("order_index", current.order_index)
+            self.session.add(current)
 
         await self.session.flush()
 
