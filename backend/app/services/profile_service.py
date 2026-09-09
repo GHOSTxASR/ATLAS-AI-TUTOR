@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import os
 import tempfile
 import time
@@ -28,6 +29,8 @@ from app.db.models import (
 from app.db.repositories.profile_repo import ProfileRepository
 from app.exceptions import AtlasError
 from app.schemas.profile import ProfileCreate, ProfileUpdate
+
+logger = logging.getLogger(__name__)
 
 #: Ceiling on what one import may write to disk, as a multiple of the
 #: configured archive size limit -- so with the default 500MB limit, an import
@@ -111,6 +114,16 @@ class ProfileService:
 
         vector_store = VectorStore()
         await vector_store.delete_all_profile_data(profile_id)
+
+        # The knowledge graph lives in its own file outside those directories,
+        # so deleting a profile left its graph on disk -- and cached in memory,
+        # since the in-process cache is shared across instances.
+        from app.db.repositories.graph_repo import GraphRepository
+
+        try:
+            await GraphRepository().delete_by_profile_id(profile_id)
+        except Exception as e:
+            logger.warning("Could not delete knowledge graph for profile %s: %s", profile_id, e)
 
     async def export_profile(self, profile_id: str) -> Path:
         """Package a profile's data, documents and records into a ZIP on disk.

@@ -328,7 +328,25 @@ class NotesService:
         if not note or note.profile_id != profile_id:
             raise AtlasError(status_code=404, code="NOT_FOUND", message="Note not found")
 
-        updated = await self.repo.update(note, **data.model_dump(exclude_unset=True))
+        fields = data.model_dump(exclude_unset=True)
+        updated = await self.repo.update(note, **fields)
+
+        # Keep what the tutor can retrieve in step with what the note now
+        # says. Only creation indexed a note, so an edited note stayed
+        # searchable by its original wording -- corrections included.
+        if {"title", "content"} & set(fields):
+            try:
+                await self.vector_store.index_note(
+                    profile_id=profile_id,
+                    note_id=updated.id,
+                    title=updated.title,
+                    text=updated.content,
+                    tags=",".join(_format_tags(updated.tags_json)),
+                    roadmap_node_id=updated.roadmap_node_id,
+                )
+            except Exception as e:
+                logger.warning("Could not re-index edited note %s: %s", updated.id, e)
+
         return NoteResponse(
             id=updated.id,
             profile_id=updated.profile_id,
@@ -348,5 +366,14 @@ class NotesService:
         note = await self.repo.get_by_id(note_id)
         if not note or note.profile_id != profile_id:
             raise AtlasError(status_code=404, code="NOT_FOUND", message="Note not found")
+
+        # Drop the vector first: a note deleted from the database but left in
+        # the index went on being quoted back to the learner as a source, with
+        # nothing behind the citation.
+        try:
+            await self.vector_store.delete_by_note_id(profile_id=profile_id, note_id=note.id)
+        except Exception as e:
+            logger.warning("Could not remove note %s from the vector index: %s", note.id, e)
+
         await self.repo.delete(note)
         return True
