@@ -29,6 +29,84 @@ from app.services.syllabus_service import SyllabusService
 
 logger = logging.getLogger(__name__)
 
+#: How much of the existing roadmap has to reappear in a freshly parsed
+#: syllabus before it counts as the same course still being studied.
+#:
+#: The two cases this separates look nothing alike: a syllabus that grew by a
+#: chapter still contains nearly all of its old topics, while a syllabus for a
+#: different subject shares almost none. Anywhere in the middle is
+#: vanishingly rare, so the exact figure matters far less than having one.
+SAME_COURSE_TITLE_OVERLAP = 0.5
+
+
+def _normalized(title: str) -> str:
+    """Titles as they compare across two parses of the same syllabus."""
+    return " ".join((title or "").split()).strip().lower()
+
+
+def _match_existing_nodes(
+    existing: Sequence[RoadmapNode], nodes_data: list[dict[str, Any]]
+) -> tuple[dict[str, str], float]:
+    """Pair freshly parsed topics with the ones already on the roadmap.
+
+    Matching is by title, under its parent first so that the "Introduction"
+    beneath one module is not confused with the "Introduction" beneath
+    another, then by title alone for whatever is left over.
+
+    Returns the generated-id -> existing-id map, and the share of the existing
+    roadmap that was recognised.
+    """
+    existing_titles = {n.id: _normalized(n.title) for n in existing}
+    incoming_titles = {
+        nd["id"]: _normalized(nd["title"]) for nd in nodes_data if nd.get("id")
+    }
+
+    def existing_key(node: RoadmapNode) -> tuple[str, str]:
+        return (existing_titles.get(node.parent_id or "", ""), existing_titles[node.id])
+
+    def incoming_key(nd: dict[str, Any]) -> tuple[str, str]:
+        return (incoming_titles.get(nd.get("parent_id") or "", ""), _normalized(nd["title"]))
+
+    by_parent_and_title: dict[tuple[str, str], str] = {}
+    by_title: dict[str, str] = {}
+    for node in existing:
+        by_parent_and_title.setdefault(existing_key(node), node.id)
+        by_title.setdefault(existing_titles[node.id], node.id)
+
+    id_map: dict[str, str] = {}
+    claimed: set[str] = set()
+
+    # Two passes, so a confident match is never displaced by a looser one.
+    for lookup, key in ((by_parent_and_title, incoming_key), (by_title, lambda nd: _normalized(nd["title"]))):
+        for nd in nodes_data:
+            generated_id = nd.get("id")
+            if not generated_id or generated_id in id_map:
+                continue
+            candidate = lookup.get(key(nd))  # type: ignore[arg-type]
+            # One existing topic cannot become two, or they would collide on
+            # the same primary key.
+            if candidate and candidate not in claimed:
+                id_map[generated_id] = candidate
+                claimed.add(candidate)
+
+    overlap = len(claimed) / len(existing) if existing else 0.0
+    return id_map, overlap
+
+
+def _remap_ids(
+    nodes_data: list[dict[str, Any]],
+    edges_data: list[dict[str, Any]],
+    id_map: dict[str, str],
+) -> None:
+    """Point a freshly built graph at the rows that already exist."""
+    for nd in nodes_data:
+        nd["id"] = id_map.get(nd.get("id"), nd.get("id"))
+        if nd.get("parent_id"):
+            nd["parent_id"] = id_map.get(nd["parent_id"], nd["parent_id"])
+    for ed in edges_data:
+        ed["from_node_id"] = id_map.get(ed["from_node_id"], ed["from_node_id"])
+        ed["to_node_id"] = id_map.get(ed["to_node_id"], ed["to_node_id"])
+
 
 class RoadmapService:
     """Orchestrates Roadmap DAG generation in Strict, Adaptive, and Hybrid modes with progress tracking."""
@@ -79,7 +157,39 @@ class RoadmapService:
             # Strict mode (default)
             nodes_data, edges_data = build_strict_dag(profile_id, parsed_syllabus)
 
-        # 3. Archive previously active roadmaps
+        # 3. Continue the roadmap already in progress when this syllabus is
+        # the same course. Replacing it wholesale gave every topic a new id,
+        # which reset all progress and cut every chat, note, quiz attempt and
+        # document loose from the topic it was filed under -- so adding one
+        # chapter to a syllabus cost the learner everything done so far.
+        active = await self.repo.get_active_roadmap(profile_id)
+        if active and active.nodes:
+            id_map, overlap = _match_existing_nodes(active.nodes, nodes_data)
+            if overlap >= SAME_COURSE_TITLE_OVERLAP:
+                _remap_ids(nodes_data, edges_data, id_map)
+                incoming_ids = {nd["id"] for nd in nodes_data if nd.get("id")}
+                dropped = [n.id for n in active.nodes if n.id not in incoming_ids]
+                keep_node_ids = await self.repo.nodes_with_history(dropped)
+                logger.info(
+                    "Updating roadmap %s in place: %.0f%% of its topics are in the "
+                    "new syllabus, %d dropped (%d kept for their history).",
+                    active.id,
+                    overlap * 100,
+                    len(dropped),
+                    len(keep_node_ids),
+                )
+                reconciled = await self.repo.reconcile_roadmap(
+                    active,
+                    title=title,
+                    mode=mode,
+                    source_document_id=data.document_id,
+                    nodes_data=nodes_data,
+                    edges_data=edges_data,
+                    keep_node_ids=keep_node_ids,
+                )
+                return self._format_roadmap_response(reconciled)
+
+        # A different subject: keep the old roadmap as history and start fresh.
         await self.repo.archive_active_roadmaps(profile_id)
 
         # 4. Save new roadmap
@@ -229,41 +339,31 @@ class RoadmapService:
     async def regenerate_roadmap(
         self, profile_id: str, roadmap_id: str, mode: str | None = None
     ) -> RoadmapResponse:
-        """Regenerate a roadmap as a new version and migrate progress from matching old nodes."""
+        """Rebuild a roadmap from its syllabus without losing what has been done.
+
+        Progress used to be copied across by title onto a freshly created set
+        of nodes. Generation now folds a re-parsed syllabus into the roadmap
+        that is already there, which keeps the node ids as well as the
+        progress -- so the chats, notes and quiz attempts filed against each
+        topic stay attached to it instead of being cut loose.
+        """
         old_roadmap = await self.repo.get_full_roadmap(roadmap_id)
         if not old_roadmap or old_roadmap.profile_id != profile_id:
             raise AtlasError(status_code=404, code="NOT_FOUND", message="Roadmap not found")
 
+        # Read before generating: the commit inside expires this instance, and
+        # touching an expired attribute afterwards raises rather than reloading.
+        source_document_id = old_roadmap.source_document_id
         gen_mode = mode or old_roadmap.mode
-        new_version = old_roadmap.version + 1
+        roadmap_title = old_roadmap.title
+        next_version = old_roadmap.version + 1
 
-        # Generate new roadmap
-        create_req = RoadmapCreate(
-            document_id=old_roadmap.source_document_id,
-            mode=gen_mode,  # type: ignore
-            title=old_roadmap.title,
+        return await self.generate_roadmap(
+            profile_id=profile_id,
+            data=RoadmapCreate(
+                document_id=source_document_id,
+                mode=gen_mode,  # type: ignore[arg-type]
+                title=roadmap_title,
+            ),
+            version=next_version,
         )
-        new_roadmap_resp = await self.generate_roadmap(
-            profile_id=profile_id, data=create_req, version=new_version
-        )
-
-        # Progress Migration: match old nodes to new nodes by normalized title
-        old_nodes_by_title = {n.title.strip().lower(): n for n in old_roadmap.nodes}
-        new_roadmap_db = await self.repo.get_full_roadmap(new_roadmap_resp.id)
-        if new_roadmap_db:
-            for new_n in new_roadmap_db.nodes:
-                match = old_nodes_by_title.get(new_n.title.strip().lower())
-                if match and match.status in ("completed", "in_progress", "skipped"):
-                    await self.repo.update_node(
-                        new_n,
-                        status=match.status,
-                        mastery_score=match.mastery_score,
-                        time_spent_minutes=match.time_spent_minutes,
-                        completed_at=match.completed_at,
-                    )
-
-            # Re-fetch after progress migration
-            new_roadmap_db = await self.repo.get_full_roadmap(new_roadmap_resp.id)
-            return self._format_roadmap_response(new_roadmap_db)  # type: ignore
-
-        return new_roadmap_resp

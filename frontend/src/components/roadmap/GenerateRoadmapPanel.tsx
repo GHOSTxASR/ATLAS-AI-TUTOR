@@ -158,12 +158,14 @@ export function GenerateRoadmapPanel({
         </div>
       </fieldset>
 
-      {/* Generating replaces whatever is active, and the progress on it stops
-          being visible. Better said before the click than discovered after. */}
+      {/* What happens next depends on what was uploaded, and it is worth
+          saying before the click rather than leaving it to be discovered. */}
       {hasExistingRoadmap && (
         <p className="text-[11px] text-luminous-highlight bg-primary-container/25 border border-primary/30 p-3 leading-relaxed">
-          This archives your current roadmap. Its progress is kept, but it will no longer be the
-          one shown here.
+          An updated syllabus for the same course folds into your current roadmap: topics you
+          have already worked on keep their progress, and new ones are added alongside them. A
+          syllabus for a different subject starts a separate roadmap instead, and this one is
+          kept as history.
         </p>
       )}
 
