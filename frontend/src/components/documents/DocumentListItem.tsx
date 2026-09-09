@@ -9,11 +9,22 @@ interface DocumentListItemProps {
   isReprocessing: boolean;
 }
 
+const IN_PROGRESS = "bg-primary-container/30 text-primary animate-pulse";
+const DONE = "bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300";
+
+// Every status the backend can set. Four were missing -- including "indexed",
+// which is where a document ends up when everything worked, so the one state
+// with no styling of its own was the successful one. It fell through to the
+// neutral fallback and showed the raw lowercase value.
 const STATUS_STYLES: Record<DocumentStatus, { label: string; className: string }> = {
   pending: { label: "Pending", className: "bg-surface-container-high text-on-surface-variant" },
-  extracting: { label: "Extracting...", className: "bg-primary-container/30 text-primary animate-pulse" },
-  extracted: { label: "Extracted", className: "bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300" },
+  extracting: { label: "Extracting…", className: IN_PROGRESS },
+  extracted: { label: "Extracted", className: DONE },
   pending_ocr: { label: "Awaiting OCR", className: "bg-primary-container/40 text-luminous-highlight" },
+  chunking: { label: "Chunking…", className: IN_PROGRESS },
+  queuing: { label: "Queued", className: IN_PROGRESS },
+  indexing: { label: "Indexing…", className: IN_PROGRESS },
+  indexed: { label: "Indexed", className: DONE },
   error: { label: "Error", className: "bg-rose-100 dark:bg-rose-950 text-rose-800 dark:text-rose-300" },
 };
 

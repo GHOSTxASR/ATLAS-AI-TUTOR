@@ -5,6 +5,24 @@ versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- **A "Generate roadmap" button.** Uploading a syllabus and ticking "Mark as
+  Syllabus" set a database flag that nothing downstream consumed, and
+  `generateRoadmap` — written, working, and reachable in the API — was called
+  from nowhere in the interface. There was no way to create a roadmap from the
+  app at all. The Roadmap page now offers a syllabus picker and an ordering
+  mode in its empty state, and a "New roadmap" action in the header once one
+  exists, so it stays reachable when a syllabus grows.
+
+### Fixed
+
+- **Four document statuses were missing from the frontend's type**, including
+  `indexed` — the state a document ends in when everything worked. Anything
+  comparing against it failed to typecheck, and the Library rendered the
+  successful state as an unstyled grey badge showing the raw lowercase value,
+  because the status-to-badge map had no entry for it.
+
 ### Security
 
 - **Upgraded FastAPI/Starlette/python-multipart, fixing a real Windows CVE.**

@@ -85,7 +85,24 @@ export interface ChatMessageCreate {
 
 export type DocumentFileType = "pdf" | "docx" | "txt" | "image";
 
-export type DocumentStatus = "pending" | "extracting" | "extracted" | "pending_ocr" | "error";
+/**
+ * Mirrors DocumentStatus in backend/app/schemas/document.py.
+ *
+ * Four of these were missing here -- including "indexed", the terminal success
+ * state nearly every document ends in. Anything comparing a status against it
+ * failed to typecheck, and anything switching on status silently had no branch
+ * for the most common value.
+ */
+export type DocumentStatus =
+  | "pending"
+  | "extracting"
+  | "extracted"
+  | "pending_ocr"
+  | "chunking"
+  | "queuing"
+  | "indexing"
+  | "indexed"
+  | "error";
 
 export interface Document {
   id: string;

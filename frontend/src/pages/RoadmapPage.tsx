@@ -18,6 +18,7 @@ import {
   ChevronRight,
   } from "lucide-react";
 import { EmptyState, ErrorState } from "../components/common/LoadingStates";
+import { GenerateRoadmapPanel } from "../components/roadmap/GenerateRoadmapPanel";
 
 export function RoadmapPage() {
   const { activeProfileId, profiles } = useProfileStore();
@@ -26,6 +27,10 @@ export function RoadmapPage() {
   const urlNodeId = searchParams.get("node_id");
 
   const [roadmap, setRoadmap] = useState<RoadmapDetail | null>(null);
+  // The generator is reachable from the header too, not only from the empty
+  // state -- otherwise it disappears the moment a roadmap exists, which is
+  // exactly when you need it again to rebuild from a grown syllabus.
+  const [showGenerator, setShowGenerator] = useState(false);
   const [selectedNode, setSelectedNode] = useState<RoadmapNode | null>(null);
   const [openingTutor, setOpeningTutor] = useState(false);
   const navigate = useNavigate();
@@ -149,8 +154,20 @@ export function RoadmapPage() {
         {/* Named the "current node" but linked to a bare /chat, carrying no
             topic at all. It now opens the tutor on the topic actually in
             progress, and names it so the destination is predictable. */}
-        {currentNode && (
-          <div className="flex items-center gap-3 shrink-0">
+        <div className="flex items-center gap-3 shrink-0">
+          {roadmap && (
+            <button
+              type="button"
+              onClick={() => setShowGenerator((open) => !open)}
+              aria-expanded={showGenerator}
+              title="Build a roadmap from a syllabus document"
+              className="atlas-btn"
+            >
+              <Sparkles className="w-4 h-4 shrink-0" />
+              <span>{showGenerator ? "Close" : "New roadmap"}</span>
+            </button>
+          )}
+          {currentNode && (
             <Link
               to={`/chat?topic=${encodeURIComponent(currentNode.title)}`}
               title={`Open the AI tutor on "${currentNode.title}"`}
@@ -159,9 +176,23 @@ export function RoadmapPage() {
               <MessageSquare className="w-4 h-4 shrink-0" />
               <span className="truncate">Study {currentNode.title}</span>
             </Link>
-          </div>
-        )}
+          )}
+        </div>
       </div>
+
+      {showGenerator && activeProfileId && (
+        <div className="glass-panel border border-glass-border">
+          <GenerateRoadmapPanel
+            profileId={activeProfileId}
+            hasExistingRoadmap={Boolean(roadmap)}
+            onGenerated={() => {
+              setShowGenerator(false);
+              setSelectedNode(null);
+              loadRoadmap();
+            }}
+          />
+        </div>
+      )}
 
       {/* Progress & Health Cards */}
       <div className="atlas-grid grid-cols-1 sm:grid-cols-3">
@@ -304,9 +335,15 @@ export function RoadmapPage() {
               })}
             </div>
           ) : (
-            <div className="p-8 text-center text-xs text-on-surface-variant font-sans">
-              No topics found in active roadmap. Upload a syllabus or generate a curriculum.
-            </div>
+            /* Previously this told the reader to "generate a curriculum" with
+               no way to do it -- the API existed but nothing called it. */
+            activeProfileId ? (
+              <GenerateRoadmapPanel
+                profileId={activeProfileId}
+                hasExistingRoadmap={Boolean(roadmap)}
+                onGenerated={loadRoadmap}
+              />
+            ) : null
           )}
           </div>
         </div>
