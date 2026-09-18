@@ -61,7 +61,7 @@ export function ChatPage() {
   const [showSessionDrawer, setShowSessionDrawer] = useState<boolean>(false);
   const [unifiedContext, setUnifiedContext] = useState<UnifiedLearningContext | null>(null);
   const [loadingContext, setLoadingContext] = useState<boolean>(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesPaneRef = useRef<HTMLDivElement>(null);
 
   const navigate = useNavigate();
   const { sessionId: urlSessionId } = useParams<{ sessionId: string }>();
@@ -177,10 +177,25 @@ export function ChatPage() {
     }
   }, [isStreaming, activeProfileId, activeSession, autotitleSession]);
 
-  // Auto-scroll to bottom when messages change or streaming content updates
+  // Keep the thread pinned to the newest message.
+  //
+  // Scrolls the pane itself rather than calling scrollIntoView on an anchor
+  // inside it. scrollIntoView moves *every* scrollable ancestor to bring the
+  // element into view -- including ancestors with overflow-hidden, which are
+  // still scrollable programmatically, and the document itself. So following
+  // the conversation could carry the whole chat column up with it, leaving the
+  // composer at the top of the screen and the header out of sight.
+  //
+  // Instant while tokens are arriving: a smooth scroll started on every chunk
+  // means several animations a second, each interrupting the last.
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [activeSession?.messages, streamingContent]);
+    const pane = messagesPaneRef.current;
+    if (!pane) return;
+    pane.scrollTo({
+      top: pane.scrollHeight,
+      behavior: isStreaming ? "auto" : "smooth",
+    });
+  }, [activeSession?.messages, streamingContent, isStreaming]);
 
   const handleCreateChat = () => {
     if (activeProfileId) {
@@ -413,7 +428,7 @@ export function ChatPage() {
             {/* Conversation Flow Area */}
             <div className="flex-1 flex overflow-hidden">
               <div className="flex-1 flex flex-col min-w-0">
-                <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
+                <div ref={messagesPaneRef} className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
                   {activeSession.messages?.map((msg) => (
                     <div
                       key={msg.id}
@@ -483,7 +498,6 @@ export function ChatPage() {
                     </div>
                   )}
 
-                  <div ref={messagesEndRef} />
                 </div>
 
                 {/* Chat Message Input Bar */}
