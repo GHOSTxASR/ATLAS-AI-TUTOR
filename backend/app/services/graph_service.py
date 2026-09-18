@@ -219,36 +219,86 @@ class GraphService:
 
         return await self.repo.sync_curriculum(profile_id, concepts, links)
 
+    #: Concepts taken from one source in a single pass. A whole syllabus read
+    #: at once would bury the curriculum already on the graph; the point is the
+    #: handful of ideas a document is actually about.
+    MAX_CONCEPTS_PER_SOURCE = 8
+
+    #: Finer points hung off each concept. Enough to show what a topic breaks
+    #: down into, few enough that the graph stays readable.
+    MAX_SUBTOPICS_PER_CONCEPT = 4
+
+    #: Documents read in one request. Each is a separate model call, so this is
+    #: what keeps "map everything I own" from running for ten minutes.
+    MAX_SOURCE_DOCUMENTS = 10
+
     async def enrich_from_text(
         self, profile_id: str, data: GraphEnrichRequest
     ) -> GraphDataResponse:
-        """Extract concepts, descriptions, and prerequisite links from learning text and link to source.
+        """Map concepts out of learning material and onto the graph.
 
-        A document can be named instead of pasting its contents. The text was
-        already extracted when it was uploaded, so asking for it again was
-        asking the learner to fetch something the app was sitting on.
+        Documents can be named rather than pasted. Their text was extracted
+        when they were uploaded, so asking for it again was asking the learner
+        to fetch something the app was already sitting on.
+
+        Several can be read in one go -- every syllabus for a course, or the
+        whole set of materials when none was marked as one -- because picking
+        through them one at a time is the same request over and over.
         """
         await self._require_profile(profile_id)
 
-        text = data.text or ""
-        source_type = data.source_type
-        source_id = data.source_id
-        source_label = data.source_label
+        # (label, text, document id)
+        sources: list[tuple[str, str, str | None]] = []
 
-        if data.document_id:
+        document_ids = list(
+            data.document_ids or ([data.document_id] if data.document_id else [])
+        )
+        if document_ids:
             if self.session is None:
                 raise AtlasError(
                     status_code=400,
                     code="VALIDATION_ERROR",
                     message="Reading a document requires a database session.",
                 )
-            document, text = await load_document_text(
-                self.session, self.settings, profile_id, data.document_id
-            )
-            source_type = "document"
-            source_id = data.document_id
-            source_label = source_label or document.filename
+            for document_id in document_ids[: self.MAX_SOURCE_DOCUMENTS]:
+                try:
+                    document, text = await load_document_text(
+                        self.session, self.settings, profile_id, document_id
+                    )
+                    sources.append((document.filename, text, document_id))
+                except AtlasError as e:
+                    # One unreadable scan among six should not cost the rest.
+                    logger.warning("Skipping document %s while mapping: %s", document_id, e)
+        elif (data.text or "").strip():
+            sources.append((data.source_label or "", data.text or "", data.source_id))
 
+        if not sources:
+            raise AtlasError(
+                status_code=422,
+                code="EXTRACTION_EMPTY",
+                message="None of the selected documents had any readable text.",
+            )
+
+        for label, text, document_id in sources:
+            await self._map_one_source(
+                profile_id=profile_id,
+                text=text,
+                source_type="document" if document_ids else data.source_type,
+                source_id=document_id,
+                source_label=label or None,
+            )
+
+        return await self.get_graph_data(profile_id)
+
+    async def _map_one_source(
+        self,
+        profile_id: str,
+        text: str,
+        source_type: str,
+        source_id: str | None,
+        source_label: str | None,
+    ) -> None:
+        """Pull the concepts out of one document or passage and file them."""
         # 1. Ensure source entity node exists (Document / Chat)
         source_node_id = None
         if source_id:
@@ -267,13 +317,19 @@ class GraphService:
 
         # 2. Extract concepts with LLM
         prompt = (
-            "You are an expert knowledge graph extraction engine. Given this learning text, "
-            "extract the top 4-8 core technical concepts, definitions, and any prerequisite relationships between them.\n\n"
-            f"Text Content:\n{text[:4000]}\n\n"
+            "You are a knowledge graph extraction engine. Read this learning material "
+            "and work out what it actually teaches.\n\n"
+            f"Name at most {self.MAX_CONCEPTS_PER_SOURCE} main concepts -- the ideas the "
+            "material is about, not every term it mentions. Under each, list at most "
+            f"{self.MAX_SUBTOPICS_PER_CONCEPT} subtopics: the finer points belonging to "
+            "that concept. Leave the list empty rather than padding it out.\n\n"
+            "Then say which main concepts have to be understood before which others.\n\n"
+            f"Material:\n{text[:6000]}\n\n"
             "Return ONLY a JSON object with this exact schema:\n"
             "{\n"
             '  "concepts": [\n'
-            '    {"label": "Concept Name", "description": "Concise summary"}\n'
+            '    {"label": "Concept Name", "description": "Concise summary", '
+            '"subtopics": ["Finer point"]}\n'
             "  ],\n"
             '  "relationships": [\n'
             '    {"source": "Concept A", "target": "Concept B", "type": "prerequisite_of"}\n'
@@ -281,7 +337,7 @@ class GraphService:
             "}"
         )
 
-        extracted_concepts: list[dict[str, str]] = []
+        extracted_concepts: list[dict] = []
         extracted_rels: list[dict[str, str]] = []
 
         try:
@@ -289,15 +345,16 @@ class GraphService:
             try:
                 response = await client.chat_complete(
                     messages=[
-                        ChatMessage(role="system", content="You extract semantic concept knowledge graphs. Return ONLY JSON."),
+                        ChatMessage(
+                            role="system",
+                            content="You extract semantic concept knowledge graphs. Return ONLY JSON.",
+                        ),
                         ChatMessage(role="user", content=prompt),
                     ],
                     temperature=0.1,
                     max_tokens=2500,
                 )
-                raw = extract_json_payload(response.content)
-
-                parsed = json.loads(raw)
+                parsed = json.loads(extract_json_payload(response.content))
                 extracted_concepts = parsed.get("concepts", [])
                 extracted_rels = parsed.get("relationships", [])
             finally:
@@ -308,12 +365,14 @@ class GraphService:
             lines = [line.strip() for line in text.split("\n") if line.strip()]
             for line in lines[:5]:
                 if len(line) > 5 and len(line) < 50 and not line.startswith("#"):
-                    extracted_concepts.append({"label": line, "description": "Extracted from source content."})
+                    extracted_concepts.append(
+                        {"label": line, "description": "Extracted from source content."}
+                    )
 
         # 3. Add extracted concepts and link to source
         label_to_id: dict[str, str] = {}
-        for c in extracted_concepts:
-            lbl = c.get("label", "").strip()
+        for c in extracted_concepts[: self.MAX_CONCEPTS_PER_SOURCE]:
+            lbl = str(c.get("label", "")).strip()
             if not lbl:
                 continue
             doc_ids = [source_id] if source_id and source_type == "document" else []
@@ -323,7 +382,7 @@ class GraphService:
                 profile_id=profile_id,
                 label=lbl,
                 node_type="concept",
-                description=c.get("description", ""),
+                description=str(c.get("description", "")),
                 document_ids=doc_ids,
                 chat_session_ids=chat_ids,
             )
@@ -339,10 +398,32 @@ class GraphService:
                     edge_type=rel_type,
                 )
 
+            # 3b. Hang the finer points off the concept they belong to instead
+            # of dropping them in beside it. A flat heap of everything a
+            # document mentions is exactly what makes a graph unreadable.
+            for sub in list(c.get("subtopics") or [])[: self.MAX_SUBTOPICS_PER_CONCEPT]:
+                sub_label = str(sub).strip()
+                if not sub_label or sub_label.lower() == lbl.lower():
+                    continue
+                sub_node = await self.repo.add_node(
+                    profile_id=profile_id,
+                    label=sub_label,
+                    node_type="concept",
+                    description=f"Part of {lbl}.",
+                    document_ids=doc_ids,
+                )
+                if sub_node["id"] != created["id"]:
+                    await self.repo.add_edge(
+                        profile_id=profile_id,
+                        source=sub_node["id"],
+                        target=created["id"],
+                        edge_type="related_to",
+                    )
+
         # 4. Add concept-to-concept relationships
         for r in extracted_rels:
-            src_lbl = r.get("source", "").strip().lower()
-            tgt_lbl = r.get("target", "").strip().lower()
+            src_lbl = str(r.get("source", "")).strip().lower()
+            tgt_lbl = str(r.get("target", "")).strip().lower()
             rel_type = r.get("type", "related_to")
 
             src_id = label_to_id.get(src_lbl)
@@ -358,8 +439,6 @@ class GraphService:
                     )
                 except Exception:
                     pass
-
-        return await self.get_graph_data(profile_id)
 
     async def search_nodes(self, profile_id: str, query: str) -> list[GraphNode]:
         """Search graph nodes by label or description query."""

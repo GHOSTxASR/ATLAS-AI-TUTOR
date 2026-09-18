@@ -85,6 +85,8 @@ export const roadmapApi = {
     profileId: string,
     payload: {
       document_id?: string;
+      /** Course materials to write a curriculum from, when no syllabus exists. */
+      document_ids?: string[];
       mode?: "strict" | "adaptive" | "hybrid";
       title?: string;
       syllabus_text?: string;

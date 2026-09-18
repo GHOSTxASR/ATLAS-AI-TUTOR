@@ -15,6 +15,14 @@ class RoadmapCreate(BaseModel):
     mode: RoadmapMode = Field("strict", description="Roadmap generation mode: strict, adaptive, or hybrid")
     title: str | None = Field(None, description="Optional custom title for the roadmap")
     syllabus_text: str | None = Field(None, description="Optional raw syllabus text instead of document ID")
+    document_ids: list[str] | None = Field(
+        None,
+        description=(
+            "Course materials to write a syllabus from, for a learner who has "
+            "slides and chapters but no syllabus document. Used only when "
+            "document_id and syllabus_text are both absent."
+        ),
+    )
 
 
 class RoadmapNodeUpdate(BaseModel):

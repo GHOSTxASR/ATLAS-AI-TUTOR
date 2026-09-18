@@ -21,6 +21,7 @@ import {
   MessageSquare,
   Trash2,
   X,
+  Loader2,
 } from "lucide-react";
 import { EmptyState, ErrorState } from "../components/common/LoadingStates";
 import { useFocusTrap } from "../hooks/useFocusTrap";
@@ -70,9 +71,16 @@ export function GraphPage() {
   const [enrichText, setEnrichText] = useState<string>("");
   const [enrichSourceLabel, setEnrichSourceLabel] = useState<string>("");
   const [enrichDocuments, setEnrichDocuments] = useState<Document[]>([]);
-  const [enrichDocumentId, setEnrichDocumentId] = useState<string>("");
+  const [enrichSelection, setEnrichSelection] = useState<string>("");
   const [enrichPasting, setEnrichPasting] = useState<boolean>(false);
   const [loadingEnrichDocuments, setLoadingEnrichDocuments] = useState<boolean>(false);
+  const [enriching, setEnriching] = useState<boolean>(false);
+
+  // What "everything" means here: the syllabus if any is marked as one,
+  // otherwise the whole library. Reading them all in one pass is the normal
+  // case -- going document by document is the same request over and over.
+  const enrichSyllabi = enrichDocuments.filter((d) => d.is_syllabus);
+  const enrichAuto = enrichSyllabi.length > 0 ? enrichSyllabi : enrichDocuments;
 
   // The library already holds the text of everything uploaded, so opening the
   // extractor offers it rather than asking for the syllabus a second time.
@@ -84,10 +92,6 @@ export function GraphPage() {
       .then((docs) => {
         const readable = docs.filter((d) => d.status === "indexed");
         setEnrichDocuments(readable);
-        // The syllabus is the one worth mapping, and the newest one at that.
-        const preferred =
-          readable.find((d) => d.is_syllabus) ?? readable[0];
-        setEnrichDocumentId((current) => current || preferred?.id || "");
         setEnrichPasting(readable.length === 0);
       })
       .catch(() => setEnrichPasting(true))
@@ -168,16 +172,20 @@ export function GraphPage() {
 
   const handleEnrichGraph = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!activeProfileId) return;
-    const usingDocument = !enrichPasting && !!enrichDocumentId;
-    if (!usingDocument && !enrichText.trim()) return;
+    if (!activeProfileId || enriching) return;
+    const chosen = enrichPasting
+      ? []
+      : enrichSelection
+      ? [enrichSelection]
+      : enrichAuto.map((d) => d.id);
+    if (chosen.length === 0 && !enrichText.trim()) return;
     setActionError(null);
-    setLoading(true);
+    setEnriching(true);
     try {
       const updated = await graphApi.enrichGraph(
         activeProfileId,
-        usingDocument
-          ? { document_id: enrichDocumentId }
+        chosen.length > 0
+          ? { document_ids: chosen }
           : {
               text: enrichText.trim(),
               source_label: enrichSourceLabel.trim() || undefined,
@@ -190,7 +198,7 @@ export function GraphPage() {
     } catch (err) {
       setActionError(getErrorMessage(err, "Failed to enrich graph."));
     } finally {
-      setLoading(false);
+      setEnriching(false);
     }
   };
 
@@ -747,10 +755,20 @@ export function GraphPage() {
                     </p>
                   ) : (
                     <select
-                      value={enrichDocumentId}
-                      onChange={(e) => setEnrichDocumentId(e.target.value)}
-                      className="w-full px-3 py-2 bg-surface-container/50 border border-glass-border text-on-surface focus:outline-hidden focus:border-primary"
+                      value={enrichSelection}
+                      onChange={(e) => setEnrichSelection(e.target.value)}
+                      disabled={enriching}
+                      className="w-full px-3 py-2 bg-surface-container/50 border border-glass-border text-on-surface focus:outline-hidden focus:border-primary disabled:opacity-50"
                     >
+                      {/* Reading the whole course at once is the normal case;
+                          one file at a time is the exception. */}
+                      <option value="">
+                        {enrichSyllabi.length > 0
+                          ? `My syllabus (${enrichSyllabi.length} ${
+                              enrichSyllabi.length === 1 ? "document" : "documents"
+                            })`
+                          : `All my materials (${enrichDocuments.length} documents)`}
+                      </option>
                       {enrichDocuments.map((d) => (
                         <option key={d.id} value={d.id}>
                           {d.filename}
@@ -795,8 +813,9 @@ export function GraphPage() {
 
               <button
                 type="button"
+                disabled={enriching}
                 onClick={() => setEnrichPasting((v) => !v)}
-                className="text-primary hover:underline"
+                className="text-primary hover:underline disabled:opacity-50"
               >
                 {enrichPasting
                   ? "Use a document from my library instead"
@@ -805,28 +824,59 @@ export function GraphPage() {
 
               <p className="text-on-surface-variant leading-relaxed">
                 Your roadmap topics are already on the graph in the order you
-                will study them. This adds the finer concepts a source
-                mentions, alongside them.
+                will study them. This reads the material itself and adds the
+                concepts it teaches, with the finer points grouped under the
+                concept they belong to.
               </p>
+
+              {/* One model call per document, so this is not quick. Saying so
+                  and locking the button is what stops it being pressed again
+                  half way through. */}
+              {enriching && (
+                <p className="flex items-center gap-2 text-luminous-highlight bg-primary-container/25 border border-primary/30 p-3 leading-relaxed">
+                  <Loader2 className="w-3.5 h-3.5 animate-spin shrink-0" />
+                  <span>
+                    Reading{" "}
+                    {enrichPasting
+                      ? "your text"
+                      : enrichSelection
+                      ? "1 document"
+                      : `${enrichAuto.length} ${
+                          enrichAuto.length === 1 ? "document" : "documents"
+                        }`}{" "}
+                    and mapping the concepts. This can take a couple of minutes — leave it
+                    running.
+                  </span>
+                </p>
+              )}
             </div>
 
             <div className="flex justify-end gap-2 pt-2">
               <button
                 type="button"
+                disabled={enriching}
                 onClick={() => setShowEnrichModal(false)}
-                className="px-4 py-2 text-xs text-on-surface-variant hover:text-on-surface"
+                className="px-4 py-2 text-xs text-on-surface-variant hover:text-on-surface disabled:opacity-50"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={
+                  enriching ||
                   loadingEnrichDocuments ||
-                  (enrichPasting ? !enrichText.trim() : !enrichDocumentId)
+                  (enrichPasting ? !enrichText.trim() : enrichDocuments.length === 0)
                 }
                 className="atlas-btn atlas-btn-primary"
               >
-                Extract &amp; Map
+                {enriching ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Mapping…</span>
+                  </>
+                ) : (
+                  <span>Extract &amp; Map</span>
+                )}
               </button>
             </div>
           </form>

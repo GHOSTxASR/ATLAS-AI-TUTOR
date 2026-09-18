@@ -48,6 +48,45 @@ class SyllabusService:
         title = Path(document.filename).stem.replace("_", " ").title()
         return await self.parser.parse_text(text=text, default_title=title)
 
+    async def synthesize_from_documents(
+        self, profile_id: str, document_ids: list[str]
+    ) -> ParsedSyllabus:
+        """Write a syllabus from uploaded materials when none was provided.
+
+        Documents that yield no text are skipped rather than failing the whole
+        request: one unreadable scan among six should not cost the roadmap.
+        """
+        await self._require_profile(profile_id)
+
+        sources: list[tuple[str, str]] = []
+        for document_id in document_ids:
+            try:
+                document, text = await load_document_text(
+                    self.session, self.settings, profile_id, document_id, extractor=self.extractor
+                )
+                sources.append((document.filename, text))
+            except AtlasError as e:
+                logger.warning("Skipping document %s while writing a syllabus: %s", document_id, e)
+
+        if not sources:
+            raise AtlasError(
+                status_code=422,
+                code="EXTRACTION_EMPTY",
+                message="None of the selected documents had any readable text.",
+            )
+
+        syllabus = await self.parser.synthesize_from_materials(sources)
+        if syllabus is None:
+            raise AtlasError(
+                status_code=422,
+                code="SYLLABUS_SYNTHESIS_FAILED",
+                message=(
+                    "Could not work out a curriculum from these materials. "
+                    "Upload a syllabus and mark it as one, or try again."
+                ),
+            )
+        return syllabus
+
     async def parse_raw_text(self, text: str, title: str = "Uploaded Syllabus") -> ParsedSyllabus:
         """Parse raw text string into a structured syllabus."""
         return await self.parser.parse_text(text=text, default_title=title)

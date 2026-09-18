@@ -87,14 +87,21 @@ class GraphEnrichRequest(BaseModel):
     document_id: str | None = Field(
         None, description="An uploaded document to read the text from"
     )
+    document_ids: list[str] | None = Field(
+        None,
+        description=(
+            "Several uploaded documents to read in one pass -- every syllabus "
+            "for a course, or the whole set of materials when none is marked."
+        ),
+    )
     source_type: str = Field("document", description="document or chat")
     source_id: str | None = Field(None, description="Optional ID of originating document or chat session")
     source_label: str | None = Field(None, description="Optional display name of source document or session")
 
     @model_validator(mode="after")
     def _needs_a_source(self) -> "GraphEnrichRequest":
-        if not (self.text or "").strip() and not self.document_id:
-            raise ValueError("Provide either document_id or text to extract from.")
+        if not (self.text or "").strip() and not self.document_id and not self.document_ids:
+            raise ValueError("Provide documents or text to extract from.")
         return self
 
 

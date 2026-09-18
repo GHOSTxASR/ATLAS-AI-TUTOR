@@ -35,7 +35,9 @@ export function GenerateRoadmapPanel({
   onGenerated,
 }: GenerateRoadmapPanelProps) {
   const [syllabi, setSyllabi] = useState<Document[]>([]);
+  const [materials, setMaterials] = useState<Document[]>([]);
   const [documentId, setDocumentId] = useState("");
+  const [source, setSource] = useState<"syllabus" | "materials">("syllabus");
   const [mode, setMode] = useState<RoadmapMode>("strict");
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
@@ -48,10 +50,15 @@ export function GenerateRoadmapPanel({
       .getAll(profileId)
       .then((docs) => {
         if (cancelled) return;
-        // Only a syllabus that finished indexing can be parsed into topics.
-        const usable = docs.filter((d) => d.is_syllabus && d.status === "indexed");
-        setSyllabi(usable);
-        setDocumentId((current) => current || usable[0]?.id || "");
+        // Only what finished indexing has any text to read.
+        const indexed = docs.filter((d) => d.status === "indexed");
+        const marked = indexed.filter((d) => d.is_syllabus);
+        setSyllabi(marked);
+        setMaterials(indexed);
+        setDocumentId((current) => current || marked[0]?.id || "");
+        // Nobody marked a syllabus, but there is still a course in these
+        // files: fall back to writing the curriculum out of them.
+        setSource(marked.length > 0 ? "syllabus" : "materials");
       })
       .catch((err) => {
         if (!cancelled) setError(getErrorMessage(err, "Could not load your documents."));
@@ -64,16 +71,25 @@ export function GenerateRoadmapPanel({
     };
   }, [profileId]);
 
+  const usingMaterials = source === "materials";
+
   const handleGenerate = async () => {
-    if (!documentId) return;
+    if (usingMaterials ? materials.length === 0 : !documentId) return;
     setGenerating(true);
     setError(null);
     try {
-      await roadmapApi.generateRoadmap(profileId, {
-        document_id: documentId,
-        mode,
-        title: syllabi.find((d) => d.id === documentId)?.filename.replace(/\.[^.]+$/, ""),
-      });
+      await roadmapApi.generateRoadmap(
+        profileId,
+        usingMaterials
+          ? { document_ids: materials.map((d) => d.id), mode }
+          : {
+              document_id: documentId,
+              mode,
+              title: syllabi
+                .find((d) => d.id === documentId)
+                ?.filename.replace(/\.[^.]+$/, ""),
+            },
+      );
       onGenerated();
     } catch (err) {
       setError(getErrorMessage(err, "Could not generate the roadmap."));
@@ -86,21 +102,22 @@ export function GenerateRoadmapPanel({
     return (
       <div className="p-8 text-center text-xs text-on-surface-variant font-sans">
         <Loader2 className="w-4 h-4 animate-spin inline mr-2" />
-        Looking for syllabus documents…
+        Looking through your library…
       </div>
     );
   }
 
-  // Without a syllabus there is nothing to build from, so say what to do rather
-  // than showing a control that cannot work.
-  if (syllabi.length === 0) {
+  // A missing syllabus is no longer a dead end -- the materials can be read
+  // instead -- so this is only for a library with nothing indexed in it.
+  if (materials.length === 0) {
     return (
       <div className="p-8 text-center space-y-3">
         <Route className="w-8 h-8 text-on-surface-variant mx-auto" />
-        <p className="text-sm text-on-surface">No syllabus to build from yet.</p>
+        <p className="text-sm text-on-surface">Nothing to build from yet.</p>
         <p className="text-xs text-on-surface-variant max-w-md mx-auto leading-relaxed">
-          Upload your syllabus in <strong className="text-on-surface">Library</strong> and tick
-          “Mark uploaded files as Syllabus”. Once it finishes indexing it will appear here.
+          Upload your syllabus or your course materials in{" "}
+          <strong className="text-on-surface">Library</strong>. Once they finish indexing they
+          will appear here.
         </p>
       </div>
     );
@@ -113,27 +130,58 @@ export function GenerateRoadmapPanel({
           {hasExistingRoadmap ? "Generate a new roadmap" : "Generate your roadmap"}
         </h3>
         <p className="text-xs text-on-surface-variant leading-relaxed">
-          Atlas reads the syllabus and lays its topics out as a dependency graph.
+          {usingMaterials
+            ? "No syllabus is marked, so Atlas reads your materials, works out the course they teach, and lays its topics out as a dependency graph."
+            : "Atlas reads the syllabus and lays its topics out as a dependency graph."}
         </p>
       </div>
 
       <div className="space-y-1.5">
         <label htmlFor="syllabus-doc" className="block text-xs text-on-surface-variant font-semibold">
-          Syllabus
+          {usingMaterials ? "Build from" : "Syllabus"}
         </label>
-        <select
-          id="syllabus-doc"
-          value={documentId}
-          onChange={(e) => setDocumentId(e.target.value)}
-          disabled={generating}
-          className="w-full min-h-[44px] px-3 bg-surface-container/50 border border-glass-border text-on-surface text-sm focus:outline-hidden focus:border-primary disabled:opacity-50"
-        >
-          {syllabi.map((d) => (
-            <option key={d.id} value={d.id}>
-              {d.filename}
-            </option>
-          ))}
-        </select>
+
+        {usingMaterials ? (
+          <div className="border border-glass-border bg-surface-container/50 p-3 space-y-2">
+            <p className="text-xs text-on-surface leading-relaxed">
+              Reading {materials.length} {materials.length === 1 ? "document" : "documents"} and
+              writing the curriculum they teach, in the order it should be learned.
+            </p>
+            <ul className="text-[11px] text-on-surface-variant space-y-0.5 max-h-28 overflow-y-auto">
+              {materials.map((d) => (
+                <li key={d.id}>{d.filename}</li>
+              ))}
+            </ul>
+          </div>
+        ) : (
+          <select
+            id="syllabus-doc"
+            value={documentId}
+            onChange={(e) => setDocumentId(e.target.value)}
+            disabled={generating}
+            className="w-full min-h-[44px] px-3 bg-surface-container/50 border border-glass-border text-on-surface text-sm focus:outline-hidden focus:border-primary disabled:opacity-50"
+          >
+            {syllabi.map((d) => (
+              <option key={d.id} value={d.id}>
+                {d.filename}
+              </option>
+            ))}
+          </select>
+        )}
+
+        {/* Only worth offering when there is actually a choice to make. */}
+        {syllabi.length > 0 && (
+          <button
+            type="button"
+            disabled={generating}
+            onClick={() => setSource(usingMaterials ? "syllabus" : "materials")}
+            className="text-[11px] text-primary hover:underline disabled:opacity-50"
+          >
+            {usingMaterials
+              ? "Use one of my syllabus documents instead"
+              : "No syllabus for this? Build one from all my materials"}
+          </button>
+        )}
       </div>
 
       <fieldset className="space-y-1.5" disabled={generating}>
@@ -178,13 +226,13 @@ export function GenerateRoadmapPanel({
       <button
         type="button"
         onClick={handleGenerate}
-        disabled={generating || !documentId}
+        disabled={generating || (usingMaterials ? materials.length === 0 : !documentId)}
         className="w-full min-h-[44px] px-4 bg-primary text-white text-sm font-semibold flex items-center justify-center gap-2 hover:brightness-110 transition disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {generating ? (
           <>
             <Loader2 className="w-4 h-4 animate-spin" />
-            Reading the syllabus…
+            {usingMaterials ? "Working out your curriculum…" : "Reading the syllabus…"}
           </>
         ) : (
           <>
@@ -196,7 +244,9 @@ export function GenerateRoadmapPanel({
 
       {generating && (
         <p className="text-[11px] text-on-surface-variant text-center">
-          This calls your chat model and can take up to a minute on a long syllabus.
+          {usingMaterials
+            ? "This reads every document you have and can take a couple of minutes. Leave it running."
+            : "This calls your chat model and can take up to a minute on a long syllabus."}
         </p>
       )}
     </div>

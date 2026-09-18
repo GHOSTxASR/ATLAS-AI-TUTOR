@@ -126,6 +126,8 @@ export const graphApi = {
     payload: {
       /** Read the text from a document already uploaded. */
       document_id?: string;
+      /** Read several at once -- every syllabus, or the whole library. */
+      document_ids?: string[];
       /** Pasted text, for content that is not in the library. */
       text?: string;
       source_type?: string;

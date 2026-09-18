@@ -140,11 +140,23 @@ class RoadmapService:
             parsed_syllabus = await self.syllabus_service.parse_raw_text(
                 text=data.syllabus_text, title=data.title or "Curriculum Roadmap"
             )
+        elif data.document_ids:
+            # No syllabus, only the course materials. Read across them and
+            # write the curriculum they teach, rather than refusing: a learner
+            # with six lecture PDFs and no syllabus document could not get a
+            # roadmap at all, because generating one needed a syllabus and the
+            # only thing that could produce a syllabus was a syllabus.
+            parsed_syllabus = await self.syllabus_service.synthesize_from_documents(
+                profile_id=profile_id, document_ids=data.document_ids
+            )
         else:
             raise AtlasError(
                 status_code=422,
                 code="VALIDATION_ERROR",
-                message="Either document_id or syllabus_text must be provided to generate a roadmap.",
+                message=(
+                    "Provide a syllabus document, syllabus text, or the "
+                    "documents to build a curriculum from."
+                ),
             )
 
         title = data.title or parsed_syllabus.title or "Learning Roadmap"
