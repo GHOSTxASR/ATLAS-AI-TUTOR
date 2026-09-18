@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from typing import Literal
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 GraphNodeType = Literal["concept", "chapter", "subject", "document", "note", "quiz"]
 GraphEdgeType = Literal["prerequisite_of", "related_to", "taught_in", "referenced_by", "learned_from", "tested_by"]
@@ -74,10 +74,28 @@ class GraphDataResponse(BaseModel):
 
 
 class GraphEnrichRequest(BaseModel):
-    text: str = Field(..., description="Text content to extract knowledge graph concepts and links from")
+    """Where to read concepts from: a document already uploaded, or pasted text.
+
+    `text` used to be required, which meant the only way to map a syllabus was
+    to paste it in again after uploading it. Naming `document_id` instead reads
+    the text that was already extracted on upload.
+    """
+
+    text: str | None = Field(
+        None, description="Text to extract from. Ignored when document_id is given."
+    )
+    document_id: str | None = Field(
+        None, description="An uploaded document to read the text from"
+    )
     source_type: str = Field("document", description="document or chat")
     source_id: str | None = Field(None, description="Optional ID of originating document or chat session")
     source_label: str | None = Field(None, description="Optional display name of source document or session")
+
+    @model_validator(mode="after")
+    def _needs_a_source(self) -> "GraphEnrichRequest":
+        if not (self.text or "").strip() and not self.document_id:
+            raise ValueError("Provide either document_id or text to extract from.")
+        return self
 
 
 class GraphPathResponse(BaseModel):

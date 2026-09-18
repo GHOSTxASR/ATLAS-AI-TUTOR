@@ -7,8 +7,10 @@ import networkx as nx
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import Settings, get_settings
+from app.db.models import Roadmap
 from app.db.repositories.graph_repo import GraphRepository
 from app.db.repositories.profile_repo import ProfileRepository
+from app.services.document_text import load_document_text
 from app.exceptions import AtlasError
 from app.models.abstraction import ChatMessage
 from app.models.provider_factory import get_model_client
@@ -26,6 +28,10 @@ from app.schemas.graph import (
 from app.utils.text_utils import extract_json_payload
 
 logger = logging.getLogger(__name__)
+
+#: Roadmap node types that name something to be learned. Subjects and
+#: chapters are how a syllabus is filed, not concepts in their own right.
+LEARNABLE_ROADMAP_NODE_TYPES = ("topic", "bridge")
 
 
 class GraphService:
@@ -46,6 +52,7 @@ class GraphService:
     async def get_graph_data(self, profile_id: str) -> GraphDataResponse:
         """Fetch all graph nodes and edges with aggregate summary statistics."""
         await self._require_profile(profile_id)
+        await self._backfill_curriculum(profile_id)
         raw_nodes, raw_edges = await self.repo.get_all_nodes_and_edges(profile_id)
 
         nodes: list[GraphNode] = []
@@ -138,21 +145,123 @@ class GraphService:
             raise AtlasError(status_code=404, code="NOT_FOUND", message="Graph edge not found")
         return True
 
+    async def _backfill_curriculum(self, profile_id: str) -> None:
+        """Mirror the active roadmap the first time a graph built before this is read.
+
+        Generating a roadmap keeps the graph in step from now on, but a learner
+        who built theirs earlier would open this page and still find whatever
+        ad-hoc extractions they had run, with the curriculum missing. Once a
+        single concept is tied to a topic there is nothing left to backfill and
+        this stops doing anything.
+        """
+        if self.session is None:
+            return
+        try:
+            graph = await self.repo.get_graph(profile_id)
+            if any(attrs.get("roadmap_node_id") for _, attrs in graph.nodes(data=True)):
+                return
+
+            from app.db.repositories.roadmap_repo import RoadmapRepository
+
+            roadmap = await RoadmapRepository(self.session).get_active_roadmap(profile_id)
+            if roadmap is None:
+                return
+            result = await self.sync_from_roadmap(profile_id, roadmap)
+            if result["concepts_total"]:
+                logger.info(
+                    "Backfilled %d curriculum concepts into the graph for profile %s.",
+                    result["concepts_total"],
+                    profile_id,
+                )
+        except Exception as e:
+            logger.warning("Could not backfill the curriculum graph for %s: %s", profile_id, e)
+
+    async def sync_from_roadmap(self, profile_id: str, roadmap: Roadmap) -> dict[str, int]:
+        """Mirror a roadmap's topics, and the order they are learned in, into the graph.
+
+        The roadmap has already worked out what comes before what: strict mode
+        chains the syllabus in order, adaptive mode asks the model for a
+        prerequisite DAG, hybrid mode inserts bridging concepts first. All
+        three mean "learn this before that", which is what an edge in the
+        concept graph means, so the ordering is carried across rather than
+        guessed at a second time from the same syllabus.
+
+        Until this existed the graph had no idea a curriculum was there. It
+        filled up only from ad-hoc extractions -- four to eight concepts at a
+        time, each batch an island with no edge to any other -- while the
+        roadmap next to it held every topic in sequence.
+        """
+        nodes = list(roadmap.nodes)
+        edges = list(roadmap.edges)
+
+        learnable = [n for n in nodes if n.node_type in LEARNABLE_ROADMAP_NODE_TYPES]
+        position = {n.id: n.order_index or 0 for n in nodes}
+
+        concepts = [
+            {
+                "roadmap_node_id": node.id,
+                "label": node.title,
+                "description": node.description or "",
+                "mastery_score": node.mastery_score or 0.0,
+            }
+            for node in sorted(
+                learnable,
+                key=lambda n: (position.get(n.parent_id or "", 0), n.order_index or 0),
+            )
+        ]
+
+        learnable_ids = {node.id for node in learnable}
+        links = [
+            (edge.from_node_id, edge.to_node_id)
+            for edge in edges
+            if edge.from_node_id in learnable_ids and edge.to_node_id in learnable_ids
+        ]
+
+        return await self.repo.sync_curriculum(profile_id, concepts, links)
+
     async def enrich_from_text(
         self, profile_id: str, data: GraphEnrichRequest
     ) -> GraphDataResponse:
-        """Extract concepts, descriptions, and prerequisite links from learning text and link to source."""
+        """Extract concepts, descriptions, and prerequisite links from learning text and link to source.
+
+        A document can be named instead of pasting its contents. The text was
+        already extracted when it was uploaded, so asking for it again was
+        asking the learner to fetch something the app was sitting on.
+        """
         await self._require_profile(profile_id)
+
+        text = data.text or ""
+        source_type = data.source_type
+        source_id = data.source_id
+        source_label = data.source_label
+
+        if data.document_id:
+            if self.session is None:
+                raise AtlasError(
+                    status_code=400,
+                    code="VALIDATION_ERROR",
+                    message="Reading a document requires a database session.",
+                )
+            document, text = await load_document_text(
+                self.session, self.settings, profile_id, data.document_id
+            )
+            source_type = "document"
+            source_id = data.document_id
+            source_label = source_label or document.filename
 
         # 1. Ensure source entity node exists (Document / Chat)
         source_node_id = None
-        if data.source_id:
-            source_label = data.source_label or (f"Document {data.source_id[:8]}" if data.source_type == "document" else f"Session {data.source_id[:8]}")
+        if source_id:
+            entity_label = source_label or (
+                f"Document {source_id[:8]}"
+                if source_type == "document"
+                else f"Session {source_id[:8]}"
+            )
             source_node = await self.repo.add_node(
                 profile_id=profile_id,
-                label=source_label,
-                node_type=data.source_type,
-                node_id=data.source_id,
+                label=entity_label,
+                node_type=source_type,
+                node_id=source_id,
             )
             source_node_id = source_node["id"]
 
@@ -160,7 +269,7 @@ class GraphService:
         prompt = (
             "You are an expert knowledge graph extraction engine. Given this learning text, "
             "extract the top 4-8 core technical concepts, definitions, and any prerequisite relationships between them.\n\n"
-            f"Text Content:\n{data.text[:4000]}\n\n"
+            f"Text Content:\n{text[:4000]}\n\n"
             "Return ONLY a JSON object with this exact schema:\n"
             "{\n"
             '  "concepts": [\n'
@@ -196,7 +305,7 @@ class GraphService:
         except Exception as e:
             logger.warning(f"AI graph extraction failed; using heuristic term extraction: {e}")
             # Fallback heuristic: extract capitalized key phrases
-            lines = [line.strip() for line in data.text.split("\n") if line.strip()]
+            lines = [line.strip() for line in text.split("\n") if line.strip()]
             for line in lines[:5]:
                 if len(line) > 5 and len(line) < 50 and not line.startswith("#"):
                     extracted_concepts.append({"label": line, "description": "Extracted from source content."})
@@ -207,8 +316,8 @@ class GraphService:
             lbl = c.get("label", "").strip()
             if not lbl:
                 continue
-            doc_ids = [data.source_id] if data.source_id and data.source_type == "document" else []
-            chat_ids = [data.source_id] if data.source_id and data.source_type == "chat" else []
+            doc_ids = [source_id] if source_id and source_type == "document" else []
+            chat_ids = [source_id] if source_id and source_type == "chat" else []
 
             created = await self.repo.add_node(
                 profile_id=profile_id,
@@ -222,7 +331,7 @@ class GraphService:
 
             # Link concept -> source
             if source_node_id:
-                rel_type = "taught_in" if data.source_type == "document" else "referenced_by"
+                rel_type = "taught_in" if source_type == "document" else "referenced_by"
                 await self.repo.add_edge(
                     profile_id=profile_id,
                     source=created["id"],

@@ -16,6 +16,10 @@ from app.exceptions import AtlasError
 
 logger = logging.getLogger(__name__)
 
+#: Marks the edges that mirror the curriculum, so re-syncing can replace its
+#: own ordering without disturbing links the learner drew by hand.
+CURRICULUM_EDGE_ORIGIN = "curriculum"
+
 
 class GraphRepository:
     """Manages profile-isolated Knowledge Graphs using NetworkX DiGraph and atomic JSON file persistence."""
@@ -75,6 +79,137 @@ class GraphRepository:
                 json.dump(data, f, indent=2, default=str)
 
             os.replace(tmp_path, file_path)
+
+    async def sync_curriculum(
+        self,
+        profile_id: str,
+        concepts: list[dict[str, Any]],
+        links: list[tuple[str, str]],
+    ) -> dict[str, int]:
+        """Mirror a roadmap's topics, and the order they are learned in, into the graph.
+
+        `concepts` carry the roadmap node id they come from; `links` are pairs
+        of those ids meaning "learn the first before the second".
+
+        Written in one pass under a single save. Going through `add_node` and
+        `add_edge` would rewrite the whole graph file once per topic -- three
+        hundred writes for a syllabus this size, each one larger than the last.
+
+        Nothing is deleted. A concept the learner added by hand is adopted
+        rather than duplicated when the curriculum turns out to name the same
+        thing, and their own links survive a re-sync untouched.
+        """
+        if not concepts:
+            return {
+                "concepts_added": 0,
+                "concepts_adopted": 0,
+                "order_links": 0,
+                "concepts_total": 0,
+            }
+
+        g = await self.get_graph(profile_id)
+        now_str = datetime.now(timezone.utc).isoformat()
+
+        async with self._get_lock(profile_id):
+            by_roadmap_id: dict[str, str] = {}
+            by_label: dict[str, str] = {}
+            for n_id, attrs in g.nodes(data=True):
+                roadmap_id = attrs.get("roadmap_node_id")
+                if roadmap_id:
+                    by_roadmap_id.setdefault(roadmap_id, n_id)
+                label = (attrs.get("label") or "").strip().lower()
+                if label:
+                    by_label.setdefault(label, n_id)
+
+            resolved: dict[str, str] = {}
+            added = 0
+            adopted = 0
+
+            for concept in concepts:
+                roadmap_node_id = concept.get("roadmap_node_id")
+                label = (concept.get("label") or "").strip()
+                if not roadmap_node_id or not label:
+                    continue
+
+                # The roadmap id is tried first: a topic that was reworded in a
+                # later syllabus keeps the concept it already had, and with it
+                # everything attached to it.
+                n_id = by_roadmap_id.get(roadmap_node_id) or by_label.get(label.lower())
+
+                if n_id is None:
+                    n_id = str(uuid.uuid4())
+                    g.add_node(
+                        n_id,
+                        id=n_id,
+                        label=label,
+                        type="concept",
+                        profile_id=profile_id,
+                        description=concept.get("description") or "",
+                        mastery_score=float(concept.get("mastery_score") or 0.0),
+                        mention_count=1,
+                        first_seen=now_str,
+                        last_seen=now_str,
+                        roadmap_node_id=roadmap_node_id,
+                        document_ids=[],
+                        chat_session_ids=[],
+                    )
+                    added += 1
+                else:
+                    attrs = g.nodes[n_id]
+                    if not attrs.get("roadmap_node_id"):
+                        adopted += 1
+                    attrs["label"] = label
+                    attrs["roadmap_node_id"] = roadmap_node_id
+                    if concept.get("description") and not attrs.get("description"):
+                        attrs["description"] = concept["description"]
+                    attrs["last_seen"] = now_str
+
+                by_roadmap_id[roadmap_node_id] = n_id
+                by_label[label.lower()] = n_id
+                resolved[roadmap_node_id] = n_id
+
+            # Replace the previous mirror, leaving hand-drawn links alone.
+            g.remove_edges_from(
+                [
+                    (u, v)
+                    for u, v, data in g.edges(data=True)
+                    if data.get("origin") == CURRICULUM_EDGE_ORIGIN
+                ]
+            )
+
+            # Two topics named the same thing share one concept, which can turn
+            # a straight run of topics into a loop. Only worth checking for when
+            # that has actually happened.
+            collapsed = len(set(resolved.values())) < len(resolved)
+
+            ordered = 0
+            for source_roadmap_id, target_roadmap_id in links:
+                u = resolved.get(source_roadmap_id)
+                v = resolved.get(target_roadmap_id)
+                if not u or not v or u == v:
+                    continue
+                existing = g.edges[u, v] if g.has_edge(u, v) else None
+                if existing is not None and existing.get("origin") != CURRICULUM_EDGE_ORIGIN:
+                    continue
+                if collapsed and nx.has_path(g, v, u):
+                    continue
+                g.add_edge(
+                    u,
+                    v,
+                    type="prerequisite_of",
+                    weight=1.0,
+                    created_at=now_str,
+                    origin=CURRICULUM_EDGE_ORIGIN,
+                )
+                ordered += 1
+
+        await self.save_graph(profile_id)
+        return {
+            "concepts_added": added,
+            "concepts_adopted": adopted,
+            "order_links": ordered,
+            "concepts_total": len(resolved),
+        }
 
     async def add_node(
         self,

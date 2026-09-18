@@ -25,6 +25,7 @@ from app.schemas.roadmap import (
     RoadmapResponse,
     RoadmapSummaryResponse,
 )
+from app.services.graph_service import GraphService
 from app.services.syllabus_service import SyllabusService
 
 logger = logging.getLogger(__name__)
@@ -117,6 +118,7 @@ class RoadmapService:
         self.repo = RoadmapRepository(session)
         self.profile_repo = ProfileRepository(session)
         self.syllabus_service = SyllabusService(session=session, settings=self.settings)
+        self.graph_service = GraphService(session=session, settings=self.settings)
 
     async def _require_profile(self, profile_id: str) -> None:
         profile = await self.profile_repo.get_by_id(profile_id)
@@ -187,6 +189,7 @@ class RoadmapService:
                     edges_data=edges_data,
                     keep_node_ids=keep_node_ids,
                 )
+                await self._mirror_into_graph(profile_id, reconciled)
                 return self._format_roadmap_response(reconciled)
 
         # A different subject: keep the old roadmap as history and start fresh.
@@ -203,7 +206,36 @@ class RoadmapService:
             edges_data=edges_data,
         )
 
+        await self._mirror_into_graph(profile_id, roadmap)
         return self._format_roadmap_response(roadmap)
+
+    async def _mirror_into_graph(self, profile_id: str, roadmap: Roadmap) -> None:
+        """Carry the curriculum into the knowledge graph.
+
+        The graph is generated here rather than on its own button because this
+        is the moment the ordering exists: a syllabus on its own is a list of
+        titles, and it is building the roadmap that works out what has to be
+        learned before what. Uploading a syllabus used to leave the graph
+        completely empty, with nothing to press but "AI Extract".
+
+        A failure here must not lose the roadmap, which is the thing actually
+        being asked for.
+        """
+        try:
+            result = await self.graph_service.sync_from_roadmap(profile_id, roadmap)
+            logger.info(
+                "Mirrored roadmap %s into the knowledge graph: %d concepts "
+                "(%d new, %d adopted), %d ordering links.",
+                roadmap.id,
+                result["concepts_total"],
+                result["concepts_added"],
+                result["concepts_adopted"],
+                result["order_links"],
+            )
+        except Exception as e:
+            logger.warning(
+                "Could not mirror roadmap %s into the knowledge graph: %s", roadmap.id, e
+            )
 
     # ── Progress & Unlocks ────────────────────────────────────────────
 

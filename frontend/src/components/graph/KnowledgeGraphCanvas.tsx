@@ -244,14 +244,21 @@ export function KnowledgeGraphCanvas({
       {/* Canvas SVG */}
       <svg className="w-full h-full">
         <defs>
-          {/* Arrow markers */}
+          {/* Arrow markers.
+              markerUnits is userSpaceOnUse so the head is sized in graph
+              units rather than multiples of the line's stroke width: at a
+              1.2 stroke the default put a seven-unit arrow under a
+              twenty-unit node, which is why no edge ever appeared to have a
+              direction. refX sits on the tip, and each line stops short of
+              its target, so the head lands just outside the circle. */}
           <marker
             id="arrow-prereq"
             viewBox="0 -5 10 10"
-            refX="22"
+            refX="10"
             refY="0"
-            markerWidth="6"
-            markerHeight="6"
+            markerUnits="userSpaceOnUse"
+            markerWidth="13"
+            markerHeight="13"
             orient="auto"
           >
             <path d="M0,-5L10,0L0,5" fill="#6366f1" />
@@ -259,10 +266,11 @@ export function KnowledgeGraphCanvas({
           <marker
             id="arrow-path"
             viewBox="0 -5 10 10"
-            refX="22"
+            refX="10"
             refY="0"
-            markerWidth="7"
-            markerHeight="7"
+            markerUnits="userSpaceOnUse"
+            markerWidth="15"
+            markerHeight="15"
             orient="auto"
           >
             <path d="M0,-5L10,0L0,5" fill="#10b981" />
@@ -270,10 +278,11 @@ export function KnowledgeGraphCanvas({
           <marker
             id="arrow-default"
             viewBox="0 -5 10 10"
-            refX="22"
+            refX="10"
             refY="0"
-            markerWidth="5"
-            markerHeight="5"
+            markerUnits="userSpaceOnUse"
+            markerWidth="11"
+            markerHeight="11"
             orient="auto"
           >
             <path d="M0,-5L10,0L0,5" fill="#64748b" />
@@ -304,6 +313,23 @@ export function KnowledgeGraphCanvas({
               ? "#f59e0b"
               : "#475569";
 
+            // Between the rims, not the centres: an arrowhead drawn at the
+            // target's centre sits underneath the node and cannot be seen,
+            // so which way round a prerequisite goes was never shown.
+            const dx = v.x - u.x;
+            const dy = v.y - u.y;
+            const distance = Math.hypot(dx, dy) || 1;
+            const unitX = dx / distance;
+            const unitY = dy / distance;
+            const headroom = u.radius + v.radius + 14;
+            // Overlapping nodes leave no room to trim; a trimmed line there
+            // would double back on itself and point the wrong way.
+            const trimmed = distance > headroom;
+            const x1 = trimmed ? u.x + unitX * (u.radius + 2) : u.x;
+            const y1 = trimmed ? u.y + unitY * (u.radius + 2) : u.y;
+            const x2 = trimmed ? v.x - unitX * (v.radius + 3) : v.x;
+            const y2 = trimmed ? v.y - unitY * (v.radius + 3) : v.y;
+
             const markerEnd = isHighlightedEdge
               ? "url(#arrow-path)"
               : edge.type === "prerequisite_of"
@@ -313,13 +339,18 @@ export function KnowledgeGraphCanvas({
             return (
               <line
                 key={idx}
-                x1={u.x}
-                y1={u.y}
-                x2={v.x}
-                y2={v.y}
+                x1={x1}
+                y1={y1}
+                x2={x2}
+                y2={y2}
                 stroke={strokeColor}
                 strokeWidth={isHighlightedEdge ? 3 : isConnectedToSelected ? 2.2 : 1.2}
                 strokeDasharray={edge.type === "related_to" ? "4,4" : undefined}
+                // Stroke width in screen pixels, not graph units. A whole
+                // curriculum framed to fit sits near k=0.24, where a 1.2
+                // unit line is a quarter of a pixel: every edge was being
+                // drawn and none of them could be seen.
+                vectorEffect="non-scaling-stroke"
                 markerEnd={edge.type !== "related_to" ? markerEnd : undefined}
                 opacity={isDimmed ? 0.15 : 0.85}
                 className="transition-opacity duration-300"

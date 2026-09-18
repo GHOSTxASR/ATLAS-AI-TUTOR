@@ -1,6 +1,8 @@
 import { getErrorMessage } from "../utils/errors";
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { useProfileStore } from "../stores/profileStore";
+import { documentsApi } from "../api/documents";
+import { Document } from "../types";
 import {
   graphApi,
   GraphDataResponse,
@@ -67,6 +69,30 @@ export function GraphPage() {
   });
   const [enrichText, setEnrichText] = useState<string>("");
   const [enrichSourceLabel, setEnrichSourceLabel] = useState<string>("");
+  const [enrichDocuments, setEnrichDocuments] = useState<Document[]>([]);
+  const [enrichDocumentId, setEnrichDocumentId] = useState<string>("");
+  const [enrichPasting, setEnrichPasting] = useState<boolean>(false);
+  const [loadingEnrichDocuments, setLoadingEnrichDocuments] = useState<boolean>(false);
+
+  // The library already holds the text of everything uploaded, so opening the
+  // extractor offers it rather than asking for the syllabus a second time.
+  useEffect(() => {
+    if (!showEnrichModal || !activeProfileId) return;
+    setLoadingEnrichDocuments(true);
+    documentsApi
+      .getAll(activeProfileId)
+      .then((docs) => {
+        const readable = docs.filter((d) => d.status === "indexed");
+        setEnrichDocuments(readable);
+        // The syllabus is the one worth mapping, and the newest one at that.
+        const preferred =
+          readable.find((d) => d.is_syllabus) ?? readable[0];
+        setEnrichDocumentId((current) => current || preferred?.id || "");
+        setEnrichPasting(readable.length === 0);
+      })
+      .catch(() => setEnrichPasting(true))
+      .finally(() => setLoadingEnrichDocuments(false));
+  }, [showEnrichModal, activeProfileId]);
 
   const loadGraph = useCallback(() => {
     if (!activeProfileId) return;
@@ -84,10 +110,11 @@ export function GraphPage() {
               return;
             }
           }
-          // Functional form: this only needs "is anything selected", and
-          // reading that from state would tie the whole fetch to the
-          // selection and refetch the graph on every click.
-          setSelectedNode((current) => current ?? data.nodes[0]);
+          // Nothing is selected for you. Selecting a node dims everything
+          // not touching it, which is the right way to read one concept's
+          // neighbourhood and the wrong way to open the page: picking the
+          // first node on arrival faded a whole curriculum down to one
+          // topic and its single link, so the graph looked empty.
         }
       })
       .catch((err) => setError(getErrorMessage(err, "Failed to load knowledge graph.")))
@@ -141,14 +168,21 @@ export function GraphPage() {
 
   const handleEnrichGraph = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!activeProfileId || !enrichText.trim()) return;
+    if (!activeProfileId) return;
+    const usingDocument = !enrichPasting && !!enrichDocumentId;
+    if (!usingDocument && !enrichText.trim()) return;
     setActionError(null);
     setLoading(true);
     try {
-      const updated = await graphApi.enrichGraph(activeProfileId, {
-        text: enrichText.trim(),
-        source_label: enrichSourceLabel.trim() || undefined,
-      });
+      const updated = await graphApi.enrichGraph(
+        activeProfileId,
+        usingDocument
+          ? { document_id: enrichDocumentId }
+          : {
+              text: enrichText.trim(),
+              source_label: enrichSourceLabel.trim() || undefined,
+            },
+      );
       setGraphData(updated);
       setShowEnrichModal(false);
       setEnrichText("");
@@ -697,30 +731,83 @@ export function GraphPage() {
             </div>
 
             <div className="space-y-3 font-sans text-xs">
-              <div>
-                <label className="block text-on-surface-variant mb-1 font-semibold">
-                  Source Name / Reference (Optional)
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g. Chapter 4 Notes, Lecture 2"
-                  value={enrichSourceLabel}
-                  onChange={(e) => setEnrichSourceLabel(e.target.value)}
-                  className="w-full px-3 py-2 bg-surface-container/50 border border-glass-border text-on-surface focus:outline-hidden focus:border-primary"
-                />
-              </div>
+              {/* Read from the library by default. Uploading a syllabus and
+                  then being asked to paste it in read as the app having
+                  forgotten it. */}
+              {!enrichPasting && (
+                <div>
+                  <label className="block text-on-surface-variant mb-1 font-semibold">
+                    Read from
+                  </label>
+                  {loadingEnrichDocuments ? (
+                    <p className="text-on-surface-variant py-2">Looking through your library...</p>
+                  ) : enrichDocuments.length === 0 ? (
+                    <p className="text-on-surface-variant py-2">
+                      Nothing indexed yet. Upload a document, or paste text below.
+                    </p>
+                  ) : (
+                    <select
+                      value={enrichDocumentId}
+                      onChange={(e) => setEnrichDocumentId(e.target.value)}
+                      className="w-full px-3 py-2 bg-surface-container/50 border border-glass-border text-on-surface focus:outline-hidden focus:border-primary"
+                    >
+                      {enrichDocuments.map((d) => (
+                        <option key={d.id} value={d.id}>
+                          {d.filename}
+                          {d.is_syllabus ? "  (syllabus)" : ""}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </div>
+              )}
 
-              <div>
-                <label className="block text-on-surface-variant mb-1 font-semibold">Text or Syllabus Content</label>
-                <textarea
-                  rows={6}
-                  required
-                  placeholder="Paste lecture text, book excerpt, or syllabus concepts..."
-                  value={enrichText}
-                  onChange={(e) => setEnrichText(e.target.value)}
-                  className="w-full px-3 py-2 bg-surface-container/50 border border-glass-border text-on-surface focus:outline-hidden focus:border-primary"
-                />
-              </div>
+              {enrichPasting && (
+                <>
+                  <div>
+                    <label className="block text-on-surface-variant mb-1 font-semibold">
+                      Source Name / Reference (Optional)
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Chapter 4 Notes, Lecture 2"
+                      value={enrichSourceLabel}
+                      onChange={(e) => setEnrichSourceLabel(e.target.value)}
+                      className="w-full px-3 py-2 bg-surface-container/50 border border-glass-border text-on-surface focus:outline-hidden focus:border-primary"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-on-surface-variant mb-1 font-semibold">
+                      Text to map
+                    </label>
+                    <textarea
+                      rows={6}
+                      required
+                      placeholder="Paste lecture text, a book excerpt, or a list of concepts..."
+                      value={enrichText}
+                      onChange={(e) => setEnrichText(e.target.value)}
+                      className="w-full px-3 py-2 bg-surface-container/50 border border-glass-border text-on-surface focus:outline-hidden focus:border-primary"
+                    />
+                  </div>
+                </>
+              )}
+
+              <button
+                type="button"
+                onClick={() => setEnrichPasting((v) => !v)}
+                className="text-primary hover:underline"
+              >
+                {enrichPasting
+                  ? "Use a document from my library instead"
+                  : "Paste text instead"}
+              </button>
+
+              <p className="text-on-surface-variant leading-relaxed">
+                Your roadmap topics are already on the graph in the order you
+                will study them. This adds the finer concepts a source
+                mentions, alongside them.
+              </p>
             </div>
 
             <div className="flex justify-end gap-2 pt-2">
@@ -733,9 +820,13 @@ export function GraphPage() {
               </button>
               <button
                 type="submit"
+                disabled={
+                  loadingEnrichDocuments ||
+                  (enrichPasting ? !enrichText.trim() : !enrichDocumentId)
+                }
                 className="atlas-btn atlas-btn-primary"
               >
-                Extract & Map
+                Extract &amp; Map
               </button>
             </div>
           </form>

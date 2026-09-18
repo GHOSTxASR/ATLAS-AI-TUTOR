@@ -124,7 +124,10 @@ export const graphApi = {
   enrichGraph: async (
     profileId: string,
     payload: {
-      text: string;
+      /** Read the text from a document already uploaded. */
+      document_id?: string;
+      /** Pasted text, for content that is not in the library. */
+      text?: string;
       source_type?: string;
       source_id?: string;
       source_label?: string;
