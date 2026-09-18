@@ -12,7 +12,6 @@ while a syllabus for a genuinely different subject still starts its own.
 
 from __future__ import annotations
 
-import json
 from typing import AsyncIterator
 
 import pytest
