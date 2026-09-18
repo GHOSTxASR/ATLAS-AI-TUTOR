@@ -125,7 +125,11 @@ def sanitize_filename(filename: str) -> str:
 
     Prevents path traversal from user-controlled upload filenames.
     """
-    name = Path(filename).name  # drop any directory components (.., /, \)
+    # Both separators, on every platform. Path() only knows the host's own:
+    # on Linux, Path(r"..\..\windows\evil.dll").name is the whole string, so a
+    # Windows-style upload name arrived on a Linux host un-stripped and came
+    # out mangled into one long filename instead of reduced to its basename.
+    name = filename.replace("\\", "/").rsplit("/", 1)[-1]
     name = name.strip().strip(".")
     name = _UNSAFE_FILENAME_CHARS.sub("_", name)
     return name or "upload"

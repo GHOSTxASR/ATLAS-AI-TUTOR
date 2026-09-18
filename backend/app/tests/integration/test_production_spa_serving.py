@@ -5,6 +5,20 @@ import pytest
 from fastapi.testclient import TestClient
 
 
+#: Where the compiled interface lands. Serving it is only possible once the
+#: frontend has actually been built, which the backend CI job does not do.
+FRONTEND_DIST = Path(__file__).resolve().parents[4] / "frontend" / "dist"
+
+
+def _requires_a_production_build() -> None:
+    if not (FRONTEND_DIST / "index.html").exists():
+        pytest.skip(
+            "needs a production build: run `npm run build` in frontend/. "
+            "Serving the compiled interface is what this test is about, so "
+            "there is nothing to assert without one."
+        )
+
+
 def _make_app(tmp_path, monkeypatch):
     monkeypatch.setenv("ATLAS_DATA_DIR", str(tmp_path / "atlas-spa-data"))
 
@@ -22,6 +36,7 @@ def test_production_spa_serving_and_fallback(tmp_path, monkeypatch):
     - Client SPA routes (/chat, /notes, /roadmap) return 200 and HTML
     - /api/v1/health continues returning API health payload
     """
+    _requires_a_production_build()
     app = _make_app(tmp_path, monkeypatch)
 
     with TestClient(app) as client:
