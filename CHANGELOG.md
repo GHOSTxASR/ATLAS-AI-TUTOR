@@ -5,7 +5,43 @@ versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-09-18
+
 ### Added
+
+- **The knowledge graph is built from the curriculum, in the order it is
+  studied.** Nothing ever wrote a syllabus into it: the only things that did
+  were generating a note and the "AI Extract" button, which pulls four to eight
+  concepts out of one passage. So the graph filled up as unconnected islands
+  while the roadmap beside it held every topic of the course in sequence — 27
+  loose concepts against 152 ordered ones. Building a roadmap now mirrors it
+  across, ordering included, and each concept keeps the id of the topic it came
+  from. Roadmaps built before this get their curriculum the first time the
+  graph is opened.
+
+- **A roadmap can be built from course materials when no syllabus is marked.**
+  Generation needed a syllabus document, and the only thing that could produce
+  one was a syllabus, so a learner with six lecture PDFs and nothing flagged
+  got an empty panel and no roadmap — and therefore no graph either. The
+  materials are now read across and the course they teach is written out,
+  ordered for learning rather than by upload date, with a topic that several
+  documents cover appearing once. It then goes through the same strict /
+  adaptive / hybrid generation as any other syllabus.
+
+- **Concept extraction reads what is already uploaded.** It took one document
+  per visit and asked for the text to be pasted in again, having extracted it
+  on upload. It now reads a set in one pass — every document marked as a
+  syllabus, or the whole library when none is — and asks for the shape of the
+  material rather than a list of terms, with finer points grouped under the
+  concept they belong to. It also says when it is working: each document is a
+  separate model call, and the dialog used to sit there looking idle with a
+  live button.
+
+- **The Atlas mark, and a tutor that says when it is thinking.** The sidebar and
+  every assistant message showed a generic sparkle. Both now carry the mark,
+  and so does the browser tab. While a reply is being prepared, a red blob
+  turns beside the words "Atlas is thinking" in place of a spinner — on an
+  answer that can take most of a minute, it is worth saying who is busy.
 
 - **A "Generate roadmap" button.** Uploading a syllabus and ticking "Mark as
   Syllabus" set a database flag that nothing downstream consumed, and
@@ -16,6 +52,47 @@ versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   exists, so it stays reachable when a syllabus grows.
 
 ### Fixed
+
+- **"Start AI Tutorial" now starts tutoring.** Clicking a topic opened an empty
+  chat and stopped. Four faults sat between the button and a reply, each hiding
+  the next: nothing was ever asked, the first question was sent into a socket
+  that had not finished connecting and was dropped, the WebSocket ignored the
+  topic the session was opened for so the tutor had no curriculum context and
+  the topic stayed at "not started", and a model that returned nothing was
+  reported as a finished answer. An empty reply is now retried once without
+  streaming on a budget with room for a reasoning model's thinking, and a turn
+  that still yields nothing says so.
+
+- **A roadmap grows with its syllabus instead of starting over.** Generating one
+  archived the roadmap in progress and built an entirely new set of nodes, so
+  every topic got a new id: all progress went back to zero, and every chat,
+  note, quiz attempt and document filed against a topic was left pointing at a
+  row nobody would look at again — the cost of adding one chapter. A re-parsed
+  syllabus is now folded into the roadmap already there, topics keep their
+  rows, and a topic the syllabus drops is only deleted if it was never touched.
+  A syllabus for a different subject still starts its own.
+
+- **The knowledge graph was drawn but invisible.** Arriving on the page selected
+  the first node, which faded every edge not touching it; edge width was in
+  graph units, so at the zoom needed to fit a curriculum a line was a quarter of
+  a pixel; and arrowheads were drawn at the target's centre, underneath the
+  node. Framing also clamped zoom to a floor a large graph could not reach, so
+  "Reset View" showed the middle of the graph and pressing it again changed
+  nothing.
+
+- **Edited and deleted notes no longer linger in the search index.** Only
+  creating a note ever reached it, so a note the learner had corrected went on
+  being retrieved in its original wording, and a deleted one was still cited as
+  a source with nothing behind it.
+
+- **Deleting a profile now deletes its knowledge graph**, which lives in a file
+  of its own outside the directories that were cleaned up, and stayed in an
+  in-process cache shared across every repository instance.
+
+- **Filename sanitising works on the platform you deploy to.** It used
+  `Path(filename).name`, which only understands the host's own separator, so on
+  Linux a Windows-style upload name was never reduced to its basename. A
+  path-stripping guard that does nothing on Linux is not one.
 
 - **Four document statuses were missing from the frontend's type**, including
   `indexed` — the state a document ends in when everything worked. Anything
@@ -285,5 +362,6 @@ than by version.
 - Uploads are validated by magic bytes rather than extension, size-capped, and
   stored under generated names so a filename cannot traverse.
 
-[Unreleased]: https://github.com/GHOSTxASR/atlas/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/GHOSTxASR/atlas/releases/tag/v0.1.0
+[Unreleased]: https://github.com/GHOSTxASR/ATLAS-AI-TUTOR/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/GHOSTxASR/ATLAS-AI-TUTOR/compare/v0.1.0...v0.2.0
+[0.1.0]: https://github.com/GHOSTxASR/ATLAS-AI-TUTOR/releases/tag/v0.1.0

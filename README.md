@@ -7,7 +7,7 @@ textbooks, and it builds a searchable knowledge base, generates a roadmap,
 quizzes you on weak spots, and remembers what you struggle with — all stored
 locally. Your documents, notes, progress and API keys never leave your machine.
 
-[![CI](https://github.com/GHOSTxASR/atlas/actions/workflows/ci.yml/badge.svg)](https://github.com/GHOSTxASR/atlas/actions/workflows/ci.yml)
+[![CI](https://github.com/GHOSTxASR/ATLAS-AI-TUTOR/actions/workflows/ci.yml/badge.svg)](https://github.com/GHOSTxASR/ATLAS-AI-TUTOR/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://www.python.org/downloads/)
 [![Node 18+](https://img.shields.io/badge/node-18%2B-brightgreen.svg)](https://nodejs.org/)
@@ -76,8 +76,8 @@ an embedding provider explicitly in Settings to override it.
 Get the code:
 
 ```bash
-git clone https://github.com/GHOSTxASR/atlas.git
-cd atlas
+git clone https://github.com/GHOSTxASR/ATLAS-AI-TUTOR.git
+cd ATLAS-AI-TUTOR
 ```
 
 Install once:

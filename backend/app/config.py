@@ -23,7 +23,7 @@ ENV_PREFIX = "ATLAS_"
 LEGACY_ENV_PREFIX = "LEARNINGOS_"
 
 _legacy_env_warned: set[str] = set()
-DEFAULT_VERSION = "0.1.0"
+DEFAULT_VERSION = "0.2.0"
 
 
 @dataclass(frozen=True)
