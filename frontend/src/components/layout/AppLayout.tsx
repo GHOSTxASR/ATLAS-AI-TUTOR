@@ -1,4 +1,6 @@
 import { NavLink } from "react-router-dom";
+
+import atlasMark from "../../assets/atlas-mark.png";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
   Brain,
@@ -13,7 +15,6 @@ import {
   Search,
   Menu,
   X,
-  Sparkles,
   HelpCircle,
   PanelLeftClose,
   PanelLeftOpen,
@@ -113,9 +114,12 @@ export function AppLayout({ children }: AppLayoutProps) {
             {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
           <div className="flex items-center gap-2">
-            <div className="w-7 h-7 bg-primary-container/40 text-luminous-highlight border border-glass-border flex items-center justify-center font-bold text-xs shadow-sm">
-              <Sparkles className="w-4 h-4" />
-            </div>
+            <img
+              src={atlasMark}
+              alt=""
+              aria-hidden="true"
+              className="w-7 h-7 shrink-0 object-contain drop-shadow-[0_0_8px_rgba(var(--accent-rgb),0.3)]"
+            />
             <span className="font-editorial text-xl font-normal tracking-tight text-on-surface">
               Atlas
             </span>
@@ -160,9 +164,12 @@ export function AppLayout({ children }: AppLayoutProps) {
           {/* Brand Logo */}
           <div className={`flex items-center justify-between px-2 pt-1 pb-1 ${collapsed ? "md:justify-center md:px-0" : ""}`}>
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 shrink-0 bg-primary-container/40 text-luminous-highlight border border-glass-border flex items-center justify-center shadow-[0_0_12px_rgba(var(--accent-rgb),0.2)]">
-                <Sparkles className="w-4 h-4" />
-              </div>
+              <img
+                src={atlasMark}
+                alt=""
+                aria-hidden="true"
+                className="w-8 h-8 shrink-0 object-contain drop-shadow-[0_0_10px_rgba(var(--accent-rgb),0.35)]"
+              />
               <span
                 className={`font-editorial text-2xl tracking-tight text-on-surface leading-none ${
                   collapsed ? "md:hidden" : ""

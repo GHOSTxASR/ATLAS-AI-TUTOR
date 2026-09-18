@@ -733,3 +733,126 @@ main:has(.page-own-layout) > * {
     transition: opacity 160ms ease;
   }
 }
+
+/* ── Thinking indicator ──────────────────────────────────────────────────
+   A soft red blob that turns over while the tutor is working, in place of
+   the spinner that used to sit there. A spinner says "busy"; this says the
+   same thing in the product's own colour, and reads as something thinking
+   rather than something loading.
+
+   Built from gradients and border-radius rather than the exported artwork,
+   which is 3.5 MB of blurred layers and has no business in a bundle. */
+
+@keyframes atlas-blob-morph {
+  0%,
+  100% {
+    border-radius: 58% 42% 46% 54% / 52% 48% 52% 48%;
+  }
+  25% {
+    border-radius: 45% 55% 62% 38% / 44% 60% 40% 56%;
+  }
+  50% {
+    border-radius: 52% 48% 38% 62% / 60% 42% 58% 40%;
+  }
+  75% {
+    border-radius: 62% 38% 52% 48% / 40% 56% 44% 60%;
+  }
+}
+
+@keyframes atlas-blob-turn {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes atlas-blob-breathe {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.75;
+  }
+  50% {
+    transform: scale(1.14);
+    opacity: 1;
+  }
+}
+
+@keyframes atlas-thinking-shimmer {
+  to {
+    background-position: 200% center;
+  }
+}
+
+.atlas-blob {
+  position: relative;
+  display: inline-block;
+  flex: none;
+}
+
+/* The halo. Sits behind and slightly outside the core so the edge stays
+   soft instead of cutting off against the background. */
+.atlas-blob::before {
+  content: "";
+  position: absolute;
+  inset: -32%;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 50% 50%,
+    rgba(var(--accent-rgb), 0.5),
+    rgba(var(--accent-rgb), 0) 68%
+  );
+  filter: blur(4px);
+  animation: atlas-blob-breathe 2.8s ease-in-out infinite;
+}
+
+.atlas-blob::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    conic-gradient(
+      from 210deg,
+      rgb(var(--accent-rgb)),
+      #ff6b7a,
+      #8d0b22,
+      rgb(var(--accent-rgb))
+    );
+  animation:
+    atlas-blob-morph 4.2s ease-in-out infinite,
+    atlas-blob-turn 7s linear infinite;
+  box-shadow: inset 0 0 6px rgba(255, 255, 255, 0.28);
+}
+
+/* Claude-style: the words shimmer rather than blink, which is calmer to sit
+   next to while you wait. */
+.atlas-thinking-text {
+  background: linear-gradient(
+    90deg,
+    rgba(var(--accent-rgb), 0.55) 0%,
+    rgba(255, 255, 255, 0.92) 18%,
+    rgba(var(--accent-rgb), 0.55) 38%,
+    rgba(var(--accent-rgb), 0.55) 100%
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: atlas-thinking-shimmer 2.4s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .atlas-blob::before,
+  .atlas-blob::after {
+    animation: none;
+  }
+  .atlas-blob::after {
+    border-radius: 50%;
+  }
+  .atlas-thinking-text {
+    animation: none;
+    background: none;
+    -webkit-background-clip: border-box;
+    background-clip: border-box;
+    color: rgb(var(--accent-rgb));
+  }
+}

@@ -20,7 +20,6 @@ import {
   BookOpen,
   X,
   Menu,
-  Sparkles,
 } from "lucide-react";
 import { useChatStore } from "../stores/chatStore";
 import { useProfileStore } from "../stores/profileStore";
@@ -29,6 +28,8 @@ import { StudyIntent, openingPromptFor } from "../hooks/useOpenTutor";
 import { EmptyState, Skeleton } from "../components/common/LoadingStates";
 import { MarkdownContent } from "../components/common/MarkdownContent";
 import { CitationList } from "../components/chat/CitationList";
+import { AtlasBlob, ThinkingIndicator } from "../components/chat/ThinkingIndicator";
+import atlasMark from "../assets/atlas-mark.png";
 
 export function ChatPage() {
   const { activeProfileId } = useProfileStore();
@@ -420,15 +421,20 @@ export function ChatPage() {
                         msg.role === "user" ? "ml-auto flex-row-reverse" : "mr-auto"
                       }`}
                     >
-                      <div
-                        className={`w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center shrink-0 border border-glass-border shadow-sm ${
-                          msg.role === "user"
-                            ? "bg-primary-container/40 text-luminous-highlight"
-                            : "bg-surface-container-high text-primary"
-                        }`}
-                      >
-                        {msg.role === "user" ? <User className="w-4 h-4" /> : <Sparkles className="w-4 h-4" />}
-                      </div>
+                      {msg.role === "user" ? (
+                        <div className="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center shrink-0 border border-glass-border shadow-sm bg-primary-container/40 text-luminous-highlight">
+                          <User className="w-4 h-4" />
+                        </div>
+                      ) : (
+                        // The mark itself, not a generic sparkle. Static: an
+                        // answer that has already arrived is not still working.
+                        <img
+                          src={atlasMark}
+                          alt=""
+                          aria-hidden="true"
+                          className="w-7 h-7 sm:w-8 sm:h-8 shrink-0 object-contain"
+                        />
+                      )}
 
                       <div
                         className={`min-w-0 px-4 sm:px-5 py-3 text-xs sm:text-sm leading-relaxed ${
@@ -451,16 +457,23 @@ export function ChatPage() {
                   {/* Streaming Assistant Response */}
                   {isStreaming && (
                     <div className="flex gap-3 sm:gap-4 max-w-3xl mr-auto">
-                      <div className="w-7 h-7 sm:w-8 sm:h-8 bg-surface-container-high border border-glass-border flex items-center justify-center shrink-0 text-primary">
-                        <Sparkles className="w-4 h-4 animate-spin" />
+                      <div className="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center shrink-0">
+                        <AtlasBlob className="w-6 h-6 sm:w-7 sm:h-7" />
                       </div>
-                      <div className="min-w-0 glass-card rounded-tl-none px-4 sm:px-5 py-3 text-xs sm:text-sm leading-relaxed border border-glass-border">
-                        <MarkdownContent content={streamingContent} />
-                        <span className="inline-block w-1.5 h-4 bg-primary ml-1 animate-pulse" />
-                        {streamingCitations.length > 0 && (
-                          <CitationList citations={streamingCitations} />
-                        )}
-                      </div>
+                      {/* Before the first token there is nothing to show but
+                          the wait, so say what is happening. Once the answer
+                          starts it speaks for itself and the label goes. */}
+                      {streamingContent ? (
+                        <div className="min-w-0 glass-card rounded-tl-none px-4 sm:px-5 py-3 text-xs sm:text-sm leading-relaxed border border-glass-border">
+                          <MarkdownContent content={streamingContent} />
+                          <span className="inline-block w-1.5 h-4 bg-primary ml-1 animate-pulse" />
+                          {streamingCitations.length > 0 && (
+                            <CitationList citations={streamingCitations} />
+                          )}
+                        </div>
+                      ) : (
+                        <ThinkingIndicator />
+                      )}
                     </div>
                   )}
 
