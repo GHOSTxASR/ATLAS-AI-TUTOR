@@ -39,6 +39,80 @@ const LARGE_GRAPH_NODES = 150;
 const COMMIT_INTERVAL_MS = 250;
 
 /**
+ * The order the graph is meant to be learned in, read off its own edges.
+ *
+ * Chains are followed to their end before the next one is started, so a run
+ * of topics stays a run rather than being interleaved with an unrelated one
+ * -- which is what a plain topological sort would do with a curriculum and a
+ * handful of loose clusters sitting side by side.
+ *
+ * Everything else lands at the end, in the order it arrived.
+ */
+export function learningOrder(nodes: GraphNode[], edges: GraphEdge[]): string[] {
+  const successors = new Map<string, string[]>();
+  const incoming = new Map<string, number>();
+  for (const node of nodes) incoming.set(node.id, 0);
+
+  let ordered = false;
+  for (const edge of edges) {
+    if (edge.type !== "prerequisite_of") continue;
+    if (!incoming.has(edge.source) || !incoming.has(edge.target)) continue;
+    ordered = true;
+    const from = successors.get(edge.source);
+    if (from) from.push(edge.target);
+    else successors.set(edge.source, [edge.target]);
+    incoming.set(edge.target, (incoming.get(edge.target) ?? 0) + 1);
+  }
+  if (!ordered) return [];
+
+  const order: string[] = [];
+  const seen = new Set<string>();
+
+  const walk = (startId: string) => {
+    let current: string | undefined = startId;
+    while (current && !seen.has(current)) {
+      seen.add(current);
+      order.push(current);
+      current = (successors.get(current) ?? []).find((id) => !seen.has(id));
+    }
+  };
+
+  // Begin where nothing comes first: the start of each chain.
+  for (const node of nodes) {
+    if (!seen.has(node.id) && (incoming.get(node.id) ?? 0) === 0) walk(node.id);
+  }
+  // Whatever is left is inside a loop, or was only ever something's target.
+  for (const node of nodes) if (!seen.has(node.id)) walk(node.id);
+
+  return order;
+}
+
+/**
+ * Distance between neighbours along the seeded spiral.
+ *
+ * Matched to the rest length of the edge springs, so a chain starts at the
+ * length it wants to be and the layout refines it instead of first having to
+ * stretch or squash every link in the curriculum.
+ */
+const SEED_SPACING = 150;
+
+/**
+ * Distance between one turn of the spiral and the next.
+ *
+ * Two node-spacings apart: closer and repulsion shuffles neighbouring turns
+ * into each other, taking the ordering with them; much wider and the graph
+ * opens out into a disc far larger than it needs.
+ */
+const SEED_TURN_GAP = SEED_SPACING * 2;
+
+/** How far out the seeded spiral reaches for a graph of this size. */
+function seedExtent(count: number): number {
+  const growth = SEED_TURN_GAP / (2 * Math.PI);
+  return Math.sqrt(2 * Math.max(1, count - 1) * SEED_SPACING * growth);
+}
+
+
+/**
  * Force-directed layout for the knowledge graph.
  *
  * Lives apart from the canvas because it shares nothing with rendering: it owns
@@ -75,8 +149,27 @@ export function useGraphSimulation(
       return;
     }
 
-    // Seed on a ring big enough to hold the nodes without overlap, so the
-    // simulation refines a layout instead of untangling a knot.
+    // Seed in the order the material is meant to be studied, running outward
+    // along a spiral, so what the layout settles into follows the sequence.
+    //
+    // A ring was the same idea without the direction: neighbours sat next to
+    // each other, but it closed on itself, so a curriculum came out as a
+    // starburst with no beginning and nothing to follow. A force layout keeps
+    // roughly the arrangement it is handed, which is what makes the starting
+    // positions worth choosing rather than scattering.
+    const sequence = learningOrder(nodes, edges);
+    const seedRank = new Map(sequence.map((id, index) => [id, index]));
+
+    // r = b * theta, stepped by arc length so neighbours stay one spacing
+    // apart however far out the turn is.
+    const growth = SEED_TURN_GAP / (2 * Math.PI);
+    const spiralAt = (rank: number) => {
+      const theta = Math.sqrt((2 * rank * SEED_SPACING) / growth);
+      const radius = growth * theta;
+      return { x: Math.cos(theta) * radius, y: Math.sin(theta) * radius };
+    };
+
+    // Nothing to sequence -- no prerequisites anywhere -- so keep the ring.
     const radiusBase = Math.max(160, (nodes.length * 46) / (2 * Math.PI));
 
     // Previous positions come from the updater rather than the closure: a node
@@ -90,11 +183,18 @@ export function useGraphSimulation(
         if (existing) {
           return { ...existing, ...node, radius };
         }
+        const rank = seedRank.get(node.id);
         const angle = (i / nodes.length) * 2 * Math.PI;
+        const seat =
+          rank === undefined
+            ? { x: Math.cos(angle) * radiusBase, y: Math.sin(angle) * radiusBase }
+            : spiralAt(rank);
         return {
           ...node,
-          x: Math.cos(angle) * radiusBase + (Math.random() - 0.5) * 40,
-          y: Math.sin(angle) * radiusBase + (Math.random() - 0.5) * 40,
+          // A little scatter, so nothing starts perfectly symmetrical and
+          // sits there with every force cancelling out.
+          x: seat.x + (Math.random() - 0.5) * 40,
+          y: seat.y + (Math.random() - 0.5) * 40,
           vx: 0,
           vy: 0,
           radius,
@@ -104,7 +204,7 @@ export function useGraphSimulation(
       workingRef.current = seeded.map((n) => ({ ...n }));
       return seeded;
     });
-  }, [nodes]);
+  }, [nodes, edges]);
 
   // Run force-directed physics iteration
   useEffect(() => {
@@ -139,6 +239,8 @@ export function useGraphSimulation(
         const kAttract = 0.05;
         const kGravity = 0.004;
         const damping = 0.85;
+        // Room for the seeded arrangement to keep its shape, with margin.
+        const containment = seedExtent(next.length) * 1.3;
 
         // 1. Repulsion between all node pairs
         for (let i = 0; i < next.length; i++) {
@@ -187,11 +289,27 @@ export function useGraphSimulation(
           }
         }
 
-        // 3. Center gravity force
+        // 3. Containment, in place of centre gravity
+        //
+        // Gravity used to pull every node inward in proportion to how far out
+        // it was, which fixes the size of the graph no matter how it started:
+        // 179 nodes settled into a disc of radius ~1100 whatever was seeded,
+        // and a spiral laid out to 1600 was squeezed into that same disc with
+        // its ordering lost on the way in. What gravity is actually for --
+        // its comment says so -- is keeping unconnected nodes from drifting
+        // off screen, and a boundary does that without flattening what is
+        // inside it.
+        const boundary = containment;
         for (const n of next) {
           if (n.id === draggedNodeId) continue;
-          n.vx -= n.x * kGravity;
-          n.vy -= n.y * kGravity;
+          const distance = Math.sqrt(n.x * n.x + n.y * n.y);
+          if (distance > boundary) {
+            // Proportional to the overshoot, so it is nothing at the edge and
+            // firm well past it.
+            const pull = (kGravity * (distance - boundary)) / distance;
+            n.vx -= n.x * pull;
+            n.vy -= n.y * pull;
+          }
           n.x += n.vx;
           n.y += n.vy;
           n.vx *= damping;
