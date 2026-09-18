@@ -7,7 +7,10 @@ textbooks, and it builds a searchable knowledge base, generates a roadmap,
 quizzes you on weak spots, and remembers what you struggle with — all stored
 locally. Your documents, notes, progress and API keys never leave your machine.
 
+[![CI](https://github.com/GHOSTxASR/atlas/actions/workflows/ci.yml/badge.svg)](https://github.com/GHOSTxASR/atlas/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://www.python.org/downloads/)
+[![Node 18+](https://img.shields.io/badge/node-18%2B-brightgreen.svg)](https://nodejs.org/)
 
 ![Atlas — a tour: pick a profile, see your progress, ask the tutor, follow the roadmap, explore the graph](docs/demo.gif)
 
@@ -159,7 +162,7 @@ python -m venv .venv
 .venv/Scripts/activate          # Windows;  source .venv/bin/activate on macOS/Linux
 pip install -r requirements-dev.txt   # includes runtime deps + test tooling
 
-pytest                          # 206 tests
+pytest                          # 297 tests
 ruff check app/ evals/ alembic/
 python -m evals.run             # retrieval + syllabus scorecards (no API key)
 
