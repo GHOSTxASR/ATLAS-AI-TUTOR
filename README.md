@@ -70,6 +70,13 @@ an embedding provider explicitly in Settings to override it.
 
 ## Quick Start
 
+Get the code:
+
+```bash
+git clone https://github.com/GHOSTxASR/atlas.git
+cd atlas
+```
+
 Install once:
 
 ```bash
@@ -81,6 +88,10 @@ Then run it, any time:
 ```bash
 python start.py
 ```
+
+On Linux and macOS the interpreter is usually `python3`, not `python` — a
+stock Ubuntu has no `python` at all. Either substitute it, or use the shims
+below, which look for both.
 
 Prefer double-clicking? `scripts/` holds **`install.bat`** and **`start.bat`**
 for Windows, **`install.sh`** and **`start.sh`** for macOS/Linux. All four are

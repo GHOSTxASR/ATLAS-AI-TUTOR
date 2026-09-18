@@ -285,5 +285,5 @@ than by version.
 - Uploads are validated by magic bytes rather than extension, size-capped, and
   stored under generated names so a filename cannot traverse.
 
-[Unreleased]: https://github.com/OWNER/atlas/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/OWNER/atlas/releases/tag/v0.1.0
+[Unreleased]: https://github.com/GHOSTxASR/atlas/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/GHOSTxASR/atlas/releases/tag/v0.1.0
