@@ -147,8 +147,12 @@ export function KnowledgeGraphCanvas({
     const minY = Math.min(...ys) - pad;
     const maxY = Math.max(...ys) + pad;
 
+    // The floor is only there to stop a degenerate bounding box producing an
+    // absurd zoom. It must not be tight enough to prevent framing a real
+    // graph: a 179-node curriculum needs 0.13 to fit, and a floor of 0.2 left
+    // "Reset View" showing the middle of it with the edges off screen.
     const k = Math.max(
-      0.2,
+      0.05,
       Math.min(1.4, Math.min(rect.width / (maxX - minX), rect.height / (maxY - minY))),
     );
     setTransform({

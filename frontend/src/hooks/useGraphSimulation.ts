@@ -239,8 +239,11 @@ export function useGraphSimulation(
         const kAttract = 0.05;
         const kGravity = 0.004;
         const damping = 0.85;
-        // Room for the seeded arrangement to keep its shape, with margin.
-        const containment = seedExtent(next.length) * 1.3;
+        // Just enough room for the seeded arrangement to keep its shape.
+        // With more slack than this the graph inflates against the boundary
+        // -- 179 nodes seeded to 1600 spread to 2125 before stopping -- which
+        // buys nothing and only makes the whole thing harder to take in.
+        const containment = seedExtent(next.length) * 1.05;
 
         // 1. Repulsion between all node pairs
         for (let i = 0; i < next.length; i++) {
